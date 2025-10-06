@@ -13,7 +13,6 @@ frontend (FrontEnd module)
     compatible with Firefox
     no errors or warnings when browsing the website
 
-
 game
     live pong game against another player directly on the website
     both players use the same keyboard
