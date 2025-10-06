@@ -1,4 +1,8 @@
 timeline 
+- done by christmas the latest
+- first milestone: 
+    Now that you’ve accomplished 25% of the project, congratulations!
+    With a functional basic website in place, the next step is to choose modules for further improvement.
 
 personal availability
 
