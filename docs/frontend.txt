@@ -1,0 +1,21 @@
+Vite in the context of building is allowed:
+https://42born2code.slack.com/archives/CN9RHKQHW/p1746766117482379?thread_ts=1746447614.267189&cid=CN9RHKQHW
+
+TypeScript doesn't run in browsers, it must be compiled in JavaScript. Node.js is the local runtime used to run the compiler and dev tools.
+Vite is a tool that compiles the TypeScript & bundles modules. It is not part of the frontend code!
+
+## Dependency lockfiles
+- package.json: declares dependencies (version ranges).
+- package-lock.json: exact versions resolved by npm for reproducible installs. Auto-generated; commit it, don’t edit by hand.
+- To refresh: delete node_modules and package-lock.json, then run `npm install`.
+
+## TypeScript configuration
+- `tsconfig.json` defines how TypeScript analyzes the project.
+- Key points:
+  - `target` ES2020, `module` ESNext, `lib` includes `DOM` (browser types)
+  - `moduleResolution: Bundler` to align with Vite
+  - `strict: true` for safer types
+  - `noEmit: true` (Vite handles build output)
+- Adjust `jsx` if using React; otherwise it’s harmless or can be set to `"preserve"`.
+
+
