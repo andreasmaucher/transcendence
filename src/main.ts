@@ -1,4 +1,4 @@
-// Super simple Pong in TypeScript (beginner-friendly)
+// Super simple Pong in TypeScript
 // Goal: keep code easy to read and reason about.
 // This file:
 // 1) defines small data types for paddles, ball, and overall game state
@@ -10,6 +10,8 @@
 // - Canvas origin (0,0) is top-left corner
 // - x increases to the right; y increases going down
 // - All sizes/positions are in pixels
+
+import { WIDTH, HEIGHT, PADDLE_W, PADDLE_H, PADDLE_SPEED, BALL_R, BALL_SPEED } from './constants';
 
 // Basic shapes — tiny, explicit types keep things approachable
 // Example: a paddle at (x=24,y=100) with size 12x80 and speed 420 px/s
@@ -33,9 +35,11 @@ type Inputs = {
   right: -1 | 0 | 1;
 };
 
+// A frame is one cycle of the game loop where the game state is updated and then drawn.
+// So one frame equals one screen refresh (usually about 60 times / second but depends on display)
 // Everything the game needs for one frame lives in State. Keeping it in one
 // object makes it easy to pass around to update() and draw().
-// scoreL/scoreR track points for left/right players.
+// scoreL/scoreR tracks the points for left/right players.
 type State = {
   width: number;
   height: number;
@@ -45,16 +49,6 @@ type State = {
   scoreL: number;
   scoreR: number;
 };
-
-// Game constants (change here to tweak)
-// Tip: Having a single source of truth avoids “magic numbers” later.
-const WIDTH = 800;            // canvas width in px
-const HEIGHT = 450;           // canvas height in px
-const PADDLE_W = 12;          // paddle width
-const PADDLE_H = 80;          // paddle height
-const PADDLE_SPEED = 420;     // how fast paddles move (px/second)
-const BALL_R = 8;             // ball radius
-const BALL_SPEED = 360;       // initial horizontal speed (px/second)
 
 // Make the initial game state
 // Ball starts centered, moving slightly diagonally; paddles start centered.
