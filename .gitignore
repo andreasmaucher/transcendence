@@ -1,0 +1,13 @@
+# Environment files (do not commit secrets)
+.env
+.env.*
+.env.local
+.env.*.local
+
+# Keep example env files tracked
+!.env.example
+!.env.*.example
+
+# Environment directories
+env/
+.env/
