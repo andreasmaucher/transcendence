@@ -22,3 +22,4 @@ responsiblities / interests
 win screen
 put calc parts into backend, frontend only displays and send commands
 containerizing after that
+new
