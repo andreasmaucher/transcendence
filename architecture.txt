@@ -1,0 +1,20 @@
+backend (Framework module)
+    - if backend or framework uses database 
+        -> Database module
+    - use Docker to run the website 
+    - signle command line that runs an autonomous container
+
+frontend (FrontEnd module)
+    single-sided application (SPA)\
+    -> loads one web page once and after that only updates parts that changed e.g. gmail, google maps
+    back & forward button
+    compatible with Firefox
+    no errors or warnings when browsing the website
+
+
+game
+    live pong game against another player directly on the website
+    both players use the same keyboard
+        -> Remote players module enhances this
+    player must be able to play against each other
+    tournament system
