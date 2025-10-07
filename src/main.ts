@@ -15,6 +15,8 @@
 import { WIDTH, HEIGHT, PADDLE_W, PADDLE_H, PADDLE_SPEED, BALL_R, BALL_SPEED } from './constants';
 import { PADDLE_MARGIN, INITIAL_BALL_VY_RATIO } from './constants';
 import { SCORE_OUT_MARGIN } from './constants';
+import { COLOR_BACKGROUND, COLOR_CENTERLINE, COLOR_PADDLE_BALL_LIGHT, COLOR_SCORE } from './constants';
+import { FONT_SCORE } from './constants';
 
 // Type that defines the shape of a paddle object
 // Example: a paddle at (x=24,y=100) with size 12x80 and speed 420 px/s
@@ -162,16 +164,17 @@ function update(state: State, inputs: Inputs, dt: number): void {
   if (outRight) { state.scoreL += 1; resetBall(state, 1); }
 }
 
-// Draw everything
-// Important: drawing reads state but does not change it (no game logic here).
+// Draw everything (reads state but does not change it, since there is no game logic here)
+// function takes in a 2D canvas context ctx and the gurrent game State s
 function draw(ctx: CanvasRenderingContext2D, s: State): void {
-  // background rectangle covering the whole canvas
+  // wipes all previous pixels in the full canvas area
   ctx.clearRect(0, 0, s.width, s.height);
-  ctx.fillStyle = '#0f172a';
+  ctx.fillStyle = COLOR_BACKGROUND;
+  // paints the entire canvas area with the background color
   ctx.fillRect(0, 0, s.width, s.height);
 
-  // center line: just visuals to split the field
-  ctx.strokeStyle = '#334155';
+  // this part draws the center line dividing the field in half
+  ctx.strokeStyle = COLOR_CENTERLINE;
   ctx.setLineDash([6, 10]);
   ctx.beginPath();
   ctx.moveTo(s.width / 2, 0);
@@ -179,19 +182,19 @@ function draw(ctx: CanvasRenderingContext2D, s: State): void {
   ctx.stroke();
   ctx.setLineDash([]);
 
-  // paddles
-  ctx.fillStyle = '#e2e8f0';
-  ctx.fillRect(s.left.x, s.left.y, s.left.w, s.left.h);
-  ctx.fillRect(s.right.x, s.right.y, s.right.w, s.right.h);
+  // draws the two paddles as filled rectangles
+  ctx.fillStyle = COLOR_PADDLE_BALL_LIGHT;
+  ctx.fillRect(s.left.x, s.left.y, s.left.w, s.left.h); // left paddle
+  ctx.fillRect(s.right.x, s.right.y, s.right.w, s.right.h); // right paddle
 
-  // ball (drawn as a circle)
+  // draws the ball as a circle
   ctx.beginPath();
   ctx.arc(s.ball.x, s.ball.y, s.ball.r, 0, Math.PI * 2);
   ctx.fill();
 
-  // score — text drawn near the top
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '24px system-ui';
+  // draws the score text near the top
+  ctx.fillStyle = COLOR_SCORE;
+  ctx.font = FONT_SCORE;
   ctx.fillText(String(s.scoreL), s.width * 0.4, 32);
   ctx.fillText(String(s.scoreR), s.width * 0.6, 32);
 }
