@@ -1,22 +1,30 @@
-// Super simple Pong in TypeScript (beginner-friendly)
-// Goal: keep code easy to read and reason about.
+// Simple Pong in TypeScript
+
 // This file:
 // 1) defines small data types for paddles, ball, and overall game state
 // 2) updates the game each frame (move paddles/ball, bounce, score)
-// 3) draws the scene on a <canvas>
+// 3) draws the scene on a canvas (HTML element that provides a blank pixel surface to draw on)
 // 4) uses requestAnimationFrame to run ~60 times per second
-//
-// Coordinate system reminder:
+
+// Coordinate system for this game:
 // - Canvas origin (0,0) is top-left corner
 // - x increases to the right; y increases going down
 // - All sizes/positions are in pixels
 
-// Basic shapes — tiny, explicit types keep things approachable
+// importing adjustable game constants
+import { WIDTH, HEIGHT, PADDLE_W, PADDLE_H, PADDLE_SPEED, BALL_R, BALL_SPEED } from './constants';
+import { PADDLE_MARGIN, INITIAL_BALL_VY_RATIO } from './constants';
+import { SCORE_OUT_MARGIN } from './constants';
+import { COLOR_BACKGROUND, COLOR_CENTERLINE, COLOR_PADDLE_BALL_LIGHT, COLOR_SCORE } from './constants';
+import { FONT_SCORE, WINNING_SCORE } from './constants';
+
+// Type that defines the shape of a paddle object
 // Example: a paddle at (x=24,y=100) with size 12x80 and speed 420 px/s
 // const p: Paddle = { x: 24, y: 100, w: 12, h: 80, speed: 420 };
 type Paddle = { x: number; y: number; w: number; h: number; speed: number };
 
-// Ball: position (x,y), velocity (vx,vy), radius r
+// Type for the ball
+// Ball: position (x,y), velocity (vx,vy), radius r (half the ball's width)
 // Example: a ball moving right 360 px/s and down 90 px/s
 // const b: Ball = { x: 400, y: 225, vx: 360, vy: 90, r: 8 };
 type Ball = { x: number; y: number; vx: number; vy: number; r: number };
@@ -33,9 +41,11 @@ type Inputs = {
   right: -1 | 0 | 1;
 };
 
+// A frame is one cycle of the game loop where the game state is updated and then drawn.
+// So one frame equals one screen refresh (usually about 60 times / second but depends on display)
 // Everything the game needs for one frame lives in State. Keeping it in one
 // object makes it easy to pass around to update() and draw().
-// scoreL/scoreR track points for left/right players.
+// scoreL/scoreR tracks the points for left/right players.
 type State = {
   width: number;
   height: number;
@@ -44,44 +54,64 @@ type State = {
   ball: Ball;
   scoreL: number;
   scoreR: number;
+  gameOver: boolean;
+  winner: 'left' | 'right' | null;
 };
-
-// Game constants (change here to tweak)
-// Tip: Having a single source of truth avoids “magic numbers” later.
-const WIDTH = 800;            // canvas width in px
-const HEIGHT = 450;           // canvas height in px
-const PADDLE_W = 12;          // paddle width
-const PADDLE_H = 80;          // paddle height
-const PADDLE_SPEED = 420;     // how fast paddles move (px/second)
-const BALL_R = 8;             // ball radius
-const BALL_SPEED = 360;       // initial horizontal speed (px/second)
 
 // Make the initial game state
 // Ball starts centered, moving slightly diagonally; paddles start centered.
 function createInitialState(): State {
-  const left: Paddle = { x: 24, y: (HEIGHT - PADDLE_H) / 2, w: PADDLE_W, h: PADDLE_H, speed: PADDLE_SPEED };
-  const right: Paddle = { x: WIDTH - 24 - PADDLE_W, y: (HEIGHT - PADDLE_H) / 2, w: PADDLE_W, h: PADDLE_H, speed: PADDLE_SPEED };
-  const ball: Ball = { x: WIDTH / 2, y: HEIGHT / 2, vx: BALL_SPEED, vy: BALL_SPEED * 0.25, r: BALL_R };
-  return { width: WIDTH, height: HEIGHT, left, right, ball, scoreL: 0, scoreR: 0 };
+  const centerY = (HEIGHT - PADDLE_H) / 2; // compute y-pos to center a paddle vertically 
+  const left: Paddle = {
+    x: PADDLE_MARGIN,
+    y: centerY,
+    w: PADDLE_W,
+    h: PADDLE_H,
+    speed: PADDLE_SPEED
+  };
+  const right: Paddle = {
+    x: WIDTH - PADDLE_MARGIN - PADDLE_W,
+    y: centerY,
+    w: PADDLE_W,
+    h: PADDLE_H,
+    speed: PADDLE_SPEED
+  };
+  const ball: Ball = {
+    x: WIDTH / 2,
+    y: HEIGHT / 2,
+    vx: BALL_SPEED,
+    vy: BALL_SPEED * INITIAL_BALL_VY_RATIO,
+    r: BALL_R
+  };
+  return { width: WIDTH, height: HEIGHT, left, right, ball, scoreL: 0, scoreR: 0, gameOver: false, winner: null };
 }
 
+// Clamp makes sure to keep numbers in between two limits
 // Keep value within [min, max]
 // Example: clamp(120, 0, 100) -> 100; clamp(-5, 0, 100) -> 0
 function clamp(n: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, n));
+  // If n is below the minimum, snap to min
+  if (n < min) return min;
+  // If n is above the maximum, snap to max
+  if (n > max) return max;
+  // Otherwise it is already in range
+  return n;
 }
 
 // Move one paddle according to input (-1, 0, 1)
-// We multiply input by paddle speed and time delta to get a distance.
+// Multiplies input by paddle speed and time delta to get a distance.
 // Example: dir = 1, speed = 420, dt = 0.016 (~60fps) => ~6.72 pixels moved
+// dt == time since last frame in seconds (e.g. 0.016 at 60 FPS)
 function movePaddle(p: Paddle, dir: -1 | 0 | 1, dt: number, fieldHeight: number): void {
   p.y += dir * p.speed * dt;
   p.y = clamp(p.y, 0, fieldHeight - p.h); // keep paddle fully on screen
 }
 
 // Check if ball overlaps a paddle (treat ball as a circle)
-// This finds the closest point on the rectangle to the ball center, then checks
-// if that point is within the ball radius. Common and simple approach.
+// This finds the closest point on the rectangle to the ball center, then checks if that point is within the ball radius.
+// If the paddle is box and the ball a circle: find the spot on the box that is closest to the ball
+// measure how far the ball's center is from that spot and if the distance is small enough to still be inside the ball
+// if so the ball is touching the box
 function ballHitsPaddle(ball: Ball, pad: Paddle): boolean {
   const cx = clamp(ball.x, pad.x, pad.x + pad.w); // closest x on paddle
   const cy = clamp(ball.y, pad.y, pad.y + pad.h); // closest y on paddle
@@ -91,18 +121,20 @@ function ballHitsPaddle(ball: Ball, pad: Paddle): boolean {
 }
 
 // Reset the ball to center and send it to a side (-1 = left, 1 = right)
-// Useful after scoring so the next rally starts fairly.
+// This is called whenever the ball goes out on the left or the right and a point is scored.
 function resetBall(state: State, dir: -1 | 1): void {
   state.ball.x = state.width / 2;
   state.ball.y = state.height / 2;
-  state.ball.vx = dir * BALL_SPEED;          // horizontal direction
-  state.ball.vy = BALL_SPEED * 0.25;         // small vertical angle (keeps it interesting)
+  state.ball.vx = dir * BALL_SPEED;
+  state.ball.vy = BALL_SPEED * INITIAL_BALL_VY_RATIO;
 }
 
-// Update everything once per frame
+// Updates everything once per frame
 // dt is “delta time” in seconds since the last frame (e.g., ~0.016 at 60fps).
 // Using dt makes movement framerate-independent (moves the same on fast/slow PCs).
 function update(state: State, inputs: Inputs, dt: number): void {
+  // Don't update game logic if game is over
+  if (state.gameOver) return;
   // 1) paddles
   movePaddle(state.left, inputs.left, dt, state.height);
   movePaddle(state.right, inputs.right, dt, state.height);
@@ -112,31 +144,57 @@ function update(state: State, inputs: Inputs, dt: number): void {
   state.ball.y += state.ball.vy * dt;
 
   // 3) walls (top/bottom): flip vertical velocity when touching edges
-  // We also check the sign to avoid getting stuck if we overlap slightly.
-  if (state.ball.y - state.ball.r <= 0 && state.ball.vy < 0) state.ball.vy *= -1; // bounce up -> down
-  if (state.ball.y + state.ball.r >= state.height && state.ball.vy > 0) state.ball.vy *= -1; // bounce down -> up
+  // Bounce only when moving into the wall. This prevents “flip-flip” jitter if the ball overlaps the wall for a few frames.
+  const hitTop = state.ball.y - state.ball.r <= 0;
+  const hitBottom = state.ball.y + state.ball.r >= state.height;
+  const movingUp = state.ball.vy < 0;
+  const movingDown = state.ball.vy > 0;
+  if (hitTop && movingUp) state.ball.vy = Math.abs(state.ball.vy);      // start moving down
+  if (hitBottom && movingDown) state.ball.vy = -Math.abs(state.ball.vy); // start moving up
 
   // 4) paddles: flip horizontal velocity on hit (simple bounce, no spin)
-  // Math.abs ensures we reflect to the correct side regardless of tiny overlaps.
-  if (state.ball.vx < 0 && ballHitsPaddle(state.ball, state.left)) state.ball.vx = Math.abs(state.ball.vx);
-  if (state.ball.vx > 0 && ballHitsPaddle(state.ball, state.right)) state.ball.vx = -Math.abs(state.ball.vx);
+  // checks if the ball is movign toward a paddle and touching it. if so, bounce with x velocity
+  // positive vs moves right, negative vx moves left
+  // Math.abs ensures we reflect to the correct side regardless of tiny overlaps
+  const hitLeft = state.ball.vx < 0 && ballHitsPaddle(state.ball, state.left);
+  const hitRight = state.ball.vx > 0 && ballHitsPaddle(state.ball, state.right);
+  if (hitLeft || hitRight) state.ball.vx = -state.ball.vx;
 
   // 5) scoring: ball left/right out of bounds
-  // We add a small margin (50 px) to ensure the ball is clearly past the edge.
-  if (state.ball.x < -50) { state.scoreR += 1; resetBall(state, -1); }
-  if (state.ball.x > state.width + 50) { state.scoreL += 1; resetBall(state, 1); }
+  // Adding a small margin to ensure the ball is clearly past the edge.
+  const outLeft = state.ball.x < -SCORE_OUT_MARGIN;
+  const outRight = state.ball.x > state.width + SCORE_OUT_MARGIN;
+  if (outLeft) { 
+    state.scoreR += 1; 
+    if (state.scoreR >= WINNING_SCORE) {
+      state.gameOver = true;
+      state.winner = 'right';
+    } else {
+      resetBall(state, -1); 
+    }
+  }
+  if (outRight) { 
+    state.scoreL += 1; 
+    if (state.scoreL >= WINNING_SCORE) {
+      state.gameOver = true;
+      state.winner = 'left';
+    } else {
+      resetBall(state, 1); 
+    }
+  }
 }
 
-// Draw everything
-// Important: drawing reads state but does not change it (no game logic here).
+// Draw everything (reads state but does not change it, since there is no game logic here)
+// function takes in a 2D canvas context ctx and the gurrent game State s
 function draw(ctx: CanvasRenderingContext2D, s: State): void {
-  // background rectangle covering the whole canvas
+  // wipes all previous pixels in the full canvas area
   ctx.clearRect(0, 0, s.width, s.height);
-  ctx.fillStyle = '#0f172a';
+  ctx.fillStyle = COLOR_BACKGROUND;
+  // paints the entire canvas area with the background color
   ctx.fillRect(0, 0, s.width, s.height);
 
-  // center line: just visuals to split the field
-  ctx.strokeStyle = '#334155';
+  // this part draws the center line dividing the field in half
+  ctx.strokeStyle = COLOR_CENTERLINE;
   ctx.setLineDash([6, 10]);
   ctx.beginPath();
   ctx.moveTo(s.width / 2, 0);
@@ -144,34 +202,50 @@ function draw(ctx: CanvasRenderingContext2D, s: State): void {
   ctx.stroke();
   ctx.setLineDash([]);
 
-  // paddles
-  ctx.fillStyle = '#e2e8f0';
-  ctx.fillRect(s.left.x, s.left.y, s.left.w, s.left.h);
-  ctx.fillRect(s.right.x, s.right.y, s.right.w, s.right.h);
+  // draws the two paddles as filled rectangles
+  ctx.fillStyle = COLOR_PADDLE_BALL_LIGHT;
+  ctx.fillRect(s.left.x, s.left.y, s.left.w, s.left.h); // left paddle
+  ctx.fillRect(s.right.x, s.right.y, s.right.w, s.right.h); // right paddle
 
-  // ball (drawn as a circle)
+  // draws the ball as a circle
   ctx.beginPath();
   ctx.arc(s.ball.x, s.ball.y, s.ball.r, 0, Math.PI * 2);
   ctx.fill();
 
-  // score — text drawn near the top
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '24px system-ui';
+  // draws the score text near the top
+  ctx.fillStyle = COLOR_SCORE;
+  ctx.font = FONT_SCORE;
   ctx.fillText(String(s.scoreL), s.width * 0.4, 32);
   ctx.fillText(String(s.scoreR), s.width * 0.6, 32);
+
+  // show winner message if game is over
+  if (s.gameOver && s.winner) {
+    ctx.fillStyle = '#fbbf24'; // bright yellow for winner text
+    ctx.font = '32px system-ui';
+    ctx.textAlign = 'center';
+    const winnerText = s.winner === 'left' ? 'Left Player Wins!' : 'Right Player Wins!';
+    ctx.fillText(winnerText, s.width / 2, s.height / 2);
+    ctx.fillText('Refresh to play again', s.width / 2, s.height / 2 + 40);
+    ctx.textAlign = 'left'; // reset text alignment
+  }
 }
 
 // Read keyboard into simple input flags
 // W/S control the left paddle; ArrowUp/ArrowDown control the right.
-// When the key is released, we set the direction back to 0 (stop).
+// When the key is released, the direction is set back to 0 (stop)
+// global key handler responds to keyboard events anywhere on the webpage
 function setupInputs(): Inputs {
   const inputs: Inputs = { left: 0, right: 0 };
+
+  // when a key is pressed, the direction is set to -1 (up) or 1 (down)
   addEventListener('keydown', (e) => {
     if (e.key === 'w') inputs.left = -1;      // left paddle up
     if (e.key === 's') inputs.left = 1;       // left paddle down
     if (e.key === 'ArrowUp') inputs.right = -1;   // right paddle up
     if (e.key === 'ArrowDown') inputs.right = 1;  // right paddle down
   });
+
+  // when a key is released, the direction is set back to 0 (stop)
   addEventListener('keyup', (e) => {
     if (e.key === 'w' || e.key === 's') inputs.left = 0;                 // stop left paddle
     if (e.key === 'ArrowUp' || e.key === 'ArrowDown') inputs.right = 0;  // stop right paddle
@@ -191,6 +265,7 @@ function main(): void {
   app.appendChild(canvas);
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('No 2D context');  // Older/unsupported browsers
+  const ctx2 = ctx as CanvasRenderingContext2D; // assert non-null after guard
 
   const state = createInitialState();  // initial positions and score
   const inputs = setupInputs();        // read keyboard into simple flags
@@ -203,7 +278,7 @@ function main(): void {
     last = now;
 
     update(state, inputs, dt); // move paddles/ball, handle bounces and scoring
-    draw(ctx, state);          // paint the current state to the screen
+    draw(ctx2, state);         // paint the current state to the screen
 
     requestAnimationFrame(frame); // schedule the next frame
   }
