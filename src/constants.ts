@@ -11,6 +11,7 @@ export const BALL_R = 8;             // ball radius
 export const BALL_SPEED = 360;       // initial ball horizontal speed (px/second), so the ball goes slightly diagonally at the start of the game
 export const INITIAL_BALL_VY_RATIO = 0.25; // vertical speed ratio for initial serve
 export const SCORE_OUT_MARGIN = 50;  // how far past edge counts as a clear score (px)
+export const WINNING_SCORE = 5;       // first player to reach this score wins
 
 // Visual style constants (colors, fonts, etc.)
 // Centralizing colors makes it easy to theme the game from one place.
