@@ -12,3 +12,8 @@ Open `http://localhost:5173` in your browser.
 **Controls:**
 - Left paddle: `W` (up) / `S` (down)
 - Right paddle: `↑` (up) / `↓` (down)
+
+
+Backend:
+
+We are allowed to use TypeScript with Fastify & Node.js.

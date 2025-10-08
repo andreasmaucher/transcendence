@@ -16,7 +16,24 @@ import { WIDTH, HEIGHT, PADDLE_W, PADDLE_H, PADDLE_SPEED, BALL_R, BALL_SPEED } f
 import { PADDLE_MARGIN, INITIAL_BALL_VY_RATIO } from './constants';
 import { SCORE_OUT_MARGIN } from './constants';
 import { COLOR_BACKGROUND, COLOR_CENTERLINE, COLOR_PADDLE_BALL_LIGHT, COLOR_SCORE } from './constants';
-import { FONT_SCORE, WINNING_SCORE } from './constants';
+import { FONT_SCORE } from './constants';
+
+// Backend config fetch to get server-controlled rules e.g. winningScore
+// Falls back to 11 if the server is unavailable
+const API_BASE = 'http://localhost:4000';
+let WINNING_SCORE = 11; // default used until backend config is loaded
+
+async function fetchConfig(): Promise<{ winningScore: number }> {
+  try {
+    const res = await fetch(`${API_BASE}/api/config`, { credentials: 'omit' });
+    if (!res.ok) throw new Error('config fetch failed');
+    const data = await res.json();
+    const score = typeof data?.winningScore === 'number' ? data.winningScore : 11;
+    return { winningScore: score };
+  } catch {
+    return { winningScore: 11 };
+  }
+}
 
 // Type that defines the shape of a paddle object
 // Example: a paddle at (x=24,y=100) with size 12x80 and speed 420 px/s
@@ -285,5 +302,12 @@ function main(): void {
   requestAnimationFrame(frame);   // kick off the loop
 }
 
-// starts the program, all above functions are only definitions
-main();
+// Starts the program after loading the server config from the backend
+// init() calls fetchConfig() → GET http://localhost:4000/api/config
+async function init(): Promise<void> {
+  const cfg = await fetchConfig();
+  WINNING_SCORE = cfg.winningScore;
+  main();
+}
+
+init();
