@@ -12,7 +12,7 @@ const PORT = Number(4000);
 // Website (origin) allowed to call this API (Vite defaults to 5173)
 const ORIGIN = 'http://localhost:5173';
 
-// Allows the frontend to make requests to this backend
+// Allows the frontend (at ORIGIN) to make requests to this backend
 await app.register(cors, { origin: ORIGIN, credentials: true });
 
 // Minimal health check endpoint (confirms the server is running)
@@ -20,7 +20,10 @@ await app.register(cors, { origin: ORIGIN, credentials: true });
 // this can be checked via: http://localhost:4000/api/health
 app.get('/api/health', async () => ({ ok: true, time: new Date().toISOString() }));
 
-// Starts the server and prints where it is listening
+// Simple config endpoint to provide game rules from the server
+// GET /api/config -> { winningScore: number }
+app.get('/api/config', async () => ({ winningScore: Number(process.env.WINNING_SCORE || 11) }));
+
 app.listen({ port: PORT }, (err, address) => {
   if (err) {
     // If the server fails to start, log the error and exit
