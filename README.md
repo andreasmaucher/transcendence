@@ -15,4 +15,5 @@ Open `http://localhost:5173` in your browser.
 
 
 Backend:
+
 We are allowed to use TypeScript with Fastify & Node.js.
