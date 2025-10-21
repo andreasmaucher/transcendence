@@ -1,1 +1,4 @@
 containerization
+
+backend:
+- score.ts connect to a database and update player scores (currently only placeholders)
