@@ -228,6 +228,9 @@ function connectToBackend(state: State): void {
   activeSocket = ws;
 
   ws.addEventListener("open", () => {
+    // Reset game to fresh state on connection
+    ws.send(JSON.stringify({ type: "reset" }));
+    
     queueInput("left", "stop");
     queueInput("right", "stop");
     flushInputs();
