@@ -1,0 +1,22 @@
+Backend games server requirements
+    - Simple game of pong
+    - Fastify with nodejs, Typescript
+    - Minimalistic as possible 
+    - Controls frontend state through API calls, states which are sent to the frontend:
+    - Game state which is controlled from the backend
+        - Left and right paddle location
+        - Ball location, speed and direction
+        - Game score
+    - Frontend draws the game state according to the game state updates received from the backend through the API calls
+    - Fronted can send commands through an API connection to move the paddles up or down
+    - Each game state update should produce a log in the terminal
+
+Frontend requirements
+    - Uses Typescript and VITE
+    - Displays a game of pong on the screen
+    - Connects to the backend server using an API, updated the game state according to the API calls received
+    - Can control the paddle location using the W and S keys for the left paddle and UP and DOWN keys for the right paddle
+    - Displays score above the game
+
+
+
