@@ -1,4 +1,6 @@
 containerization
 
 backend:
+- extract constants into env file for easier manageability
+Keep constants.ts for now - frontend still needs it for rendering, and you need to sync the values with backend!
 - score.ts connect to a database and update player scores (currently only placeholders)
