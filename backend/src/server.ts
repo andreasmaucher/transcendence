@@ -50,7 +50,7 @@ const SCORE_OUT_MARGIN = 50;
 const WINNING_SCORE = Number(process.env.WINNING_SCORE ?? 11); //! where is this pulling from?
 const UPDATE_FPS = 60;
 
-// global storage for all active game rooms //! so far only one correct?
+// global storage for all active game rooms
 const rooms = new Map<string, Room>();
 
 export function resetRoomsForTest(): void {
@@ -249,7 +249,7 @@ export function broadcast(room: Room): void {
       try {
         socket.close();
       } catch (err) {
-        // ignore secondary close errors //! what is this?
+        // ignore secondary close errors if connection is already closed
       }
     }
   }
