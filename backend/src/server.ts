@@ -13,7 +13,6 @@ import { registerWebsocketRoute } from "./transport/websocket.js";
 export type PaddleSide = "left" | "right";
 type PaddleInput = -1 | 0 | 1; // -1=up, 0=stop, 1=down
 
-//! constants file in frontend not needed anymore
 const FIELD_WIDTH = GAME_CONSTANTS.FIELD_WIDTH;
 const FIELD_HEIGHT = GAME_CONSTANTS.FIELD_HEIGHT;
 const PADDLE_WIDTH = GAME_CONSTANTS.PADDLE_WIDTH;
@@ -26,12 +25,6 @@ const INITIAL_BALL_VY_RATIO = GAME_CONSTANTS.INITIAL_BALL_VY_RATIO;
 const SCORE_OUT_MARGIN = GAME_CONSTANTS.SCORE_OUT_MARGIN;
 const WINNING_SCORE = GAME_CONSTANTS.WINNING_SCORE;
 const UPDATE_FPS = GAME_CONSTANTS.UPDATE_FPS;
-
-// PADDLE_X moved into engine where needed
-
-// createInitialState, clamp moved to game/state.ts
-
-// engine, broadcaster moved to their files
 
 const fastify: FastifyInstance = Fastify({ logger: true });
 

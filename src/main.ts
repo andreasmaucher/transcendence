@@ -9,14 +9,9 @@ import { draw } from "./rendering/canvas";
 import { applyBackendState, type BackendStateMessage, type State } from "./game/state";
 import { setupInputs, setActiveSocket, queueInput, flushInputs } from "./game/input";
 
-// endpoints are imported from ./config/endpoints
 
-  // global constants fetched from backend
+// global constants fetched from backend
 let GAME_CONSTANTS: GameConstants | null = null;
-
-// fetchGameConstants moved to api/http.ts
-
-// types are imported from ./game/state
 
 // Make the initial game state, paddles starting centered
 function createInitialState(): State {
@@ -56,12 +51,6 @@ function createInitialState(): State {
     tick: 0,
   };
 }
-
-// clamp and draw moved to dedicated modules
-
-// input moved to game/input.ts
-
-// applyBackendState moved to src/game/state.ts
 
 // function establishes a WebSocket connection to the backend & sets up event listeners
 // also implements autmatic reconnection in case the connection is lost
@@ -114,9 +103,6 @@ function connectToBackend(state: State): void {
     ws.close();
   });
 }
-
-// sets up event listeners to capture keyboard input and convert it into movements
-// setupInputs imported from game/input
 
 // create the game canvas, connect to backend, set up controls and start rendering loop
 function main(): void {
