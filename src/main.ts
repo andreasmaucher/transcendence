@@ -3,21 +3,14 @@
 // commands back to the server.
 
 import {
-  WIDTH,
-  HEIGHT,
-  PADDLE_W,
-  PADDLE_H,
-  PADDLE_SPEED,
-  BALL_R,
-  PADDLE_MARGIN,
   COLOR_BACKGROUND,
   COLOR_CENTERLINE,
   COLOR_PADDLE_BALL_LIGHT,
   COLOR_SCORE,
   FONT_SCORE,
+  type GameConstants,
 } from "./constants";
 
-const API_BASE = "http://localhost:4000";
 const WS_PORT = Number(
   new URLSearchParams(window.location.search).get("wsPort") ?? 4000
 );
@@ -28,30 +21,30 @@ const WS_PROTOCOL = window.location.protocol === "https:" ? "wss" : "ws";
 const WS_HOST =
   new URLSearchParams(window.location.search).get("wsHost") ??
   window.location.hostname;
+// REST API base is built from the same host/port as WebSocket to avoid mismatches
+const API_BASE = `${window.location.protocol === "https:" ? "https" : "http"}://${WS_HOST}:${WS_PORT}`;
 // room ID selection (default to "default" if not specified)
 const ROOM_ID =
   new URLSearchParams(window.location.search).get("roomId") ?? "default";
 
   // global game setting
   let WINNING_SCORE = 11;
+let GAME_CONSTANTS: GameConstants | null = null;
 
 // fetch the game configuration from the backend before the game starts
 async function fetchConfig(): Promise<{ winningScore: number }> {
-  try {
-    // fetch the config from the backend using the API_BASE URL
-    const res = await fetch(`${API_BASE}/api/config`, { credentials: "omit" });
-    // if the config fetch fails, throw an error
-    if (!res.ok) throw new Error("config fetch failed");
-    // parse the response as JSON
-    const data = await res.json();
-    //! not sure why so much special handling for winning score is needed?
-    // if the winning score is not a number, use the default value of 11
-    const score =
-      typeof data?.winningScore === "number" ? data.winningScore : 11;
-    return { winningScore: score };
-  } catch {
-    return { winningScore: 11 };
-  }
+  const res = await fetch(`${API_BASE}/api/config`, { credentials: "omit" });
+  if (!res.ok) throw new Error("config fetch failed");
+  const data = await res.json();
+  const score = typeof data?.winningScore === "number" ? data.winningScore : 11;
+  return { winningScore: score };
+}
+
+async function fetchGameConstants(): Promise<GameConstants> {
+  const res = await fetch(`${API_BASE}/api/constants`, { credentials: "omit" });
+  if (!res.ok) throw new Error("constants fetch failed");
+  const data = await res.json();
+  return data as GameConstants;
 }
 
 type PaddleSide = "left" | "right";
@@ -87,32 +80,33 @@ type BackendStateMessage = {
 
 // Make the initial game state, paddles starting centered
 function createInitialState(): State {
-  const centerY = (HEIGHT - PADDLE_H) / 2;
+  if (!GAME_CONSTANTS) throw new Error("Game constants not loaded");
+  const centerY = (GAME_CONSTANTS.fieldHeight - GAME_CONSTANTS.paddleHeight) / 2;
   const left: Paddle = {
-    x: PADDLE_MARGIN,
+    x: GAME_CONSTANTS.paddleMargin,
     y: centerY,
-    w: PADDLE_W,
-    h: PADDLE_H,
-    speed: PADDLE_SPEED,
+    w: GAME_CONSTANTS.paddleWidth,
+    h: GAME_CONSTANTS.paddleHeight,
+    speed: GAME_CONSTANTS.paddleSpeed,
   };
   const right: Paddle = {
-    x: WIDTH - PADDLE_MARGIN - PADDLE_W,
+    x: GAME_CONSTANTS.fieldWidth - GAME_CONSTANTS.paddleMargin - GAME_CONSTANTS.paddleWidth,
     y: centerY,
-    w: PADDLE_W,
-    h: PADDLE_H,
-    speed: PADDLE_SPEED,
+    w: GAME_CONSTANTS.paddleWidth,
+    h: GAME_CONSTANTS.paddleHeight,
+    speed: GAME_CONSTANTS.paddleSpeed,
   };
   return {
-    width: WIDTH,
-    height: HEIGHT,
+    width: GAME_CONSTANTS.fieldWidth,
+    height: GAME_CONSTANTS.fieldHeight,
     left,
     right,
     ball: {
-      x: WIDTH / 2,
-      y: HEIGHT / 2,
+      x: GAME_CONSTANTS.fieldWidth / 2,
+      y: GAME_CONSTANTS.fieldHeight / 2,
       vx: 0,
       vy: 0,
-      r: BALL_R,
+      r: GAME_CONSTANTS.ballRadius,
     },
     scoreL: 0,
     scoreR: 0,
@@ -331,10 +325,11 @@ function setupInputs(): void {
 
 // create the game canvas, connect to backend, set up controls and start rendering loop
 function main(): void {
+  if (!GAME_CONSTANTS) throw new Error("Game constants not loaded");
   // Create a canvas and attach it to the page inside the app container
   const canvas = document.createElement("canvas");
-  canvas.width = WIDTH;
-  canvas.height = HEIGHT;
+  canvas.width = GAME_CONSTANTS.fieldWidth;
+  canvas.height = GAME_CONSTANTS.fieldHeight;
   const app = document.getElementById("app");
   if (!app) throw new Error("#app not found"); // if the HTML container is missing
   app.appendChild(canvas);
@@ -354,9 +349,26 @@ function main(): void {
 // Starts the program after loading the server config from the backend
 // init() calls fetchConfig() → GET http://localhost:4000/api/config
 async function init(): Promise<void> {
-  const cfg = await fetchConfig();
-  WINNING_SCORE = cfg.winningScore;
-  main();
+  try {
+    const [cfg, constants] = await Promise.all([
+      fetchConfig(),
+      fetchGameConstants(),
+    ]);
+    WINNING_SCORE = cfg.winningScore;
+    GAME_CONSTANTS = constants;
+    main();
+  } catch (err) {
+    console.error("Failed to initialize game", err);
+    const app = document.getElementById("app");
+    if (app) {
+      app.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:system-ui;color:#ef4444;text-align:center;padding:2rem;">
+          <h1 style="font-size:2rem;margin-bottom:1rem;">Connection Error</h1>
+          <p style="font-size:1.1rem;margin-bottom:0.5rem;">Unable to reach backend.</p>
+          <button onclick="location.reload()" style="background:#3b82f6;color:#fff;border:none;padding:0.6rem 1.1rem;border-radius:0.5rem;font-size:1rem;cursor:pointer;">Retry</button>
+        </div>`;
+    }
+  }
 }
 
 init();

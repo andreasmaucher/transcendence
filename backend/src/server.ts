@@ -3,6 +3,7 @@
 import Fastify, { FastifyInstance } from "fastify";
 import fastifyWebsocket from "@fastify/websocket";
 import { RawData, WebSocket } from "ws";
+import { GAME_CONSTANTS } from "./config/constants.js";
 
 export type PaddleSide = "left" | "right";
 type PaddleInput = -1 | 0 | 1; // -1=up, 0=stop, 1=down
@@ -37,18 +38,18 @@ export type Room = {
 };
 
 //! constants file in frontend not needed anymore
-const FIELD_WIDTH = 800;
-const FIELD_HEIGHT = 450;
-const PADDLE_WIDTH = 12;
-const PADDLE_HEIGHT = 80;
-const PADDLE_MARGIN = 24;
-const PADDLE_SPEED = 420;
-const BALL_RADIUS = 8;
-const BALL_SPEED = 360;
-const INITIAL_BALL_VY_RATIO = 0.25;
-const SCORE_OUT_MARGIN = 50;
-const WINNING_SCORE = Number(process.env.WINNING_SCORE ?? 11); //! where is this pulling from?
-const UPDATE_FPS = 60;
+const FIELD_WIDTH = GAME_CONSTANTS.FIELD_WIDTH;
+const FIELD_HEIGHT = GAME_CONSTANTS.FIELD_HEIGHT;
+const PADDLE_WIDTH = GAME_CONSTANTS.PADDLE_WIDTH;
+const PADDLE_HEIGHT = GAME_CONSTANTS.PADDLE_HEIGHT;
+const PADDLE_MARGIN = GAME_CONSTANTS.PADDLE_MARGIN;
+const PADDLE_SPEED = GAME_CONSTANTS.PADDLE_SPEED;
+const BALL_RADIUS = GAME_CONSTANTS.BALL_RADIUS;
+const BALL_SPEED = GAME_CONSTANTS.BALL_SPEED;
+const INITIAL_BALL_VY_RATIO = GAME_CONSTANTS.INITIAL_BALL_VY_RATIO;
+const SCORE_OUT_MARGIN = GAME_CONSTANTS.SCORE_OUT_MARGIN;
+const WINNING_SCORE = GAME_CONSTANTS.WINNING_SCORE;
+const UPDATE_FPS = GAME_CONSTANTS.UPDATE_FPS;
 
 // global storage for all active game rooms
 const rooms = new Map<string, Room>();
@@ -262,6 +263,22 @@ await fastify.register(fastifyWebsocket);
 fastify.get("/api/health", async () => ({ ok: true }));
 
 fastify.get("/api/config", async () => ({ winningScore: WINNING_SCORE }));
+
+// Expose gameplay constants to the frontend so it can size the canvas, paddles, etc.
+fastify.get("/api/constants", async () => ({
+  fieldWidth: FIELD_WIDTH,
+  fieldHeight: FIELD_HEIGHT,
+  paddleWidth: PADDLE_WIDTH,
+  paddleHeight: PADDLE_HEIGHT,
+  paddleMargin: PADDLE_MARGIN,
+  paddleSpeed: PADDLE_SPEED,
+  ballRadius: BALL_RADIUS,
+  ballSpeed: BALL_SPEED,
+  initialBallVyRatio: INITIAL_BALL_VY_RATIO,
+  scoreOutMargin: SCORE_OUT_MARGIN,
+  winningScore: WINNING_SCORE,
+  updateFps: UPDATE_FPS,
+}));
 
 fastify.post("/api/control", async (request, reply) => {
   const { roomId, paddle, direction } = request.body as {
