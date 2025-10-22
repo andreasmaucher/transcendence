@@ -73,6 +73,7 @@ type BackendStateMessage = {
   winningScore?: number;
 };
 
+// Make the initial game state, paddles starting centered
 function createInitialState(): State {
   const centerY = (HEIGHT - PADDLE_H) / 2;
   const left: Paddle = {
@@ -110,12 +111,20 @@ function createInitialState(): State {
   };
 }
 
+// Clamp makes sure to keep numbers in between two limits
+// Keep value within [min, max]
+// Example: clamp(120, 0, 100) -> 100; clamp(-5, 0, 100) -> 0
 function clamp(n: number, min: number, max: number): number {
+  // If n is below the minimum, snap to min
   if (n < min) return min;
+  // If n is above the maximum, snap to max
   if (n > max) return max;
+  // Otherwise it is already in range
   return n;
 }
 
+// Draw everything (reads state but does not change it, since there is no game logic here)
+// function takes in a 2D canvas context ctx and the gurrent game State s
 function draw(ctx: CanvasRenderingContext2D, s: State): void {
   // wipes all previous pixels in the full canvas area
   ctx.clearRect(0, 0, s.width, s.height);
@@ -172,14 +181,18 @@ function queueInput(paddle: PaddleSide, direction: Direction): void {
   flushInputs();
 }
 
+// flush the input queue by sending input commands from players to the backend 
 function flushInputs(): void {
+  // if the socket is not connected or not open, do nothing
   if (!activeSocket || activeSocket.readyState !== WebSocket.OPEN) {
     return;
   }
+  // loop through the pendingInputs array and send each input command to the backend
   while (pendingInputs.length) {
-    const cmd = pendingInputs.shift();
+    const cmd = pendingInputs.shift(); // shift() removes and returns the first item from the array
     if (!cmd) break;
-    lastSent[cmd.paddle] = cmd.direction;
+    lastSent[cmd.paddle] = cmd.direction; // update the last sent direction for this paddle
+    // try to send the input command to the backend
     try {
       activeSocket.send(
         JSON.stringify({
@@ -188,9 +201,12 @@ function flushInputs(): void {
           direction: cmd.direction,
         })
       );
-    } catch (err) {
+    } 
+    //! TODO: if this retry design is still needed in the future, add MAX_RETRIES to avoid infinite retries
+    // if the input command fails to send, log an error and push the command back to the front of the queue for retry
+    catch (err) { 
       console.error("failed to send input", err);
-      // push command back for retry
+      // push command back to the front of the queue for retry
       pendingInputs.unshift(cmd);
       break;
     }
@@ -263,7 +279,9 @@ function connectToBackend(state: State): void {
   });
 }
 
+// sets up event listeners to capture keyboard input and convert it into movements
 function setupInputs(): void {
+  // when a key is pressed down
   addEventListener("keydown", (e) => {
     if (e.key === "w") queueInput("left", "up");
     if (e.key === "s") queueInput("left", "down");
@@ -271,26 +289,22 @@ function setupInputs(): void {
     if (e.key === "ArrowDown") queueInput("right", "down");
   });
 
+  // when a key is released
   addEventListener("keyup", (e) => {
     if (e.key === "w" || e.key === "s") queueInput("left", "stop");
     if (e.key === "ArrowUp" || e.key === "ArrowDown")
       queueInput("right", "stop");
   });
-
-  addEventListener("blur", () => {
-    queueInput("left", "stop");
-    queueInput("right", "stop");
-    flushInputs();
-  });
 }
 
+// create the game canvas, connect to backend, set up controls and start rendering loop
 function main(): void {
-  // Create a canvas and attach it to the page inside the #app container
+  // Create a canvas and attach it to the page inside the app container
   const canvas = document.createElement("canvas");
   canvas.width = WIDTH;
   canvas.height = HEIGHT;
   const app = document.getElementById("app");
-  if (!app) throw new Error("#app not found"); // If the HTML container is missing
+  if (!app) throw new Error("#app not found"); // if the HTML container is missing
   app.appendChild(canvas);
   const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
@@ -299,8 +313,8 @@ function main(): void {
   setupInputs();
 
   function frame() {
-    draw(ctx, state);
-    requestAnimationFrame(frame);
+    draw(ctx, state); // draw the current game state to the canvas
+    requestAnimationFrame(frame); // request the next frame
   }
   requestAnimationFrame(frame);
 }
