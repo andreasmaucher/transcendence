@@ -27,18 +27,8 @@ const API_BASE = `${window.location.protocol === "https:" ? "https" : "http"}://
 const ROOM_ID =
   new URLSearchParams(window.location.search).get("roomId") ?? "default";
 
-  // global game setting
-  let WINNING_SCORE = 11;
+  // global constants fetched from backend
 let GAME_CONSTANTS: GameConstants | null = null;
-
-// fetch the game configuration from the backend before the game starts
-async function fetchConfig(): Promise<{ winningScore: number }> {
-  const res = await fetch(`${API_BASE}/api/config`, { credentials: "omit" });
-  if (!res.ok) throw new Error("config fetch failed");
-  const data = await res.json();
-  const score = typeof data?.winningScore === "number" ? data.winningScore : 11;
-  return { winningScore: score };
-}
 
 async function fetchGameConstants(): Promise<GameConstants> {
   const res = await fetch(`${API_BASE}/api/constants`, { credentials: "omit" });
@@ -112,7 +102,7 @@ function createInitialState(): State {
     scoreR: 0,
     gameOver: false,
     winner: null,
-    winningScore: WINNING_SCORE,
+    winningScore: GAME_CONSTANTS.winningScore,
     tick: 0,
   };
 }
@@ -245,7 +235,6 @@ function applyBackendState(state: State, remote: BackendStateMessage): void {
   //! ANDY: do we really need this case? when will the winning score change in our game?
   if (typeof remote.winningScore === "number") {
     state.winningScore = remote.winningScore;
-    WINNING_SCORE = remote.winningScore;
   }
   // update the tick counter to the latest tick from the backend (helps with syncing the game state)
   state.tick = remote.tick;
@@ -350,11 +339,7 @@ function main(): void {
 // init() calls fetchConfig() → GET http://localhost:4000/api/config
 async function init(): Promise<void> {
   try {
-    const [cfg, constants] = await Promise.all([
-      fetchConfig(),
-      fetchGameConstants(),
-    ]);
-    WINNING_SCORE = cfg.winningScore;
+    const constants = await fetchGameConstants();
     GAME_CONSTANTS = constants;
     main();
   } catch (err) {

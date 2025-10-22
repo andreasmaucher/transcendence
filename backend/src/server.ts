@@ -262,8 +262,6 @@ await fastify.register(fastifyWebsocket);
 
 fastify.get("/api/health", async () => ({ ok: true }));
 
-fastify.get("/api/config", async () => ({ winningScore: WINNING_SCORE }));
-
 // Expose gameplay constants to the frontend so it can size the canvas, paddles, etc.
 fastify.get("/api/constants", async () => ({
   fieldWidth: FIELD_WIDTH,
