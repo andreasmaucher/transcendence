@@ -1,5 +1,0 @@
-WINNING_MOVE is a game rule. Rules should be controlled server-side and hence stored in the backend.
-
-Visuals for example are purely client-side representation as they don't affect trust or data integrity,
-meaning they can remain in the frontend.
-

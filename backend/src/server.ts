@@ -1,11 +1,14 @@
+// backend server that handles the game logic and websocket connections
+
 import Fastify, { FastifyInstance } from "fastify";
 import fastifyWebsocket from "@fastify/websocket";
 import { RawData, WebSocket } from "ws";
 
 export type PaddleSide = "left" | "right";
-type PaddleInput = -1 | 0 | 1;
+type PaddleInput = -1 | 0 | 1; // -1=up, 0=stop, 1=down
 
 type PaddleState = { y: number };
+
 type BallState = {
   x: number;
   y: number;
@@ -33,6 +36,7 @@ export type Room = {
   clients: Set<WebSocket>;
 };
 
+//! constants file in frontend not needed anymore
 const FIELD_WIDTH = 800;
 const FIELD_HEIGHT = 450;
 const PADDLE_WIDTH = 12;
@@ -43,9 +47,10 @@ const BALL_RADIUS = 8;
 const BALL_SPEED = 360;
 const INITIAL_BALL_VY_RATIO = 0.25;
 const SCORE_OUT_MARGIN = 50;
-const WINNING_SCORE = Number(process.env.WINNING_SCORE ?? 11);
+const WINNING_SCORE = Number(process.env.WINNING_SCORE ?? 11); //! where is this pulling from?
 const UPDATE_FPS = 60;
 
+// global storage for all active game rooms
 const rooms = new Map<string, Room>();
 
 export function resetRoomsForTest(): void {
@@ -57,6 +62,7 @@ const PADDLE_X = {
   right: FIELD_WIDTH - PADDLE_MARGIN - PADDLE_WIDTH,
 };
 
+// creates a fresh game with everything in starting position
 function createInitialState(): GameState {
   return {
     width: FIELD_WIDTH,
@@ -84,6 +90,8 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
+// creates a new room if it doesn't exist, otherwise returns the existing room
+// each room has game state, player inputs, connected clients
 export function getOrCreateRoom(id: string): Room {
   let room = rooms.get(id);
   if (!room) {
@@ -109,6 +117,7 @@ function applyInput(room: Room, paddle: PaddleSide, input: PaddleInput): void {
   room.inputs[paddle] = input;
 }
 
+// checks if someone won and if so stops the game
 function maybeCompleteGame(room: Room): void {
   const state = room.state;
   const { score, winningScore } = state;
@@ -135,6 +144,7 @@ function maybeCompleteGame(room: Room): void {
   }
 }
 
+// main game loop that runs 60 times per second
 function updateRoom(room: Room, dt: number): void {
   const { state, inputs } = room;
   if (state.gameOver) return;
@@ -223,6 +233,7 @@ export function buildStatePayload(room: Room) {
   };
 }
 
+// sends the current game state to all connected players (clients)
 export function broadcast(room: Room): void {
   if (!room.clients.size) return;
   const payload = JSON.stringify(buildStatePayload(room));
@@ -238,7 +249,7 @@ export function broadcast(room: Room): void {
       try {
         socket.close();
       } catch (err) {
-        // ignore secondary close errors
+        // ignore secondary close errors if connection is already closed
       }
     }
   }

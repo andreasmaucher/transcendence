@@ -21,19 +21,31 @@ const API_BASE = "http://localhost:4000";
 const WS_PORT = Number(
   new URLSearchParams(window.location.search).get("wsPort") ?? 4000
 );
+
+// web socket protocol selection (wss if https, ws if http)
 const WS_PROTOCOL = window.location.protocol === "https:" ? "wss" : "ws";
+// web socket host selection (default to localhost if not specified)
 const WS_HOST =
   new URLSearchParams(window.location.search).get("wsHost") ??
   window.location.hostname;
+// room ID selection (default to "default" if not specified)
 const ROOM_ID =
   new URLSearchParams(window.location.search).get("roomId") ?? "default";
-let WINNING_SCORE = 11;
 
+  // global game setting
+  let WINNING_SCORE = 11;
+
+// fetch the game configuration from the backend before the game starts
 async function fetchConfig(): Promise<{ winningScore: number }> {
   try {
+    // fetch the config from the backend using the API_BASE URL
     const res = await fetch(`${API_BASE}/api/config`, { credentials: "omit" });
+    // if the config fetch fails, throw an error
     if (!res.ok) throw new Error("config fetch failed");
+    // parse the response as JSON
     const data = await res.json();
+    //! not sure why so much special handling for winning score is needed?
+    // if the winning score is not a number, use the default value of 11
     const score =
       typeof data?.winningScore === "number" ? data.winningScore : 11;
     return { winningScore: score };
@@ -73,6 +85,7 @@ type BackendStateMessage = {
   winningScore?: number;
 };
 
+// Make the initial game state, paddles starting centered
 function createInitialState(): State {
   const centerY = (HEIGHT - PADDLE_H) / 2;
   const left: Paddle = {
@@ -110,12 +123,20 @@ function createInitialState(): State {
   };
 }
 
+// Clamp makes sure to keep numbers in between two limits
+// Keep value within [min, max]
+// Example: clamp(120, 0, 100) -> 100; clamp(-5, 0, 100) -> 0
 function clamp(n: number, min: number, max: number): number {
+  // If n is below the minimum, snap to min
   if (n < min) return min;
+  // If n is above the maximum, snap to max
   if (n > max) return max;
+  // Otherwise it is already in range
   return n;
 }
 
+// Draw everything (reads state but does not change it, since there is no game logic here)
+// function takes in a 2D canvas context ctx and the gurrent game State s
 function draw(ctx: CanvasRenderingContext2D, s: State): void {
   // wipes all previous pixels in the full canvas area
   ctx.clearRect(0, 0, s.width, s.height);
@@ -172,14 +193,18 @@ function queueInput(paddle: PaddleSide, direction: Direction): void {
   flushInputs();
 }
 
+// flush the input queue by sending input commands from players to the backend 
 function flushInputs(): void {
+  // if the socket is not connected or not open, do nothing
   if (!activeSocket || activeSocket.readyState !== WebSocket.OPEN) {
     return;
   }
+  // loop through the pendingInputs array and send each input command to the backend
   while (pendingInputs.length) {
-    const cmd = pendingInputs.shift();
+    const cmd = pendingInputs.shift(); // shift() removes and returns the first item from the array
     if (!cmd) break;
-    lastSent[cmd.paddle] = cmd.direction;
+    lastSent[cmd.paddle] = cmd.direction; // update the last sent direction for this paddle
+    // try to send the input command to the backend
     try {
       activeSocket.send(
         JSON.stringify({
@@ -188,79 +213,107 @@ function flushInputs(): void {
           direction: cmd.direction,
         })
       );
-    } catch (err) {
+    } 
+    //! TODO: if this retry design is still needed in the future, add MAX_RETRIES to avoid infinite retries
+    // if the input command fails to send, log an error and push the command back to the front of the queue for retry
+    catch (err) { 
       console.error("failed to send input", err);
-      // push command back for retry
+      // push command back to the front of the queue for retry
       pendingInputs.unshift(cmd);
       break;
     }
   }
 }
 
+// apply the backend state to the local frontend game state
 function applyBackendState(state: State, remote: BackendStateMessage): void {
+  // update the left paddle's y position
   const leftY = remote.paddles.left?.y;
   if (typeof leftY === "number") {
     state.left.y = clamp(leftY, 0, state.height - state.left.h);
   }
+  // update the right paddle's y position
   const rightY = remote.paddles.right?.y;
   if (typeof rightY === "number") {
     state.right.y = clamp(rightY, 0, state.height - state.right.h);
   }
+  // ball state updates
   state.ball.x = remote.ball.x;
   state.ball.y = remote.ball.y;
   state.ball.vx = remote.ball.vx ?? state.ball.vx;
   state.ball.vy = remote.ball.vy ?? state.ball.vy;
   state.ball.r = remote.ball.r;
+  // game state updates
   state.scoreL = remote.score.left;
   state.scoreR = remote.score.right;
   state.gameOver = remote.gameOver;
   state.winner = remote.winner;
+  //! ANDY: do we really need this case? when will the winning score change in our game?
   if (typeof remote.winningScore === "number") {
     state.winningScore = remote.winningScore;
     WINNING_SCORE = remote.winningScore;
   }
+  // update the tick counter to the latest tick from the backend (helps with syncing the game state)
   state.tick = remote.tick;
 }
 
+// function establishes a WebSocket connection to the backend & sets up event listeners
+// also implements autmatic reconnection in case the connection is lost
 function connectToBackend(state: State): void {
+  // construct the WebSocket URL using the protocol, host, and port + room ID
   const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/rooms/${ROOM_ID}/ws`;
+  // create a new WebSocket connection to the backend
   const ws = new WebSocket(wsUrl);
-  activeSocket = ws;
+  activeSocket = ws; // store the WebSocket connection in the activeSocket variable
 
+  // Handler: when the WebSocket connection is opened
   ws.addEventListener("open", () => {
+    // Reset game to fresh state on connection
+    ws.send(JSON.stringify({ type: "reset" }));
+    
+    // stop the paddles from moving when the connection is established
     queueInput("left", "stop");
     queueInput("right", "stop");
-    flushInputs();
+    flushInputs(); // sends any queued input commands to the backend
   });
 
+  // Handler: when the WebSocket connection receives a message
   ws.addEventListener("message", (event) => {
     let parsed: unknown;
+    // try to parse the message as JSON
     try {
       parsed = JSON.parse(String(event.data));
     } catch (err) {
       console.warn("ignoring non-JSON message", err);
       return;
     }
+    // if the message is not valid JSON or not an object, ignore it
     if (!parsed || typeof parsed !== "object") return;
     const payload = parsed as Partial<BackendStateMessage>;
+    // if the message is a state message and has the required fields, apply the backend state to the local frontend game state
     if (payload.type === "state" && payload.ball && payload.score) {
       applyBackendState(state, payload as BackendStateMessage);
     }
   });
 
+  // Handler: when the WebSocket connection is closed
   ws.addEventListener("close", () => {
     if (activeSocket === ws) {
       activeSocket = null;
     }
+    // schedule a new connection attempt after a 1 second delay
     setTimeout(() => connectToBackend(state), 1000);
   });
 
+  // Handler: when the WebSocket connection encounters an error
   ws.addEventListener("error", () => {
     ws.close();
   });
 }
 
+// sets up event listeners to capture keyboard input and convert it into movements
 function setupInputs(): void {
+  // when a key is pressed down
   addEventListener("keydown", (e) => {
     if (e.key === "w") queueInput("left", "up");
     if (e.key === "s") queueInput("left", "down");
@@ -268,38 +321,32 @@ function setupInputs(): void {
     if (e.key === "ArrowDown") queueInput("right", "down");
   });
 
+  // when a key is released
   addEventListener("keyup", (e) => {
     if (e.key === "w" || e.key === "s") queueInput("left", "stop");
     if (e.key === "ArrowUp" || e.key === "ArrowDown")
       queueInput("right", "stop");
   });
-
-  addEventListener("blur", () => {
-    queueInput("left", "stop");
-    queueInput("right", "stop");
-    flushInputs();
-  });
 }
 
+// create the game canvas, connect to backend, set up controls and start rendering loop
 function main(): void {
-  // Create a canvas and attach it to the page inside the #app container
+  // Create a canvas and attach it to the page inside the app container
   const canvas = document.createElement("canvas");
   canvas.width = WIDTH;
   canvas.height = HEIGHT;
   const app = document.getElementById("app");
-  if (!app) throw new Error("#app not found"); // If the HTML container is missing
+  if (!app) throw new Error("#app not found"); // if the HTML container is missing
   app.appendChild(canvas);
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("No 2D context"); // Older/unsupported browsers
-  const ctx2 = ctx as CanvasRenderingContext2D; // assert non-null after guard
+  const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
   const state = createInitialState();
   connectToBackend(state);
   setupInputs();
 
   function frame() {
-    draw(ctx2, state);
-    requestAnimationFrame(frame);
+    draw(ctx, state); // draw the current game state to the canvas
+    requestAnimationFrame(frame); // request the next frame
   }
   requestAnimationFrame(frame);
 }
