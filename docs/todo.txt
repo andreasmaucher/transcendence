@@ -1,4 +1,7 @@
-containerization
+containerization -> Dockerfile
+
+winning score is handled very specifically and certain cases might be confusing.
+-> probably better to simplify
 
 backend:
 - extract constants into env file for easier manageability

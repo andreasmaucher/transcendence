@@ -21,19 +21,31 @@ const API_BASE = "http://localhost:4000";
 const WS_PORT = Number(
   new URLSearchParams(window.location.search).get("wsPort") ?? 4000
 );
+
+// web socket protocol selection (wss if https, ws if http)
 const WS_PROTOCOL = window.location.protocol === "https:" ? "wss" : "ws";
+// web socket host selection (default to localhost if not specified)
 const WS_HOST =
   new URLSearchParams(window.location.search).get("wsHost") ??
   window.location.hostname;
+// room ID selection (default to "default" if not specified)
 const ROOM_ID =
   new URLSearchParams(window.location.search).get("roomId") ?? "default";
-let WINNING_SCORE = 11;
 
+  // global game setting
+  let WINNING_SCORE = 11;
+
+// fetch the game configuration from the backend before the game starts
 async function fetchConfig(): Promise<{ winningScore: number }> {
   try {
+    // fetch the config from the backend using the API_BASE URL
     const res = await fetch(`${API_BASE}/api/config`, { credentials: "omit" });
+    // if the config fetch fails, throw an error
     if (!res.ok) throw new Error("config fetch failed");
+    // parse the response as JSON
     const data = await res.json();
+    //! not sure why so much special handling for winning score is needed?
+    // if the winning score is not a number, use the default value of 11
     const score =
       typeof data?.winningScore === "number" ? data.winningScore : 11;
     return { winningScore: score };
