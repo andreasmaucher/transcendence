@@ -292,16 +292,14 @@ function main(): void {
   const app = document.getElementById("app");
   if (!app) throw new Error("#app not found"); // If the HTML container is missing
   app.appendChild(canvas);
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("No 2D context"); // Older/unsupported browsers
-  const ctx2 = ctx as CanvasRenderingContext2D; // assert non-null after guard
+  const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
   const state = createInitialState();
   connectToBackend(state);
   setupInputs();
 
   function frame() {
-    draw(ctx2, state);
+    draw(ctx, state);
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
