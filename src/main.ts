@@ -245,42 +245,55 @@ function applyBackendState(state: State, remote: BackendStateMessage): void {
   state.tick = remote.tick;
 }
 
+// function establishes a WebSocket connection to the backend & sets up event listeners
+// also implements autmatic reconnection in case the connection is lost
 function connectToBackend(state: State): void {
+  // construct the WebSocket URL using the protocol, host, and port + room ID
   const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/rooms/${ROOM_ID}/ws`;
+  // create a new WebSocket connection to the backend
   const ws = new WebSocket(wsUrl);
-  activeSocket = ws;
+  activeSocket = ws; // store the WebSocket connection in the activeSocket variable
 
+  // Handler: when the WebSocket connection is opened
   ws.addEventListener("open", () => {
     // Reset game to fresh state on connection
     ws.send(JSON.stringify({ type: "reset" }));
     
+    // stop the paddles from moving when the connection is established
     queueInput("left", "stop");
     queueInput("right", "stop");
-    flushInputs();
+    flushInputs(); // sends any queued input commands to the backend
   });
 
+  // Handler: when the WebSocket connection receives a message
   ws.addEventListener("message", (event) => {
     let parsed: unknown;
+    // try to parse the message as JSON
     try {
       parsed = JSON.parse(String(event.data));
     } catch (err) {
       console.warn("ignoring non-JSON message", err);
       return;
     }
+    // if the message is not valid JSON or not an object, ignore it
     if (!parsed || typeof parsed !== "object") return;
     const payload = parsed as Partial<BackendStateMessage>;
+    // if the message is a state message and has the required fields, apply the backend state to the local frontend game state
     if (payload.type === "state" && payload.ball && payload.score) {
       applyBackendState(state, payload as BackendStateMessage);
     }
   });
 
+  // Handler: when the WebSocket connection is closed
   ws.addEventListener("close", () => {
     if (activeSocket === ws) {
       activeSocket = null;
     }
+    // schedule a new connection attempt after a 1 second delay
     setTimeout(() => connectToBackend(state), 1000);
   });
 
+  // Handler: when the WebSocket connection encounters an error
   ws.addEventListener("error", () => {
     ws.close();
   });
