@@ -9,7 +9,6 @@ import { draw } from "./rendering/canvas";
 import { applyBackendState, type BackendStateMessage, type State } from "./game/state";
 import { setupInputs, setActiveSocket, queueInput, flushInputs } from "./game/input";
 
-
 // global constants fetched from backend
 let GAME_CONSTANTS: GameConstants | null = null;
 

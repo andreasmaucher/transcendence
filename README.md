@@ -60,13 +60,11 @@ Server → client messages:
 ### Scripts
 
 ```bash
-# Frontend production build
-npm run build
+Frontend:
+cd frontend && npm ci && npm run dev
 
-# Backend build + tests
-cd backend
-npm run build
-npm run test
+Backend:
+cd backend && npm ci && npm run dev
 ```
 
 ### Environment Variables

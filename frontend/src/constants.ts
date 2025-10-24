@@ -1,5 +1,6 @@
 // Visual style constants (colors, fonts, etc.)
 // Centralizing colors makes it easy to theme the game from one place.
+
 export const COLOR_BACKGROUND = '#0f172a';        // main background color
 export const COLOR_CENTERLINE = '#334155';       // center dashed line color
 export const COLOR_PADDLE_BALL_LIGHT = '#e2e8f0';      // paddles and ball fill color
