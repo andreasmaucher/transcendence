@@ -6,7 +6,7 @@ import cors from "@fastify/cors";
 const PORT = Number(process.env.PORT ?? 4000);
 const HOST = process.env.HOST ?? "0.0.0.0";
 // allows frontend to connect to backend (TODO: pull from env)
-const ORIGIN = process.env.FRONTEND_ORIGIN ?? "http://localhost:5173";
+const ORIGIN = process.env.FRONTEND_ORIGIN ?? "http://localhost:5174";
 
 await fastify.register(cors, { origin: ORIGIN, credentials: false });
 
