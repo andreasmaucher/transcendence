@@ -2,6 +2,8 @@
 import { GAME_CONSTANTS } from "../config/constants.js";
 import type { GameState } from "../types/game.js";
 
+// creates a fresh game with everything in starting position
+// every tick, the backend updates this state and broadcasts a snapshot to clients
 export function createInitialState(): GameState {
   return {
     width: GAME_CONSTANTS.FIELD_WIDTH,
