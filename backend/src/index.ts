@@ -1,4 +1,5 @@
 // main entry point that starts the backend server
+import "dotenv/config"; // loads backend/.env at startup
 
 import fastify from "./server.js";
 import cors from "@fastify/cors";
@@ -6,7 +7,8 @@ import cors from "@fastify/cors";
 const PORT = Number(process.env.PORT ?? 4000);
 const HOST = process.env.HOST ?? "0.0.0.0";
 // allows frontend to connect to backend (TODO: pull from env)
-const ORIGIN = process.env.FRONTEND_ORIGIN ?? "http://localhost:5174";
+console.log("FRONTEND_ORIGIN:", process.env.FRONTEND_ORIGIN);
+const ORIGIN = process.env.FRONTEND_ORIGIN ?? "http://localhost:5173";
 
 await fastify.register(cors, { origin: ORIGIN, credentials: false });
 
