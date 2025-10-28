@@ -1,6 +1,5 @@
 // main entry point that starts the backend server
 import "dotenv/config"; // loads backend/.env at startup
-
 import fastify from "./server.js";
 import cors from "@fastify/cors";
 
@@ -10,6 +9,7 @@ const HOST = process.env.HOST ?? "0.0.0.0";
 console.log("FRONTEND_ORIGIN:", process.env.FRONTEND_ORIGIN);
 const ORIGIN = process.env.FRONTEND_ORIGIN ?? "http://localhost:5173";
 
+// Register CORS plugin, change credentials to true if you need cookies
 await fastify.register(cors, { origin: ORIGIN, credentials: false });
 
 try {

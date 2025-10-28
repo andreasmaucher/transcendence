@@ -2,9 +2,9 @@
 
 import Fastify, { FastifyInstance } from "fastify";
 import fastifyWebsocket from "@fastify/websocket";
-import { WebSocket } from "ws";
+// import { WebSocket } from "ws";
 import { GAME_CONSTANTS } from "./config/constants.js";
-import { createInitialState } from "./game/state.js";
+// import { createInitialState } from "./game/state.js";
 import { updateRoom } from "./game/engine.js";
 import { getOrCreateRoom, forEachRoom } from "./game/roomManager.js";
 import { buildStatePayload, broadcast } from "./transport/broadcaster.js";
@@ -50,24 +50,28 @@ fastify.get("/api/constants", async () => ({
 
 fastify.post("/api/control", async (request, reply) => {
   const { roomId, paddle, direction } = request.body as {
-    roomId?: string;
-    paddle?: PaddleSide;
-    direction?: "up" | "down" | "stop";
+    roomId: string;
+    paddle: PaddleSide;
+    direction: "up" | "down" | "stop";
   };
   if (!roomId || !paddle || !direction) {
     reply.code(400);
     return { error: "roomId, paddle and direction are required" };
   }
   const room = getOrCreateRoom(roomId);
-  const input: PaddleInput = direction === "up" ? -1 : direction === "down" ? 1 : 0;
+  const input: PaddleInput =
+    direction === "up" ? -1 : direction === "down" ? 1 : 0;
   room.inputs[paddle] = input;
   return { ok: true };
 });
 
-fastify.get<{ Params: { id: string } }>("/api/rooms/:id/state", async (request) => {
-  const room = getOrCreateRoom(request.params.id);
-  return buildStatePayload(room);
-});
+fastify.get<{ Params: { id: string } }>(
+  "/api/rooms/:id/state",
+  async (request) => {
+    const room = getOrCreateRoom(request.params.id);
+    return buildStatePayload(room);
+  }
+);
 
 registerWebsocketRoute(fastify);
 
