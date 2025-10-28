@@ -1,6 +1,7 @@
 // global storage for all active game rooms
 import type { Room } from "../types/game.js";
 import { createInitialState } from "./state.js";
+import db from "../database/db.js";                        //database integration
 
 const rooms = new Map<string, Room>();
 
@@ -18,6 +19,17 @@ export function getOrCreateRoom(id: string): Room {
       clients: new Set(),
     } as Room;
     rooms.set(id, room);
+  }
+  // Log new match in SQLite
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO matches (room_id, started_at)
+      VALUES (?, CURRENT_TIMESTAMP)
+      `);
+    stmt.run(id);
+    console.log(`[db] Created new match record for room ${id}`);
+  } catch (err) {
+    console.error(`[db] Failed to insert match for room ${id}:`, err);
   }
   return room;
 }
