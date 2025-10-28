@@ -2,6 +2,7 @@
 import { GAME_CONSTANTS } from "../config/constants.js";
 import type { Room } from "../types/game.js";
 import { clamp, resetBall } from "./state.js";
+import { updateMatch, endMatch } from "../database/helpers/match_setters.js";
 
 export function maybeCompleteGame(room: Room): void {
   const state = room.state;
@@ -19,6 +20,7 @@ export function maybeCompleteGame(room: Room): void {
     gameEnded = true;
   }
   if (state.gameOver) {
+    endMatch(room.id, state.winner); // Update database
     room.inputs.left = 0;
     room.inputs.right = 0;
     if (gameEnded) {
@@ -92,15 +94,20 @@ export function updateRoom(room: Room, dt: number): void {
     ball.vx = -ball.vx;
   }
 
+  // Check for scoring
   if (ball.x < -GAME_CONSTANTS.SCORE_OUT_MARGIN) {
+    // Right player scored
     state.score.right += 1;
+    updateMatch(room.id, state.score.left, state.score.right); // Update database
     console.log(
       `[score] room=${room.id} scorer=right score=${state.score.left}-${state.score.right}`
     );
     maybeCompleteGame(room);
     resetBall(state, 1);
   } else if (ball.x > state.width + GAME_CONSTANTS.SCORE_OUT_MARGIN) {
+    // Left player scored
     state.score.left += 1;
+    updateMatch(room.id, state.score.left, state.score.right); // Update database
     console.log(
       `[score] room=${room.id} scorer=left score=${state.score.left}-${state.score.right}`
     );

@@ -8,8 +8,14 @@ const dbPath = process.env.DB_PATH || "/app/data/database.sqlite";
 // Ensure directory exists
 fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 
+// If the DB file doesn't exist yet, create an empty one
+if (!fs.existsSync(dbPath)) {
+	fs.closeSync(fs.openSync(dbPath, "w"));
+	console.log("[backend] Created new SQLite database file:", dbPath);
+}
+
 const db = new Database(dbPath);
-db.pragma("foreign_keys = ON");
+//db.pragma("foreign_keys = ON");
 
 console.log("[backend] Using database at:", dbPath);
 
@@ -28,12 +34,9 @@ db.exec(`
 		player_right INTEGER,
 		score_left INTEGER DEFAULT 0,
 		score_right INTEGER DEFAULT 0,
-		winner INTEGER,
+		winner TEXT,
 		started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		ended_at DATETIME,
-		FOREIGN KEY (player_left) REFERENCES users(id),
-		FOREIGN KEY (player_right) REFERENCES users(id),
-		FOREIGN KEY (winner) REFERENCES users(id)
+		ended_at DATETIME
 	);
 `);
 

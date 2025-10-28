@@ -9,6 +9,7 @@ import { updateRoom } from "./game/engine.js";
 import { getOrCreateRoom, forEachRoom } from "./game/roomManager.js";
 import { buildStatePayload, broadcast } from "./transport/broadcaster.js";
 import { registerWebsocketRoute } from "./transport/websocket.js";
+import matchRoutes from "./routes/matches.js";
 
 export type PaddleSide = "left" | "right";
 type PaddleInput = -1 | 0 | 1; // -1=up, 0=stop, 1=down
@@ -68,6 +69,8 @@ fastify.get<{ Params: { id: string } }>("/api/rooms/:id/state", async (request) 
   const room = getOrCreateRoom(request.params.id);
   return buildStatePayload(room);
 });
+
+await fastify.register(matchRoutes);
 
 registerWebsocketRoute(fastify);
 
