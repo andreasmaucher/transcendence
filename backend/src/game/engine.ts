@@ -23,7 +23,9 @@ export function maybeCompleteGame(room: Room): void {
     room.inputs.right = 0;
     if (gameEnded) {
       console.log(
-        `[game] room=${room.id} event=game-over winner=${state.winner ?? "unknown"}`
+        `[game] room=${room.id} event=game-over winner=${
+          state.winner ?? "unknown"
+        }`
       );
     }
   }
@@ -110,4 +112,3 @@ export function updateRoom(room: Room, dt: number): void {
 
   state.tick += 1;
 }
-

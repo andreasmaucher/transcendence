@@ -1,5 +1,5 @@
 // sends the current game state to all connected players (clients)
-import type { WebSocket } from "ws";
+import { WebSocket } from "ws";
 import type { Room } from "../types/game.js";
 
 export function buildStatePayload(room: Room) {
@@ -24,7 +24,7 @@ export function broadcast(room: Room): void {
   const payload = JSON.stringify(buildStatePayload(room));
   for (const socket of Array.from(room.clients)) {
     const ws = socket as WebSocket;
-    if (ws.readyState !== ws.OPEN) {
+    if (ws.readyState !== WebSocket.OPEN) {
       room.clients.delete(socket);
       continue;
     }
@@ -38,4 +38,3 @@ export function broadcast(room: Room): void {
     }
   }
 }
-
