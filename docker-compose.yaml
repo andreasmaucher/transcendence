@@ -1,0 +1,36 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: transcendence-backend
+    ports:
+      - "4000:4000"
+    env_file:
+      - ./backend/.env
+    environment:
+      # # Enable file watching in containers on macOS
+      - CHOKIDAR_USEPOLLING=1
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    # Run in watch mode (overrides Dockerfile CMD)
+    command: ["npm", "run", "dev"]
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: transcendence-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - CHOKIDAR_USEPOLLING=1
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    # Dockerfile already starts Vite dev server on 0.0.0.0:5173
+    depends_on:
+      - backend
+    restart: unless-stopped
