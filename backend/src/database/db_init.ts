@@ -15,7 +15,7 @@ if (!fs.existsSync(dbPath)) {
 }
 
 const db = new Database(dbPath);
-//db.pragma("foreign_keys = ON");
+db.pragma("foreign_keys = ON");
 
 console.log("[backend] Using database at:", dbPath);
 
@@ -27,16 +27,25 @@ db.exec(`
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
 
+	CREATE TABLE IF NOT EXISTS tournaments (
+		id TEXT PRIMARY KEY,
+		size INTEGER,
+		winner TEXT,
+		started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		ended_at DATETIME
+	);
+
 	CREATE TABLE IF NOT EXISTS matches (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		room_id TEXT NOT NULL,
+		id TEXT PRIMARY KEY,
+		tournament_id TEXT NOT NULL,
 		player_left INTEGER,
 		player_right INTEGER,
 		score_left INTEGER DEFAULT 0,
 		score_right INTEGER DEFAULT 0,
 		winner TEXT,
 		started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		ended_at DATETIME
+		ended_at DATETIME,
+		FOREIGN KEY (tournament_id) REFERENCES tournaments (id)
 	);
 `);
 

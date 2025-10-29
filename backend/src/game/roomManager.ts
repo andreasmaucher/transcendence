@@ -21,11 +21,11 @@ export function getOrCreateRoom(id: string): Room {
     rooms.set(id, room);
   }
   // Log new match in SQLite
-  try {
+  /* try {
     startMatch(room.id, 0, 0);
   } catch (err) {
     console.error(`[db] Failed to insert match for room ${id}:`, err);
-  }
+  } */
   return room;
 }
 

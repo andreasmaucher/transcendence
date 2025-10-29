@@ -1,30 +1,30 @@
 import db from "../db_init.js";
 
-export function startMatch(roomId: string, playerLeftId?: number, playerRightId?: number): void {
+export function startMatch(id: string, tournament_id: string, playerLeftId?: number, playerRightId?: number): void {
 	const stmt = db.prepare(`
-		INSERT INTO matches (room_id, player_left, player_right, started_at)
-		VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+		INSERT INTO matches (id, tournament_id, player_left, player_right, started_at)
+		VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
 	`);
-	stmt.run(roomId, playerLeftId ?? null, playerRightId ?? null);
-	console.log(`[db] Created new match record for room ${roomId}`);
+	stmt.run(id, tournament_id, playerLeftId ?? null, playerRightId ?? null);
+	console.log(`[db] Created new match record for tournament ${tournament_id}`);
 }
 
-export function updateMatch(roomId: string, left: number, right: number): void {
+export function updateMatch(id: string, left: number, right: number): void {
 	const stmt = db.prepare(`
 		UPDATE matches
 		SET score_left = ?, score_right = ?
-		WHERE room_id = ?
+		WHERE id = ?
 	`);
-	stmt.run(left, right, roomId);
-	console.log(`[db] Match updated for room ${roomId}: ${left}-${right}`);
+	stmt.run(left, right, id);
+	console.log(`[db] Match updated for tournament ${id}: ${left}-${right}`);
 }
 
-export function endMatch(roomId: string, winnerId: string | null): void {
+export function endMatch(id: string, winner: string | null): void {
 	const stmt = db.prepare(`
 		UPDATE matches
 		SET winner = ?, ended_at = CURRENT_TIMESTAMP
-		WHERE room_id = ?
+		WHERE id = ?
 	`);
-	stmt.run(winnerId, roomId);
-	console.log(`[db] Match ended for room ${roomId}: winner is ${winnerId ?? "null"}`);
+	stmt.run(winner, id);
+	console.log(`[db] Match ended for tournament ${id}: winner is ${winner ?? "null"}`);
 }

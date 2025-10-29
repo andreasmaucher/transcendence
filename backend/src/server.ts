@@ -59,6 +59,7 @@ fastify.post("/api/control", async (request, reply) => {
     reply.code(400);
     return { error: "roomId, paddle and direction are required" };
   }
+  console.log("server.ts primo");
   const room = getOrCreateRoom(roomId);
   const input: PaddleInput = direction === "up" ? -1 : direction === "down" ? 1 : 0;
   room.inputs[paddle] = input;
@@ -66,6 +67,7 @@ fastify.post("/api/control", async (request, reply) => {
 });
 
 fastify.get<{ Params: { id: string } }>("/api/rooms/:id/state", async (request) => {
+  console.log("server.ts secondo");
   const room = getOrCreateRoom(request.params.id);
   return buildStatePayload(room);
 });

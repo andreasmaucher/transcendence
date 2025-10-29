@@ -1,12 +1,12 @@
 import db from "../db_init.js";
 
-export function getMatchById(roomId: string) {
+export function getMatchById(id: string) {
 	const stmt = db.prepare(`
 		SELECT *
 		FROM matches
-		WHERE room_id = ?
+		WHERE id = ?
 	`);
-	return stmt.get(roomId); // returns one row or undefined
+	return stmt.get(id); // returns one row or undefined
 }
 
 /* export function getMatchById(id: number) {
