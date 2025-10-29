@@ -8,12 +8,3 @@ export function getMatchById(id: string) {
 	`);
 	return stmt.get(id); // returns one row or undefined
 }
-
-/* export function getMatchById(id: number) {
-	const stmt = db.prepare(`
-		SELECT *
-		FROM matches
-		WHERE id = ?
-	`);
-	return stmt.get(id);
-} */

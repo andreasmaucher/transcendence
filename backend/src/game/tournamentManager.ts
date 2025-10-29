@@ -1,20 +1,13 @@
 import type { Match, Tournament, TournamentState } from "../types/game.js";
-import { startTournament } from "../database/helpers/tournament_setters.js";
+import { startTournamentDB } from "../database/helpers/tournament_setters.js";
 import { createMatch } from "./matchManager.js";
+import { createInitialTournamentState } from "./state.js";
 import crypto from "crypto";
 
 const tournaments = new Map<string, Tournament>();
 
 export function resetTournamentsForTest(): void {
   tournaments.clear();
-}
-
-export function createInitialTournamentState(): TournamentState {
-  return { //hardcoded for now
-	  size: 0,
-	  tournamentOver: false,
-	  winner: null,
-  };
 }
 
 export function initTournamentMatches(tournamentId: string, size: number, ): Match[] {
@@ -37,7 +30,7 @@ export function getOrCreateTournament(id: string): Tournament {
 		} as Tournament;
 		// Log new tournament in SQLite
 		try {
-			startTournament(tournament.id, tournament.state.size);
+			startTournamentDB(tournament.id, tournament.state.size);
 		} catch (err) {
 			console.error(`[db] Failed to insert tournament ${tournament.id}:`, err);
 		}
@@ -48,6 +41,6 @@ export function getOrCreateTournament(id: string): Tournament {
 	return tournament;
 }
 
-export function Tournament(fn: (tournament: Tournament) => void): void {
+export function forEachTournament(fn: (tournament: Tournament) => void): void {
   for (const tournament of tournaments.values()) fn(tournament);
 }

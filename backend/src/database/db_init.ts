@@ -24,6 +24,9 @@ db.exec(`
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		username TEXT UNIQUE NOT NULL,
 		password TEXT NOT NULL,
+		avatar TEXT,
+		friends TEXT NULL,
+		stats TEXT NULL,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
 

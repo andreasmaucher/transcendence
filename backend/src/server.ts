@@ -2,14 +2,12 @@
 
 import Fastify, { FastifyInstance } from "fastify";
 import fastifyWebsocket from "@fastify/websocket";
-import { WebSocket } from "ws";
 import { GAME_CONSTANTS } from "./config/constants.js";
-import { createInitialState } from "./game/state.js";
-import { updateRoom } from "./game/engine.js";
-import { getOrCreateRoom, forEachRoom } from "./game/roomManager.js";
+import { stepMatch } from "./game/engine.js";
 import { buildStatePayload, broadcast } from "./transport/broadcaster.js";
 import { registerWebsocketRoute } from "./transport/websocket.js";
 import matchRoutes from "./routes/matches.js";
+import { forEachTournament, getOrCreateTournament } from "./game/tournamentManager.js";
 
 export type PaddleSide = "left" | "right";
 type PaddleInput = -1 | 0 | 1; // -1=up, 0=stop, 1=down
@@ -50,26 +48,24 @@ fastify.get("/api/constants", async () => ({
 }));
 
 fastify.post("/api/control", async (request, reply) => {
-  const { roomId, paddle, direction } = request.body as {
-    roomId?: string;
+  const { tournamentId, paddle, direction } = request.body as {
+    tournamentId?: string;
     paddle?: PaddleSide;
     direction?: "up" | "down" | "stop";
   };
-  if (!roomId || !paddle || !direction) {
+  if (!tournamentId || !paddle || !direction) {
     reply.code(400);
-    return { error: "roomId, paddle and direction are required" };
+    return { error: "tournamentId, paddle and direction are required" };
   }
-  console.log("server.ts primo");
-  const room = getOrCreateRoom(roomId);
+  const tournament = getOrCreateTournament(tournamentId);
   const input: PaddleInput = direction === "up" ? -1 : direction === "down" ? 1 : 0;
-  room.inputs[paddle] = input;
+  tournament.matches[0].inputs[paddle] = input;                                                       // hardcoded first match for now
   return { ok: true };
 });
 
-fastify.get<{ Params: { id: string } }>("/api/rooms/:id/state", async (request) => {
-  console.log("server.ts secondo");
-  const room = getOrCreateRoom(request.params.id);
-  return buildStatePayload(room);
+fastify.get<{ Params: { id: string } }>("/api/tournaments/:id/state", async (request) => {
+  const tournament = getOrCreateTournament(request.params.id);
+  return buildStatePayload(tournament.matches[0]);                                                    // hardcoded first match for now
 });
 
 await fastify.register(matchRoutes);
@@ -77,13 +73,14 @@ await fastify.register(matchRoutes);
 registerWebsocketRoute(fastify);
 
 let previousTick = process.hrtime.bigint();
+
 setInterval(() => {
   const now = process.hrtime.bigint();
   const dt = Number(now - previousTick) / 1e9;
   previousTick = now;
-  forEachRoom((room) => {
-    updateRoom(room, dt || 1 / UPDATE_FPS);
-    broadcast(room);
+  forEachTournament((tournament) => {
+    stepMatch(tournament.matches[0], dt || 1 / UPDATE_FPS);   // hardcoded first match for now
+    broadcast(tournament.matches[0]);
   });
 }, 1000 / UPDATE_FPS);
 

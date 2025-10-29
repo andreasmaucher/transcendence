@@ -1,6 +1,6 @@
 import db from "../db_init.js";
 
-export function startMatch(id: string, tournament_id: string, playerLeftId?: number, playerRightId?: number): void {
+export function startMatchDB(id: string, tournament_id: string, playerLeftId?: number, playerRightId?: number): void {
 	const stmt = db.prepare(`
 		INSERT INTO matches (id, tournament_id, player_left, player_right, started_at)
 		VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
@@ -9,7 +9,7 @@ export function startMatch(id: string, tournament_id: string, playerLeftId?: num
 	console.log(`[db] Created new match record for tournament ${tournament_id}`);
 }
 
-export function updateMatch(id: string, left: number, right: number): void {
+export function updateMatchDB(id: string, left: number, right: number): void {
 	const stmt = db.prepare(`
 		UPDATE matches
 		SET score_left = ?, score_right = ?
@@ -19,7 +19,7 @@ export function updateMatch(id: string, left: number, right: number): void {
 	console.log(`[db] Match updated for tournament ${id}: ${left}-${right}`);
 }
 
-export function endMatch(id: string, winner: string | null): void {
+export function endMatchDB(id: string, winner: string | null): void {
 	const stmt = db.prepare(`
 		UPDATE matches
 		SET winner = ?, ended_at = CURRENT_TIMESTAMP

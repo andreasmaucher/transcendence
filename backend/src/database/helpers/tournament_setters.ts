@@ -1,6 +1,6 @@
 import db from "../db_init.js";
 
-export function startTournament(id: string, size: number): void {
+export function startTournamentDB(id: string, size: number): void {
 	const stmt = db.prepare(`
 		INSERT INTO tournaments (id, size, started_at)
 		VALUES (?, ?, CURRENT_TIMESTAMP)
@@ -9,7 +9,7 @@ export function startTournament(id: string, size: number): void {
 	console.log(`[db] Created new tournament ${id}`);
 }
 
-export function updateTournament(id: string, left: number, right: number): void {
+export function updateTournamentDB(id: string, left: number, right: number): void {
 	const stmt = db.prepare(`
 		UPDATE tournaments
 		SET score_left = ?, score_right = ?
@@ -19,7 +19,7 @@ export function updateTournament(id: string, left: number, right: number): void 
 	console.log(`[db] Tournament ${id} updated: ${left}-${right}`);
 }
 
-export function endTournament(id: string, winner: string | null): void {
+export function endTournamentDB(id: string, winner: string | null): void {
 	const stmt = db.prepare(`
 		UPDATE tournaments
 		SET winner = ?, ended_at = CURRENT_TIMESTAMP
