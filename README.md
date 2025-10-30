@@ -98,13 +98,37 @@ Open `http://localhost:5173` in the browser once both servers are running. The f
 
 ### Backend Endpoints
 
-| Method | Path                   | Description                                                  |
-| ------ | ---------------------- | ------------------------------------------------------------ |
-| `GET`  | `/api/health`          | Service heartbeat                                            |
-| `GET`  | `/api/config`          | Returns `{ winningScore }` (env override supported)          |
-| `POST` | `/api/control`         | Optional HTTP paddle control `{ roomId, paddle, direction }` |
-| `GET`  | `/api/rooms/:id/state` | One-off JSON snapshot of a room                              |
-| `WS`   | `/api/rooms/:id/ws`    | Live state stream + paddle/input channel                     |
+All backend endpoints return JSON format. All POST request expect the data to be sent in the body.
+
+| Method | Path                         | Description                                                     | Returns                                       |
+| ------ | ---------------------------- | --------------------------------------------------------------- | --------------------------------------------- |
+| `GET`  | `/api/health`                | Service heartbeat                                               |                                               | 
+| `GET`  | `/api/config`                | (env override supported)                                        | Returns `{ winningScore }`                    |
+| `POST` | `/api/control`               | Optional HTTP paddle control `{ roomId, paddle, direction }`    |                                               |
+
+## TOURNAMENTS
+
+| Method | Path                         | Description                                                     | Returns                                       |
+| ------ | ---------------------------- | --------------------------------------------------------------- | --------------------------------------------- |
+| `GET`  | `/api/tournaments/:id/state` | [PROBABLY NOT WORKING]                                          | One-off JSON snapshot of a room               |
+| `WS`   | `/api/tournaments/:id/ws`    | [PROBABLY NOT WORKING] Live state stream + paddle/input channel |                                               |
+| `GET`  | `/api/tournaments/:id`       | Access the database using the tournament id as key              | Returns the data (or a error message)         |
+
+## MATCHES
+
+| Method | Path                         | Description                                                     | Returns                                       |
+| ------ | ---------------------------- | --------------------------------------------------------------- | --------------------------------------------- |
+| `GET`   | `/api/matches/:id`          | Access the database using the match id as key                   | Returns the match data (or a error message)   |
+
+## USERS
+
+| Method | Path                         | Description                                                     | Returns                                       |
+| ------ | ---------------------------- | --------------------------------------------------------------- | --------------------------------------------- |
+| `GET`   | `/api/users/:username`      | Access the database using the username as key                   | Returns the user data (or a error message)    |
+| `POST`  | `/api/users/check`          | Checks if username already exist, expect body                   | Returns a boolean                             |
+| `POST`  | `/api/users/login`          | Checks user credentials                                         | Returns success: true or false                |
+| `POST`  | `/api/users/register`       | Register new user                                               | Returns success: true or false                |
+
 
 WebSocket commands from the frontend:
 

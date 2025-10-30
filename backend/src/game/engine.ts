@@ -1,10 +1,12 @@
 // main game loop and collision/score logic
 import { GAME_CONSTANTS } from "../config/constants.js";
-import type { Room } from "../types/game.js";
+import type { Match } from "../types/game.js";
 import { clamp, resetBall } from "./state.js";
+import { updateMatchDB, endMatchDB } from "../database/helpers/match_setters.js";
+import { endTournamentDB } from "../database/helpers/tournament_setters.js";
 
-export function maybeCompleteGame(room: Room): void {
-  const state = room.state;
+export function maybeCompleteGame(match: Match): void {
+  const state = match.state;
   const { score, winningScore } = state;
   if (state.gameOver) return;
   let gameEnded = false;
@@ -19,20 +21,20 @@ export function maybeCompleteGame(room: Room): void {
     gameEnded = true;
   }
   if (state.gameOver) {
-    room.inputs.left = 0;
-    room.inputs.right = 0;
+    endMatchDB(match.id, state.winner); // Update database
+    endTournamentDB(match.tournament_id, state.winner);                      // hardcoded for the moment
+    match.inputs.left = 0;
+    match.inputs.right = 0;
     if (gameEnded) {
       console.log(
-        `[game] room=${room.id} event=game-over winner=${
-          state.winner ?? "unknown"
-        }`
+        `[game] room=${match.id} event=game-over winner=${state.winner ?? "unknown"}`
       );
     }
   }
 }
 
-export function updateRoom(room: Room, dt: number): void {
-  const { state, inputs } = room;
+export function stepMatch(match: Match, dt: number): void {
+  const { state, inputs } = match;
   if (state.gameOver) return;
 
   const maxPaddleY = state.height - GAME_CONSTANTS.PADDLE_HEIGHT;
@@ -47,7 +49,7 @@ export function updateRoom(room: Room, dt: number): void {
     );
     if (Math.abs(paddle.y - previousY) > 0.001) {
       console.log(
-        `[paddle] room=${room.id} paddle=${side} y=${paddle.y.toFixed(1)}`
+        `[paddle] room=${match.id} paddle=${side} y=${paddle.y.toFixed(1)}`
       );
     }
   }
@@ -57,11 +59,11 @@ export function updateRoom(room: Room, dt: number): void {
   ball.y += ball.vy * dt;
 
   if (ball.y - ball.r <= 0 && ball.vy < 0) {
-    console.log(`[ball] room=${room.id} event=wall-bounce wall=top`);
+    console.log(`[ball] room=${match.id} event=wall-bounce wall=top`);
     ball.vy = Math.abs(ball.vy);
   }
   if (ball.y + ball.r >= state.height && ball.vy > 0) {
-    console.log(`[ball] room=${room.id} event=wall-bounce wall=bottom`);
+    console.log(`[ball] room=${match.id} event=wall-bounce wall=bottom`);
     ball.vy = -Math.abs(ball.vy);
   }
 
@@ -85,28 +87,33 @@ export function updateRoom(room: Room, dt: number): void {
     ball.y <= state.paddles.right.y + GAME_CONSTANTS.PADDLE_HEIGHT;
 
   if (hitsLeft) {
-    console.log(`[ball] room=${room.id} event=paddle-hit paddle=left`);
+    console.log(`[ball] room=${match.id} event=paddle-hit paddle=left`);
   }
   if (hitsRight) {
-    console.log(`[ball] room=${room.id} event=paddle-hit paddle=right`);
+    console.log(`[ball] room=${match.id} event=paddle-hit paddle=right`);
   }
   if (hitsLeft || hitsRight) {
     ball.vx = -ball.vx;
   }
 
+  // Check for scoring
   if (ball.x < -GAME_CONSTANTS.SCORE_OUT_MARGIN) {
+    // Right player scored
     state.score.right += 1;
+    updateMatchDB(match.id, state.score.left, state.score.right); // Update database
     console.log(
-      `[score] room=${room.id} scorer=right score=${state.score.left}-${state.score.right}`
+      `[score] room=${match.id} scorer=right score=${state.score.left}-${state.score.right}`
     );
-    maybeCompleteGame(room);
+    maybeCompleteGame(match);
     resetBall(state, 1);
   } else if (ball.x > state.width + GAME_CONSTANTS.SCORE_OUT_MARGIN) {
+    // Left player scored
     state.score.left += 1;
+    updateMatchDB(match.id, state.score.left, state.score.right); // Update database
     console.log(
-      `[score] room=${room.id} scorer=left score=${state.score.left}-${state.score.right}`
+      `[score] room=${match.id} scorer=left score=${state.score.left}-${state.score.right}`
     );
-    maybeCompleteGame(room);
+    maybeCompleteGame(match);
     resetBall(state, -1);
   }
 
