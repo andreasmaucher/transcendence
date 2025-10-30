@@ -1,8 +1,81 @@
 // sends the current game state to all connected players (clients)
 import type { WebSocket } from "ws";
-import type { Room } from "../types/game.js";
+import type { Match } from "../types/game.js";
 
-export function buildStatePayload(room: Room) {
+export function buildStatePayload(match: Match) {
+  const { state } = match;
+  return {
+    type: "state" as const,
+    tick: state.tick,
+    paddles: state.paddles,
+    ball: state.ball,
+    score: state.score,
+    gameOver: state.gameOver,
+    winner: state.winner,
+    winningScore: state.winningScore,
+  };
+}
+
+export function broadcast(match: Match): void {
+  if (!match.clients.size) return;
+  const payload = JSON.stringify(buildStatePayload(match));
+  //console.log("[DEBUG BACKEND → CLIENT]", payload);
+  for (const socket of Array.from(match.clients)) {
+    const ws = socket as WebSocket;
+    if (ws.readyState !== ws.OPEN) {
+      match.clients.delete(socket);
+      continue;
+    }
+    try {
+      ws.send(payload);
+    } catch {
+      match.clients.delete(socket);
+      try { ws.close(); } catch {}
+    }
+  }
+}
+
+
+/* export function buildStatePayload(match: Match) {
+  const { state } = match;
+  return {
+    type: "state" as const,
+    tick: state.tick,
+    paddles: {
+      left: { y: state.paddles.left.y },
+      right: { y: state.paddles.right.y },
+    },
+    ball: { ...state.ball },
+    score: { ...state.score },
+    gameOver: state.gameOver,
+    winner: state.winner,
+    winningScore: state.winningScore,
+  };
+}
+
+export function broadcast(match: Match): void {
+  if (!match.clients.size) return;
+  const payload = JSON.stringify(buildStatePayload(match));
+  for (const socket of Array.from(match.clients)) {
+    const ws = socket as WebSocket;
+    if (ws.readyState !== ws.OPEN) {
+      match.clients.delete(socket);
+      continue;
+    }
+    try {
+      ws.send(payload);
+    } catch {
+      match.clients.delete(socket);
+      try {
+        ws.close();
+      } catch {}
+    }
+  }
+} */
+
+
+
+/* export function buildStatePayload(room: Room) {
   const { state } = room;
   return {
     type: "state" as const,
@@ -37,5 +110,4 @@ export function broadcast(room: Room): void {
       } catch {}
     }
   }
-}
-
+} */
