@@ -6,5 +6,8 @@ export function getMatchById(id: string) {
 		FROM matches
 		WHERE id = ?
 	`);
-	return stmt.get(id); // returns one row or undefined
+	const result = stmt.get(id); // returns one row or undefined
+	if (!result) throw new Error(`[DB] Match ${id} not found`);
+
+	return result;
 }

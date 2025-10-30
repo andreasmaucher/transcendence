@@ -6,9 +6,12 @@ export default async function matchRoutes(fastify: FastifyInstance) {
 	fastify.get("/api/tournaments/:id", async (request, reply) => {
 		const { id } = request.params as { id: string };
 
-		const tournament = getTournamentById(id);
-		if (!tournament) return reply.code(404).send({ success: false, message: "Tournament not found" });
-
-		return reply.code(200).send({ success: true, data: tournament });
+		try {
+			const tournament = getTournamentById(id);
+			return reply.code(200).send({ success: true, data: tournament });
+		} catch (error : any) {
+			console.log(error.message);
+			return reply.code(404).send({ success: false, message: "Tournament not found" });
+		}
 	});
 }

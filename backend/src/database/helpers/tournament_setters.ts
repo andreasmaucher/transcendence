@@ -5,8 +5,11 @@ export function startTournamentDB(id: string, size: number): void {
 		INSERT INTO tournaments (id, size, started_at)
 		VALUES (?, ?, CURRENT_TIMESTAMP)
 	`);
-	stmt.run(id, size);
-	console.log(`[db] Created new tournament ${id}`);
+	const result = stmt.run(id, size);
+	if (result.changes === 0)                                                                      // If DB run fails, throws error
+		throw new Error(`[DB] Failed to create tournament ${id}`);
+	else
+		console.log(`[DB] Created new tournament ${id} with size ${size}`);
 }
 
 export function updateTournamentDB(id: string, left: number, right: number): void {
@@ -15,8 +18,11 @@ export function updateTournamentDB(id: string, left: number, right: number): voi
 		SET score_left = ?, score_right = ?
 		WHERE id = ?
 	`);
-	stmt.run(left, right, id);
-	console.log(`[db] Tournament ${id} updated: ${left}-${right}`);
+	const result = stmt.run(left, right, id);
+	if (result.changes === 0)                                                                      // If DB run fails, throws error
+		throw new Error(`[DB] Failed to update tournament ${id}`);
+	else
+		console.log(`[DB] Updated tournament ${id}: ${left}-${right}`);
 }
 
 export function endTournamentDB(id: string, winner: string | null): void {
@@ -25,6 +31,9 @@ export function endTournamentDB(id: string, winner: string | null): void {
 		SET winner = ?, ended_at = CURRENT_TIMESTAMP
 		WHERE id = ?
 	`);
-	stmt.run(winner, id);
-	console.log(`[db] Tournament ${id}ended: winner is ${winner ?? "null"}`);
+	const result = stmt.run(winner, id);
+	if (result.changes === 0)                                                                      // If DB run fails, throws error
+		throw new Error(`[DB] Failed to end tournament ${id}`);
+	else
+		console.log(`[DB] Tournament ${id} ended: ${winner ?? "null"}`);
 }

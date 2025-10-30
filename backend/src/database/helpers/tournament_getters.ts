@@ -6,5 +6,8 @@ export function getTournamentById(id: string) {
 		FROM tournaments
 		WHERE id = ?
 	`);
-	return stmt.get(id); // returns one row or undefined
+	const result = stmt.get(id); // returns one row or undefined
+	if (!result) throw new Error(`[DB] Tournament ${id} not found`);
+
+	return result;
 }
