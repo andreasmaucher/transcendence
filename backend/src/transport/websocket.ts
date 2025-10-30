@@ -1,54 +1,51 @@
-import { RawData, WebSocket } from "ws";
+import { RawData } from "ws";
 import type { FastifyInstance } from "fastify";
-import type { PaddleSide } from "../types/game.js";
-import { getOrCreateRoom } from "../game/roomManager.js";
-import { buildStatePayload } from "./broadcaster.js";
+import type { PaddleSide, Match } from "../types/game.js";
+import { getOrCreateTournament } from "../game/tournamentManager.js";
+import { buildStatePayload, broadcast } from "./broadcaster.js";
 import { GAME_CONSTANTS } from "../config/constants.js";
 
 export function registerWebsocketRoute(fastify: FastifyInstance) {
   fastify.get<{ Params: { id: string } }>(
-    "/api/rooms/:id/ws",
+    "/api/tournaments/:id/ws",
     { websocket: true },
     (socket, request) => {
-      const roomId = request.params.id;
-      if (!roomId) {
-        try {
-          socket.close(1011, "room id missing");
-        } catch {}
+      const tournamentId = request.params.id;
+      if (!tournamentId) {
+        socket.close(1011, "tournament id missing");
         return;
       }
-      const room = getOrCreateRoom(roomId);
-      room.clients.add(socket);
-      console.log(
-        `[client] room=${room.id} event=join ip=${request.ip} clients=${room.clients.size}`
-      );
-      const payload = JSON.stringify(buildStatePayload(room));
-      socket.send(payload, (err) => {
-        if (err) {
-          request.log.error({ err }, "initial payload send failed");
-        }
-      });
+      console.log(`[ws] connect tournamentId=${tournamentId}`);
 
+      // Retrieve or create tournament
+      const tournament = getOrCreateTournament(tournamentId);
+
+      // Choose which match
+      const match: Match = tournament.matches[0];                                  // hardcoded first match of the tournament for now
+      match.clients.add(socket);
+
+      console.log(
+        `[client] match=${match.id} joined (${match.clients.size} total)`
+      );
+
+      // Send initial state
+      socket.send(JSON.stringify(buildStatePayload(match)));
+
+      // Handle messages
       socket.on("message", (raw: RawData) => {
-        let parsed: unknown;
+        let msg: any;
         try {
-          const text = typeof raw === "string" ? raw : raw.toString();
-          parsed = JSON.parse(text);
+          msg = JSON.parse(raw.toString());
         } catch {
           return;
         }
-        if (!parsed || typeof parsed !== "object") return;
-        const message = parsed as
-          | { type: "input"; paddle: PaddleSide; direction: "up" | "down" | "stop" }
-          | { type: "reset" };
-        if (message.type === "input") {
-          const input =
-            message.direction === "up" ? -1 : message.direction === "down" ? 1 : 0;
-          room.inputs[message.paddle] = input;
-        } else if (message.type === "reset") {
-          room.state = {
-            ...room.state,
-            // reset using constants
+
+        if (msg.type === "input") {
+          const dir = msg.direction === "up" ? -1 : msg.direction === "down" ? 1 : 0;
+          match.inputs[msg.paddle as PaddleSide] = dir;
+        } else if (msg.type === "reset") {
+          match.state = {
+            ...match.state,
             width: GAME_CONSTANTS.FIELD_WIDTH,
             height: GAME_CONSTANTS.FIELD_HEIGHT,
             paddles: {
@@ -68,18 +65,23 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
             winner: null,
             winningScore: GAME_CONSTANTS.WINNING_SCORE,
           };
-          room.inputs = { left: 0, right: 0 };
-          console.log(`[game] room=${room.id} event=reset`);
+          match.inputs = { left: 0, right: 0 };
+          console.log(`[game] match=${match.id} reset`);
+          broadcast(match);
         }
       });
 
+      // Cleanup on close
       socket.on("close", () => {
-        room.clients.delete(socket);
+        match.clients.delete(socket);
         console.log(
-          `[client] room=${room.id} event=leave ip=${request.ip} clients=${room.clients.size}`
+          `[client] match=${match.id} left (${match.clients.size} remaining)`
         );
+      });
+
+      socket.on("error", (err) => {
+        console.error(`[ws error] match=${match.id}`, err);
       });
     }
   );
 }
-

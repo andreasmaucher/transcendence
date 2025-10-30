@@ -55,7 +55,7 @@ function createInitialState(): State {
 // also implements autmatic reconnection in case the connection is lost
 function connectToBackend(state: State): void {
   // construct the WebSocket URL using the protocol, host, and port + room ID
-  const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/rooms/${ROOM_ID}/ws`;
+  const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/tournaments/${ROOM_ID}/ws`;
   // create a new WebSocket connection to the backend
   const ws = new WebSocket(wsUrl);
   setActiveSocket(ws); // store the WebSocket connection in the activeSocket variable
