@@ -5,8 +5,12 @@ export function startMatchDB(id: string, tournament_id: string, playerLeftId?: n
 		INSERT INTO matches (id, tournament_id, player_left, player_right, started_at)
 		VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
 	`);
-	stmt.run(id, tournament_id, playerLeftId ?? null, playerRightId ?? null);
-	console.log(`[db] Created new match record for tournament ${tournament_id}`);
+
+	const result = stmt.run(id, tournament_id, playerLeftId ?? null, playerRightId ?? null);
+	if (result.changes === 0)                                                                      // If DB run fails, throws error
+		throw new Error(`[DB] Failed to create match ${id}`);
+	else
+		console.log(`[DB] Created new match ${id} for tournament ${tournament_id}`);
 }
 
 export function updateMatchDB(id: string, left: number, right: number): void {
@@ -15,8 +19,12 @@ export function updateMatchDB(id: string, left: number, right: number): void {
 		SET score_left = ?, score_right = ?
 		WHERE id = ?
 	`);
-	stmt.run(left, right, id);
-	console.log(`[db] Match updated for tournament ${id}: ${left}-${right}`);
+
+	const result = stmt.run(left, right, id);
+	if (result.changes === 0)                                                                      // If DB run fails, throws error
+		throw new Error(`[DB] Failed to update match ${id}`);
+	else
+		console.log(`[DB] Match ${id} updated: ${left}-${right}`);
 }
 
 export function endMatchDB(id: string, winner: string | null): void {
@@ -25,6 +33,10 @@ export function endMatchDB(id: string, winner: string | null): void {
 		SET winner = ?, ended_at = CURRENT_TIMESTAMP
 		WHERE id = ?
 	`);
-	stmt.run(winner, id);
-	console.log(`[db] Match ended for tournament ${id}: winner is ${winner ?? "null"}`);
+
+	const result = stmt.run(winner, id);
+	if (result.changes === 0)                                                                      // If DB run fails, throws error
+		throw new Error(`[DB] Failed to end match ${id}`);
+	else
+		console.log(`[DB] Match ${id} ended: winner is ${winner ?? "null"}`);
 }
