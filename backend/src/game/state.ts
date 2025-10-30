@@ -1,10 +1,18 @@
 // creates a fresh game with everything in starting position
 import { GAME_CONSTANTS } from "../config/constants.js";
-import type { GameState } from "../types/game.js";
+import type { GameState, TournamentState } from "../types/game.js";
+
+export function createInitialTournamentState(): TournamentState {
+  return { //hardcoded for now
+    size: 0,
+    tournamentOver: false,
+    winner: null,
+  };
+}
 
 // creates a fresh game with everything in starting position
 // every tick, the backend updates this state and broadcasts a snapshot to clients
-export function createInitialState(): GameState {
+export function createInitialMatchState(): GameState {
   return {
     width: GAME_CONSTANTS.FIELD_WIDTH,
     height: GAME_CONSTANTS.FIELD_HEIGHT,

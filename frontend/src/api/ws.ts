@@ -19,6 +19,6 @@ export function connectToBackend(path: string, onOpen: (ws: WebSocket) => void, 
 
 // constructs the WebSocket path for the given room ID
 export function roomWebsocketPath(): string {
-  return `/api/rooms/${ROOM_ID}/ws`;
+  return `/api/tournaments/${ROOM_ID}/ws`;
 }
 
