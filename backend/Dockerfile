@@ -1,4 +1,4 @@
-# Simple single-stage image for building and running the backend
+d# Simple single-stage image for building and running the backend
 FROM node:20-bookworm-slim
 
 WORKDIR /app
