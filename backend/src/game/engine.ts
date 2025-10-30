@@ -119,4 +119,3 @@ export function stepMatch(match: Match, dt: number): void {
 
   state.tick += 1;
 }
-

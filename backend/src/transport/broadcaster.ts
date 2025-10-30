@@ -97,7 +97,7 @@ export function broadcast(room: Room): void {
   const payload = JSON.stringify(buildStatePayload(room));
   for (const socket of Array.from(room.clients)) {
     const ws = socket as WebSocket;
-    if (ws.readyState !== ws.OPEN) {
+    if (ws.readyState !== WebSocket.OPEN) {
       room.clients.delete(socket);
       continue;
     }

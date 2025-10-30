@@ -78,6 +78,7 @@ Notes from `docker-compose.yaml`
 
 ```bash
 # Frontend (Vite)
+cd frontend
 npm install
 npm run dev
 
