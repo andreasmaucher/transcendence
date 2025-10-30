@@ -1,9 +1,9 @@
 import { getJsonUserByUsername } from "../database/helpers/user_getters.js";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 const SALT_ROUNDS = 10; // security cost factor
 
-export async function verifyPassword(password: string, userId: string): Promise<boolean> {
+export async function verifyPassword(userId: string, password: string): Promise<boolean> {
 	try {
 		const user: any = getJsonUserByUsername(userId);
 		const match = await bcrypt.compare(password, user.password);

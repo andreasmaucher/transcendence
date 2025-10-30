@@ -1,10 +1,12 @@
 import { FastifyInstance } from "fastify";
 import { getTournamentById } from "../database/helpers/tournament_getters.js";
 
-export default async function matchRoutes(fastify: FastifyInstance) {
+export default async function tournamentRoutes(fastify: FastifyInstance) {
 
 	fastify.get("/api/tournaments/:id", async (request, reply) => {
 		const { id } = request.params as { id: string };
+		
+		console.log("LAMADONNABESTIA");
 
 		try {
 			const tournament = getTournamentById(id);

@@ -41,6 +41,9 @@ export default async function userRoutes(fastify: FastifyInstance) {
 	fastify.post("/api/users/register", async (request, reply) => {
 		const { username, password, avatar } = request.body as { username: string; password: string; avatar: string };
 
+		if (!username || !password || !avatar)
+			return reply.code(500).send({ success: false, message: "All fields are needed" });
+
 		try {
 			const hashedPassword = await hashPassword(password);
 			registerUserDB(username, hashedPassword, avatar);

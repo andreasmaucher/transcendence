@@ -19,7 +19,7 @@ export function buildStatePayload(match: Match) {
 export function broadcast(match: Match): void {
   if (!match.clients.size) return;
   const payload = JSON.stringify(buildStatePayload(match));
-  console.log("[DEBUG BACKEND → CLIENT]", payload);
+  //console.log("[DEBUG BACKEND → CLIENT]", payload);
   for (const socket of Array.from(match.clients)) {
     const ws = socket as WebSocket;
     if (ws.readyState !== ws.OPEN) {

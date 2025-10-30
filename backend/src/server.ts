@@ -7,6 +7,8 @@ import { stepMatch } from "./game/engine.js";
 import { buildStatePayload, broadcast } from "./transport/broadcaster.js";
 import { registerWebsocketRoute } from "./transport/websocket.js";
 import matchRoutes from "./routes/matches.js";
+import tournamentRoutes from "./routes/tournaments.js";
+import userRoutes from "./routes/users.js";
 import { forEachTournament, getOrCreateTournament } from "./game/tournamentManager.js";
 
 export type PaddleSide = "left" | "right";
@@ -69,6 +71,8 @@ fastify.get<{ Params: { id: string } }>("/api/tournaments/:id/state", async (req
 });
 
 await fastify.register(matchRoutes);
+await fastify.register(tournamentRoutes);
+await fastify.register(userRoutes);
 
 registerWebsocketRoute(fastify);
 
