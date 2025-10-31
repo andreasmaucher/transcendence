@@ -6,6 +6,7 @@ import { GAME_CONSTANTS } from "./config/constants.js";
 import { stepMatch } from "./game/engine.js";
 import { buildStatePayload, broadcast } from "./transport/broadcaster.js";
 import { registerWebsocketRoute } from "./transport/websocket.js";
+import { registerUserAuthRoutes } from "./user_management/routes.js";
 import matchRoutes from "./routes/matches.js";
 import tournamentRoutes from "./routes/tournaments.js";
 import userRoutes from "./routes/users.js";
@@ -75,6 +76,7 @@ await fastify.register(tournamentRoutes);
 await fastify.register(userRoutes);
 
 registerWebsocketRoute(fastify);
+await registerUserAuthRoutes(fastify);
 
 let previousTick = process.hrtime.bigint();
 
