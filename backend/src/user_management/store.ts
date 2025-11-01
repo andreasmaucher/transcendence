@@ -112,7 +112,7 @@ export function makeSessionCookie(id: string): string {
     "HttpOnly",
     "SameSite=Lax",
   ];
-  // Secure is recommended in production behind HTTPS; add conditionally if needed
+  //if (secure) attrs.push("Secure"); // only for HTTPS in prod, not needed for localhost
   return attrs.join("; ");
 }
 
