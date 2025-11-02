@@ -61,7 +61,12 @@ export default async function userRoutes(fastify: FastifyInstance) {
 
     // Basic validation: all fields required
     if (!username || !password || !avatar)
-      return reply.code(500).send({ success: false, message: "All fields are needed" });
+      return reply.code(400).send({ success: false, message: "All fields are required" });
+
+    // Duplicate username check (clear message for users)
+    if (getUsername(username)) {
+      return reply.code(409).send({ success: false, message: "Username already taken" });
+    }
 
     try {
       // Hash the password and create the user in the database
@@ -77,7 +82,8 @@ export default async function userRoutes(fastify: FastifyInstance) {
       return reply.code(200).send({ success: true, message: "Registration successful" });
     } catch (error: any) {
       console.log(error.message);
-      return reply.code(500).send({ success: false, message: "Registration failed" });
+      // If a race condition triggered a DB unique constraint, reply with 409
+      return reply.code(409).send({ success: false, message: "Username already taken" });
       
     }
 	});

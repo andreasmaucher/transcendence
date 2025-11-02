@@ -31,7 +31,12 @@ export async function registerUser(params: { username: string; password: string;
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || "register failed");
+    let message = "register failed";
+    try {
+      const body = JSON.parse(text);
+      message = body?.message || message;
+    } catch {}
+    throw new Error(message);
   }
 }
 
@@ -45,7 +50,12 @@ export async function loginUser(params: { username: string; password: string }):
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || "login failed");
+    let message = "login failed";
+    try {
+      const body = JSON.parse(text);
+      message = body?.message || message;
+    } catch {}
+    throw new Error(message);
   }
 }
 
