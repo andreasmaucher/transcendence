@@ -1,3 +1,4 @@
+// USER_MANAGEMENT
 // Creates a small token that proves a user is logged in, stored in an httpOnly cookie named "sid".
 // The token is signed with a secret (HMAC) so it cannot be forged.
 // Provided helpers:

@@ -10,6 +10,7 @@ const HOST = process.env.HOST ?? "0.0.0.0";
 console.log("FRONTEND_ORIGIN:", process.env.FRONTEND_ORIGIN);
 const ORIGIN = process.env.FRONTEND_ORIGIN ?? "http://localhost:5173";
 
+// USER_MANAGEMENT
 // enable credentials so browsers can send/receive cookies (required for session cookie)
 await fastify.register(cors, { origin: ORIGIN, credentials: true });
 
