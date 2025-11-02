@@ -4,12 +4,24 @@ import type { PaddleSide, Match } from "../types/game.js";
 import { getOrCreateTournament } from "../game/tournamentManager.js";
 import { buildStatePayload, broadcast } from "./broadcaster.js";
 import { GAME_CONSTANTS } from "../config/constants.js";
+import { parseCookies, verifySessionToken } from "../auth/session.js";
 
 export function registerWebsocketRoute(fastify: FastifyInstance) {
   fastify.get<{ Params: { id: string } }>(
     "/api/tournaments/:id/ws",
     { websocket: true },
     (socket, request) => {
+      // Check session: requires a valid 'sid' cookie
+      const cookies = parseCookies(request.headers.cookie);
+      const sid = cookies["sid"];
+      const payload = verifySessionToken(sid);
+      if (!payload) {
+        try {
+          socket.close(4401, "unauthorized");
+        } catch {}
+        return;
+      }
+
       const tournamentId = request.params.id;
       if (!tournamentId) {
         socket.close(1011, "tournament id missing");
@@ -22,6 +34,8 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 
       // Choose which match
       const match: Match = tournament.matches[0];                                  // hardcoded first match of the tournament for now
+      // Attach user id on the socket for possible future use (e.g., match attribution)
+      (socket as any).userId = payload.userId;
       match.clients.add(socket);
 
       console.log(
