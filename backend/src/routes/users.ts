@@ -54,14 +54,14 @@ export default async function userRoutes(fastify: FastifyInstance) {
     return reply.code(200).send({ success: true, message: "Login successful" });
 	});
 
-	// Register a new user
+  // Register a new user (no avatar URL is collected here)
 	fastify.post("/api/users/register", async (request, reply) => {
     // Read posted registration data
-    const { username, password, avatar } = request.body as { username: string; password: string; avatar: string };
+    const { username, password } = request.body as { username: string; password: string };
 
-    // Basic validation: all fields required
-    if (!username || !password || !avatar)
-      return reply.code(400).send({ success: false, message: "All fields are required" });
+    // Basic validation: required fields
+    if (!username || !password)
+      return reply.code(400).send({ success: false, message: "Username and password are required" });
 
     // Duplicate username check (clear message for users)
     if (getUsername(username)) {
@@ -71,7 +71,8 @@ export default async function userRoutes(fastify: FastifyInstance) {
     try {
       // Hash the password and create the user in the database
       const hashedPassword = await hashPassword(password);
-      registerUserDB(username, hashedPassword, avatar);
+      // Store empty avatar by default (no avatar URL handled here)
+      registerUserDB(username, hashedPassword, "");
 
       // Immediately create a session so the user is logged in after registering
       const row = getJsonUserByUsername(username);

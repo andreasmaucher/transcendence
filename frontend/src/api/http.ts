@@ -22,7 +22,7 @@ export async function fetchMe(): Promise<{ id: number; username: string; avatar:
 }
 
 // Register a new user (also creates a session cookie on success)
-export async function registerUser(params: { username: string; password: string; avatar: string }): Promise<void> {
+export async function registerUser(params: { username: string; password: string }): Promise<void> {
   const res = await fetch(`${API_BASE}/api/users/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

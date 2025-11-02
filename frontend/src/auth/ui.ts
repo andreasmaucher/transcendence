@@ -51,13 +51,12 @@ export async function ensureAuthenticated(): Promise<void> {
     <div class="error" style="color:#ef4444;margin-top:8px;display:none;"></div>
   `;
 
-  // Register form
+  // Register form (no avatar URL field)
   const registerForm = document.createElement("form");
   registerForm.style.display = "none";
   registerForm.innerHTML = `
     <label style="display:block;margin-top:8px;">Username<input name="username" required style="width:100%"/></label>
     <label style="display:block;margin-top:8px;">Password<input type="password" name="password" required style="width:100%"/></label>
-    <label style="display:block;margin-top:8px;">Avatar URL<input name="avatar" placeholder="https://..." required style="width:100%"/></label>
     <button type="submit" style="margin-top:12px;padding:6px 10px;cursor:pointer;">Register</button>
     <div class="error" style="color:#ef4444;margin-top:8px;display:none;"></div>
   `;
@@ -110,14 +109,13 @@ export async function ensureAuthenticated(): Promise<void> {
     const form = new FormData(registerForm);
     const username = String(form.get("username") || "").trim();
     const password = String(form.get("password") || "");
-    const avatar = String(form.get("avatar") || "").trim();
-    if (!username || !password || !avatar) {
-      registerError.textContent = "All fields are required";
+    if (!username || !password) {
+      registerError.textContent = "Username and password are required";
       registerError.style.display = "block";
       return;
     }
     try {
-      await registerUser({ username, password, avatar });
+      await registerUser({ username, password });
       const authed = await fetchMe();
       if (authed) {
         app.innerHTML = "";
