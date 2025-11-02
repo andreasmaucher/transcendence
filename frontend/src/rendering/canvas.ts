@@ -1,22 +1,5 @@
 import { COLOR_BACKGROUND, COLOR_CENTERLINE, COLOR_PADDLE_BALL_LIGHT, COLOR_SCORE, FONT_SCORE } from "../constants";
-
-type Paddle = { x: number; y: number; w: number; h: number; speed: number };
-
-type Ball = { x: number; y: number; vx: number; vy: number; r: number };
-
-type State = {
-  width: number;
-  height: number;
-  left: Paddle;
-  right: Paddle;
-  ball: Ball;
-  scoreL: number;
-  scoreR: number;
-  gameOver: boolean;
-  winner: "left" | "right" | null;
-  winningScore: number;
-  tick: number;
-};
+import type { State } from "../game/state";
 
 // Draw everything (reads state but does not change it, since there is no game logic here)
 // function takes in a 2D canvas context ctx and the gurrent game State s

@@ -5,8 +5,7 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 
 	fastify.get("/api/tournaments/:id", async (request, reply) => {
 		const { id } = request.params as { id: string };
-		
-		console.log("LAMADONNABESTIA");
+    
 
 		try {
 			const tournament = getTournamentById(id);

@@ -12,3 +12,59 @@ export async function fetchGameConstants(): Promise<GameConstants> {
   return data as GameConstants;
 }
 
+// Check current logged-in user using the session cookie
+export async function fetchMe(): Promise<{ id: number; username: string; avatar: string | null; created_at: string } | null> {
+  const res = await fetch(`${API_BASE}/api/users/me`, { credentials: "include" });
+  if (res.status === 401) return null;
+  if (!res.ok) throw new Error("me fetch failed");
+  const body = await res.json();
+  return body?.data ?? null;
+}
+
+// Register a new user (also creates a session cookie on success)
+export async function registerUser(params: { username: string; password: string }): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/users/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    let message = "register failed";
+    try {
+      const body = JSON.parse(text);
+      message = body?.message || message;
+    } catch {}
+    throw new Error(message);
+  }
+}
+
+// Login existing user (sets session cookie on success)
+export async function loginUser(params: { username: string; password: string }): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/users/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    let message = "login failed";
+    try {
+      const body = JSON.parse(text);
+      message = body?.message || message;
+    } catch {}
+    throw new Error(message);
+  }
+}
+
+// Logout current user (clears the cookie on the server)
+export async function logout(): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/users/logout`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("logout failed");
+}
+

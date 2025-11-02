@@ -4,6 +4,7 @@
 
 import { type GameConstants } from "./constants";
 import { fetchGameConstants } from "./api/http";
+import { ensureAuthenticated, renderAuthHeader } from "./auth/ui";
 import { WS_PROTOCOL, WS_HOST, WS_PORT, ROOM_ID } from "./config/endpoints";
 import { draw } from "./rendering/canvas";
 import { applyBackendState, type BackendStateMessage, type State } from "./game/state";
@@ -132,6 +133,8 @@ async function init(): Promise<void> {
   try {
     const constants = await fetchGameConstants();
     GAME_CONSTANTS = constants;
+    await ensureAuthenticated();
+    await renderAuthHeader();
     main();
   } catch (err) {
     console.error("Failed to initialize game", err);

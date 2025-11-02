@@ -1,0 +1,12 @@
+Start with:
+
+- register
+    - unique display name for tournaments (initially the same as username)
+
+- login
+
+Tech:
+- use SQLite DB + helpers and routes in database directory
+    //! need to understand jalombars work better
+
+- use bcryptjs for password hashing (already used in user/password.ts)
