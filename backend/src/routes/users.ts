@@ -104,4 +104,14 @@ export default async function userRoutes(fastify: FastifyInstance) {
       return reply.code(500).send({ success: false, message: "Failed to load user" });
     }
   });
+
+  // Logout: clears the session cookie on the client
+  fastify.post("/api/users/logout", async (_request, reply) => {
+    // Expire the cookie immediately
+    reply.header(
+      "Set-Cookie",
+      "sid=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0"
+    );
+    return reply.code(200).send({ success: true });
+  });
 }

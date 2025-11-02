@@ -49,3 +49,12 @@ export async function loginUser(params: { username: string; password: string }):
   }
 }
 
+// Logout current user (clears the cookie on the server)
+export async function logout(): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/users/logout`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("logout failed");
+}
+

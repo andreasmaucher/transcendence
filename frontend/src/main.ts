@@ -3,7 +3,8 @@
 // commands back to the server.
 
 import { type GameConstants } from "./constants";
-import { fetchGameConstants, fetchMe, registerUser, loginUser } from "./api/http";
+import { fetchGameConstants } from "./api/http";
+import { ensureAuthenticated, renderAuthHeader } from "./auth/ui";
 import { WS_PROTOCOL, WS_HOST, WS_PORT, ROOM_ID } from "./config/endpoints";
 import { draw } from "./rendering/canvas";
 import { applyBackendState, type BackendStateMessage, type State } from "./game/state";
@@ -126,145 +127,6 @@ function main(): void {
   requestAnimationFrame(frame);
 }
 
-// Renders a minimal authentication UI. Returns a promise that resolves
-// once the user is authenticated.
-async function ensureAuthenticated(): Promise<void> {
-  const app = document.getElementById("app");
-  if (!app) throw new Error("#app not found");
-
-  // Fast path: already logged in
-  const me = await fetchMe();
-  if (me) return;
-
-  // Build a simple tabbed form: Login and Register
-  const container = document.createElement("div");
-  container.style.display = "flex";
-  container.style.flexDirection = "column";
-  container.style.gap = "12px";
-  container.style.fontFamily = "system-ui";
-  container.style.maxWidth = "320px";
-  container.style.margin = "40px auto";
-
-  const title = document.createElement("h2");
-  title.textContent = "Sign in to play";
-  title.style.textAlign = "center";
-  container.appendChild(title);
-
-  const tabs = document.createElement("div");
-  tabs.style.display = "flex";
-  tabs.style.gap = "8px";
-
-  const loginTab = document.createElement("button");
-  loginTab.textContent = "Login";
-  const registerTab = document.createElement("button");
-  registerTab.textContent = "Register";
-  [loginTab, registerTab].forEach((b) => {
-    b.style.padding = "6px 10px";
-    b.style.cursor = "pointer";
-  });
-  tabs.appendChild(loginTab);
-  tabs.appendChild(registerTab);
-  container.appendChild(tabs);
-
-  // Forms
-  const loginForm = document.createElement("form");
-  loginForm.innerHTML = `
-    <label style="display:block;margin-top:8px;">Username<input name="username" required style="width:100%"/></label>
-    <label style="display:block;margin-top:8px;">Password<input type="password" name="password" required style="width:100%"/></label>
-    <button type="submit" style="margin-top:12px;padding:6px 10px;cursor:pointer;">Login</button>
-    <div class="error" style="color:#ef4444;margin-top:8px;display:none;"></div>
-  `;
-
-  const registerForm = document.createElement("form");
-  registerForm.style.display = "none";
-  registerForm.innerHTML = `
-    <label style="display:block;margin-top:8px;">Username<input name="username" required style="width:100%"/></label>
-    <label style="display:block;margin-top:8px;">Password<input type="password" name="password" required style="width:100%"/></label>
-    <label style="display:block;margin-top:8px;">Avatar URL<input name="avatar" placeholder="https://..." required style="width:100%"/></label>
-    <button type="submit" style="margin-top:12px;padding:6px 10px;cursor:pointer;">Register</button>
-    <div class="error" style="color:#ef4444;margin-top:8px;display:none;"></div>
-  `;
-
-  container.appendChild(loginForm);
-  container.appendChild(registerForm);
-  app.innerHTML = "";
-  app.appendChild(container);
-
-  function showLogin(): void {
-    loginForm.style.display = "block";
-    registerForm.style.display = "none";
-  }
-  function showRegister(): void {
-    loginForm.style.display = "none";
-    registerForm.style.display = "block";
-  }
-  showLogin();
-  loginTab.onclick = showLogin;
-  registerTab.onclick = showRegister;
-
-  // Submit handlers
-  const loginError = loginForm.querySelector(".error") as HTMLDivElement;
-  loginForm.onsubmit = async (e) => {
-    e.preventDefault();
-    loginError.style.display = "none";
-    const form = new FormData(loginForm);
-    const username = String(form.get("username") || "").trim();
-    const password = String(form.get("password") || "");
-    try {
-      await loginUser({ username, password });
-      const isNowAuthed = await fetchMe();
-      if (isNowAuthed) {
-        app.innerHTML = "";
-        return;
-      }
-      loginError.textContent = "Login failed";
-      loginError.style.display = "block";
-    } catch (err: any) {
-      loginError.textContent = err?.message || "Login failed";
-      loginError.style.display = "block";
-    }
-  };
-
-  const registerError = registerForm.querySelector(".error") as HTMLDivElement;
-  registerForm.onsubmit = async (e) => {
-    e.preventDefault();
-    registerError.style.display = "none";
-    const form = new FormData(registerForm);
-    const username = String(form.get("username") || "").trim();
-    const password = String(form.get("password") || "");
-    const avatar = String(form.get("avatar") || "").trim();
-    if (!username || !password || !avatar) {
-      registerError.textContent = "All fields are required";
-      registerError.style.display = "block";
-      return;
-    }
-    try {
-      await registerUser({ username, password, avatar });
-      const isNowAuthed = await fetchMe();
-      if (isNowAuthed) {
-        app.innerHTML = "";
-        return;
-      }
-      registerError.textContent = "Registration failed";
-      registerError.style.display = "block";
-    } catch (err: any) {
-      registerError.textContent = err?.message || "Registration failed";
-      registerError.style.display = "block";
-    }
-  };
-
-  // Wait until a successful login/register clears the UI
-  await new Promise<void>((resolve) => {
-    const observer = new MutationObserver(() => {
-      if (!app.contains(container)) {
-        observer.disconnect();
-        resolve();
-      }
-    });
-    observer.observe(app, { childList: true });
-  });
-}
-
 // Starts the program after loading the server config from the backend
 // init() calls fetchConfig() → GET http://localhost:4000/api/config
 async function init(): Promise<void> {
@@ -272,6 +134,7 @@ async function init(): Promise<void> {
     const constants = await fetchGameConstants();
     GAME_CONSTANTS = constants;
     await ensureAuthenticated();
+    await renderAuthHeader();
     main();
   } catch (err) {
     console.error("Failed to initialize game", err);
