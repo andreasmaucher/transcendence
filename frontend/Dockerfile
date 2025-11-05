@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.6
 # Simple single-stage image for building and running the backend
 FROM node:20-bookworm-slim
 
@@ -5,7 +6,10 @@ WORKDIR /app
 
 # Install dependencies first for better layer caching
 COPY package*.json ./
-RUN  apt-get update && apt-get install -y --no-install-recommends tini && rm -rf /var/lib/apt/lists/* && npm ci
+ARG CACHEBUST=1
+RUN  apt-get update && apt-get install -y --no-install-recommends tini && rm -rf /var/lib/apt/lists/* \
+	&& echo "CACHEBUST=${CACHEBUST}" > /dev/null
+RUN --mount=type=cache,target=/root/.npm,sharing=locked npm ci
 
 # Copy frontend sources
 # Adjust if your files live elsewhere

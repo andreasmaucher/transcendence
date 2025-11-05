@@ -22,11 +22,11 @@ down: ## Stop and remove containers
 stop: ## Stop containers without removing
 	$(COMPOSE) stop
 
-build: ## Build all images (uses multistage Dockerfile)
-	$(COMPOSE) build
+build: ## Build all images (forces npm install by cache-busting layer)
+	CACHEBUST=$$(date +%s) $(COMPOSE) build --build-arg CACHEBUST=$$CACHEBUST
 
-rebuild: ## Rebuild images without cache
-	$(COMPOSE) build --no-cache
+rebuild: ## Rebuild images without cache (also forces npm install)
+	CACHEBUST=$$(date +%s) $(COMPOSE) build --no-cache --build-arg CACHEBUST=$$CACHEBUST
 
 restart: ## Restart running containers
 	$(COMPOSE) restart

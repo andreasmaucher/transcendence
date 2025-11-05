@@ -1,4 +1,11 @@
-import { COLOR_BACKGROUND, COLOR_CENTERLINE, COLOR_PADDLE_BALL_LIGHT, COLOR_SCORE, FONT_SCORE } from "../constants";
+import {
+  COLOR_BACKGROUND,
+  COLOR_CENTERLINE,
+  COLOR_PADDLE_BALL_LIGHT,
+  COLOR_SCORE,
+  FONT_SCORE,
+} from "../constants";
+import { showSaveMatchPrompt } from "../wallet/prompt";
 import type { State } from "../game/state";
 
 // Draw everything (reads state but does not change it, since there is no game logic here)
@@ -44,6 +51,9 @@ export function draw(ctx: CanvasRenderingContext2D, s: State): void {
       s.winner === "left" ? "Left Player Wins!" : "Right Player Wins!";
     ctx.fillText(winnerText, s.width / 2, s.height / 2);
     ctx.fillText("Refresh to play again", s.width / 2, s.height / 2 + 40);
+    showSaveMatchPrompt(state, async ({ address, state }) => {
+      /* call contract later */
+    });
     ctx.textAlign = "left"; // reset text alignment
   }
 }

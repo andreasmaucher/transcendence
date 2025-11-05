@@ -5,6 +5,9 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      args:
+        # Bump this (or set via env) to force npm install to run during image build
+        - CACHEBUST=${CACHEBUST}
     container_name: transcendence-backend
     ports:
       - "4000:4000"
@@ -13,9 +16,10 @@ services:
     environment:
       - CHOKIDAR_USEPOLLING=1                         # Enable file watching in containers on macOS
     volumes:
-      - ./backend:/app
+      # Mount only source for live reload; keep node_modules inside the image (no npm volume)
+      - ./backend/src:/app/src
+      # Persist SQLite database outside Docker
       - ./data:/app/data                              # persist SQLite database outside Docker
-      - backend_node_modules:/app/node_modules        # use a named volume (stored in the Docker) for node_modules to avoid host overwrite
     
     command: ["npm", "run", "dev"]                    # Run in watch mode (overrides Dockerfile CMD)
     restart: unless-stopped
@@ -24,19 +28,21 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        # Bump this (or set via env) to force npm install to run during image build
+        - CACHEBUST=${CACHEBUST}
     container_name: transcendence-frontend
     ports:
       - "5173:5173"
     environment:
       - CHOKIDAR_USEPOLLING=1                         # Enable file watching in containers on macOS
     volumes:
-      - ./frontend:/app
-      - frontend_node_modules:/app/node_modules       # use a named volume (stored in the Docker) for node_modules to avoid host overwrite
+      # Mount only frontend sources and index for Vite HMR; keep node_modules inside the image
+      - ./frontend/src:/app/src
+      - ./frontend/index.html:/app/index.html
+      - ./frontend/tsconfig.json:/app/tsconfig.json
     # Dockerfile already starts Vite dev server on 0.0.0.0:5173
     depends_on:
       - backend
     restart: unless-stopped
-  
-volumes:
-  backend_node_modules:
-  frontend_node_modules:
+

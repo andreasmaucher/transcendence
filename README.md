@@ -40,11 +40,11 @@ What each Make target does (under the hood)
   - Runs: `docker compose stop`
   - Gracefully stops containers without removing them.
 - `make build`
-  - Runs: `docker compose build`
-  - Rebuilds images using cache.
+  - Runs: `docker compose build` with a CACHEBUST arg
+  - Forces `npm ci` during each image build (no node_modules volume mounted).
 - `make rebuild`
-  - Runs: `docker compose build --no-cache`
-  - Full rebuild without cache (use after changing Dockerfiles or lockfiles).
+  - Runs: `docker compose build --no-cache` with a CACHEBUST arg
+  - Full rebuild without cache and fresh dependency install.
 - `make restart`
   - Runs: `docker compose restart`
   - Restarts running containers.
@@ -67,8 +67,9 @@ Notes from `docker-compose.yaml`
   - Frontend: `5173:5173` (Vite dev server)
   - Backend: `4000:4000` (Fastify HTTP/WebSocket)
 - Volumes
-  - `./frontend:/app` and `./backend:/app` for live reload.
-  - `/app/node_modules` as an anonymous volume so container installs don’t pollute the host.
+  - Frontend: bind-mounts only `frontend/src`, `frontend/index.html`, and `frontend/tsconfig.json` to preserve image-installed `node_modules` (no npm volume mounted).
+  - Backend: bind-mounts only `backend/src` and persists `./data` into `/app/data` for SQLite.
+  - Changes to `package.json`/`tsconfig` require a rebuild (`make build`) which re-runs `npm ci` in the image.
 - Commands
   - Backend runs `npm run dev` (watch mode).
   - Frontend runs Vite dev server bound to `0.0.0.0:5173`.

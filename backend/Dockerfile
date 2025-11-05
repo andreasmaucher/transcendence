@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.6
 # ---------- Stage 1: Build Stage ----------
 FROM node:20-bookworm-slim AS builder
 
@@ -13,7 +14,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Copy dependency files and install
 COPY package*.json ./
-RUN npm ci
+
+# Optionally force npm install to run on each build via CACHEBUST build-arg
+ARG CACHEBUST=1
+# Cache-bust layer so npm ci runs on each build when CACHEBUST changes
+RUN echo "CACHEBUST=${CACHEBUST}" > /dev/null
+RUN --mount=type=cache,target=/root/.npm,sharing=locked npm ci
 
 # Copy the source code and build TypeScript
 COPY tsconfig.json ./
