@@ -34,7 +34,7 @@ WORKDIR /app
 
 # Install tini for graceful shutdowns
 RUN apt-get update && apt-get install -y --no-install-recommends tini \
-	&& rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy compiled JS and production dependencies only
 COPY --from=builder /app/package*.json ./
@@ -46,9 +46,9 @@ RUN mkdir -p /app/data
 
 # Default environment variables
 ENV NODE_ENV=production \
-	PORT=4000 \
-	HOST=0.0.0.0 \
-	DB_PATH=/app/data/database.sqlite
+    PORT=4000 \
+    HOST=0.0.0.0 \
+    DB_PATH=/app/data/database.sqlite
 
 EXPOSE 4000
 

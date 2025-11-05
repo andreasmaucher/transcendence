@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: jalombar <jalombar@student.42.fr>          +#+  +:+       +#+         #
+#    By: mrizhakov <mrizhakov@student.42.fr>        +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/10/27 22:17:43 by mrizhakov         #+#    #+#              #
-#    Updated: 2025/10/28 12:26:53 by jalombar         ###   ########.fr        #
+#    Updated: 2025/11/05 21:16:27 by mrizhakov        ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 

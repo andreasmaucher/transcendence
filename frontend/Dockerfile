@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 ARG CACHEBUST=1
 RUN  apt-get update && apt-get install -y --no-install-recommends tini && rm -rf /var/lib/apt/lists/* \
-	&& echo "CACHEBUST=${CACHEBUST}" > /dev/null
+    && echo "CACHEBUST=${CACHEBUST}" > /dev/null
 RUN --mount=type=cache,target=/root/.npm,sharing=locked npm ci
 
 # Copy frontend sources
