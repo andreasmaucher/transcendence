@@ -1,11 +1,28 @@
 import { connectWallet, getWalletState, isMetaMaskAvailable } from "./wallet";
+import { ensureFujiNetwork, FUJI_CHAIN_ID_HEX } from "./wallet";
+import { fetchSavedMatch } from "./contract";
 
-type SaveHandler = (opts: { address: string; state: unknown }) => Promise<void>;
+type SaveHandler = (opts: {
+  address: string;
+  state: unknown;
+}) => Promise<
+  | void
+  | {
+      tournamentId: string;
+      gameId: string;
+    }
+>;
 
 let overlayEl: HTMLDivElement | null = null;
 let lastShownForTick = -1;
 
 export function showSaveMatchPrompt(gameState: any, onSave: SaveHandler) {
+  function isOnFuji(chainId?: string | null) {
+    return (
+      (chainId || "").toLowerCase() ===
+      (FUJI_CHAIN_ID_HEX || "0xa869").toLowerCase()
+    );
+  }
   if (
     typeof gameState?.tick === "number" &&
     gameState.tick === lastShownForTick
@@ -21,7 +38,6 @@ export function showSaveMatchPrompt(gameState: any, onSave: SaveHandler) {
     overlayEl.style.background = "rgba(0,0,0,0.6)";
     overlayEl.style.display = "flex";
     overlayEl.style.alignItems = "center";
-    overlayEl.style.justifyContent = "center";
     overlayEl.style.zIndex = "9999";
     document.body.appendChild(overlayEl);
   } else {
@@ -66,11 +82,25 @@ export function showSaveMatchPrompt(gameState: any, onSave: SaveHandler) {
   saveBtn.textContent = "Save to Blockchain";
   saveBtn.disabled = true;
 
+  const details = document.createElement("pre");
+  details.style.marginTop = "12px";
+  details.style.padding = "12px";
+  details.style.background = "#111";
+  details.style.borderRadius = "6px";
+  details.style.whiteSpace = "pre-wrap";
+  details.style.fontSize = "12px";
+  details.textContent = "";
+
   const refreshStatus = () => {
     const s = getWalletState();
     if (s.connected && s.address) {
-      status.textContent = `Connected: ${s.address} (chain ${s.chainId})`;
-      saveBtn.disabled = false;
+      if (!isOnFuji(s.chainId)) {
+        status.textContent = "Wrong network. Switch to Avalanche Fuji (43113).";
+        saveBtn.disabled = true;
+      } else {
+        status.textContent = `Connected: ${s.address} (Fuji 43113)`;
+        saveBtn.disabled = false;
+      }
     } else {
       status.textContent = "Not connected";
       saveBtn.disabled = true;
@@ -86,23 +116,65 @@ export function showSaveMatchPrompt(gameState: any, onSave: SaveHandler) {
       connectBtn.disabled = true;
       status.textContent = "Connecting...";
       await connectWallet();
+      // optional: try switching immediately after connect
+      await ensureFujiNetwork();
       refreshStatus();
     } catch (e: any) {
-      status.textContent = `Connect failed: ${e?.message ?? String(e)}`;
+      status.textContent = `Connect failed: ${e?.message || e}`;
     } finally {
       connectBtn.disabled = false;
     }
   };
 
   saveBtn.onclick = async () => {
-    const s = getWalletState();
-    if (!s.connected || !s.address) return;
     try {
       saveBtn.disabled = true;
+      // enforce Fuji before saving
+      await ensureFujiNetwork();
+      refreshStatus();
+      const s = getWalletState();
+      if (!s.connected || !s.address || !isOnFuji(s.chainId)) {
+        status.textContent =
+          "Save blocked: connect wallet to Avalanche Fuji (43113).";
+        return;
+      }
+      status.textContent = "Saving to blockchain...";
       await onSave({ address: s.address, state: gameState });
-      status.textContent = "Saved! You can close this dialog.";
+      status.textContent = "Saved! Reading back from chain...";
+
+      const tId =
+        (gameState && (gameState.tournamentId || gameState.tournament?.id)) ??
+        null;
+      const gId = (gameState && (gameState.gameId || gameState.id)) ?? null;
+      if (tId && gId) {
+        try {
+          const saved = await fetchSavedMatch(
+            s.provider,
+            String(tId),
+            String(gId)
+          );
+          const when = new Date(saved.savedAt * 1000).toISOString();
+          details.textContent =
+            `Contract saved:\n` +
+            `- tournamentId: ${saved.tournamentId}\n` +
+            `- gameId:       ${saved.gameId}\n` +
+            `- gameIndex:    ${saved.gameIndex}\n` +
+            `- players:      ${saved.leftUsername} vs ${saved.rightUsername}\n` +
+            `- score:        ${saved.scoreLeft} - ${saved.scoreRight}\n` +
+            `- reporter:     ${saved.reporter}\n` +
+            `- savedAt:      ${when}`;
+          status.textContent = "Saved and verified.";
+        } catch (err: any) {
+          status.textContent = `Saved, but readback failed: ${
+            err?.message || err
+          }`;
+        }
+      } else {
+        status.textContent =
+          "Saved, but missing tournamentId/gameId for readback.";
+      }
     } catch (e: any) {
-      status.textContent = `Save failed: ${e?.message ?? String(e)}`;
+      status.textContent = `Save failed: ${e?.message || e}`;
       saveBtn.disabled = false;
     }
   };
@@ -114,6 +186,7 @@ export function showSaveMatchPrompt(gameState: any, onSave: SaveHandler) {
   btnRow.appendChild(saveBtn);
   btnRow.appendChild(closeBtn);
   card.appendChild(btnRow);
+  card.appendChild(details);
 
   overlayEl.appendChild(card);
   refreshStatus();

@@ -19,4 +19,6 @@ export const CONTRACT_FUNCTION = "saveMatch" as const;
 // ) external;
 export const CONTRACT_ABI = [
   "function saveMatch(string,string,uint256,string,string,uint8,uint8) external",
+  "function getGame(string,string) view returns (string,string,uint32,string,string,uint8,uint8,address,uint64)",
+  "function exists(string,string) view returns (bool)",
 ];

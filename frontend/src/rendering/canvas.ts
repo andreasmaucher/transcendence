@@ -55,7 +55,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: State): void {
       s.winner === "left" ? "Left Player Wins!" : "Right Player Wins!";
     ctx.fillText(winnerText, s.width / 2, s.height / 2);
     ctx.fillText("Refresh to play again", s.width / 2, s.height / 2 + 40);
-    showSaveMatchPrompt(s, async ({ address, state: gameState }) => {
+  showSaveMatchPrompt(s, async ({ address, state: gameState }) => {
       // Build the payload for the smart contract.
       // NOTE: Contract address/ABI/function are placeholders in config/contract.ts
       // and should be updated when the real contract is provided.
@@ -87,6 +87,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: State): void {
       const { provider } = getWalletState();
       if (!provider) throw new Error("Wallet not connected");
       await saveMatchOnChain(provider, params);
+      return { tournamentId: params.tournamentId, gameId: params.gameId };
     });
     ctx.textAlign = "left"; // reset text alignment
   }
