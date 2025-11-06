@@ -24,6 +24,8 @@ db.exec(`
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		username TEXT UNIQUE NOT NULL,
 		password TEXT NOT NULL,
+		provider TEXT DEFAULT 'local',
+		provider_id TEXT DEFAULT NULL,
 		avatar TEXT,
 		friends TEXT NULL,
 		stats TEXT NULL,

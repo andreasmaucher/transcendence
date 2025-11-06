@@ -7,10 +7,13 @@ import crypto from "crypto";
 const tournaments = new Map<string, Tournament>();
 
 export function resetTournamentsForTest(): void {
-  tournaments.clear();
+	tournaments.clear();
 }
 
-export function initTournamentMatches(tournamentId: string, size: number, ): Match[] {
+export function initTournamentMatches(
+	tournamentId: string,
+	size: number
+): Match[] {
 	const matches: Match[] = [];
 	for (let i = 0; i < size / 2; i++) {
 		let matchId = crypto.randomUUID();
@@ -24,7 +27,7 @@ export function getOrCreateTournament(id: string): Tournament {
 	if (!tournament) {
 		let tournamentId = crypto.randomUUID();
 		tournament = {
-			id: tournamentId,              // temporary
+			id: tournamentId, // temporary
 			state: createInitialTournamentState(),
 			matches: [],
 		} as Tournament;
@@ -32,15 +35,18 @@ export function getOrCreateTournament(id: string): Tournament {
 		try {
 			startTournamentDB(tournament.id, tournament.state.size);
 		} catch (err) {
-			console.error(`[db] Failed to insert tournament ${tournament.id}:`, err);
+			console.error(
+				`[db] Failed to insert tournament ${tournament.id}:`,
+				err
+			);
 		}
 		tournament.matches = initTournamentMatches(tournamentId, 2); //hardcoded size of 2 for now
 		tournaments.set(tournament.id, tournament);
-  	}
-	
+	}
+
 	return tournament;
 }
 
 export function forEachTournament(fn: (tournament: Tournament) => void): void {
-  for (const tournament of tournaments.values()) fn(tournament);
+	for (const tournament of tournaments.values()) fn(tournament);
 }
