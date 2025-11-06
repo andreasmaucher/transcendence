@@ -1,6 +1,6 @@
 import type { Match } from "../types/game.js";
 import { createInitialMatchState } from "./state.js";
-import { startMatchDB } from "../database/helpers/match_setters.js";
+import { startMatchDB } from "../database/matches/setters.js";
 
 export function createMatch(id: string, tournament_id: string): Match {
 	let match = {

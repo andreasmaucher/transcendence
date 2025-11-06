@@ -2,11 +2,8 @@
 import { GAME_CONSTANTS } from "../config/constants.js";
 import type { Match } from "../types/game.js";
 import { clamp, resetBall } from "./state.js";
-import {
-	updateMatchDB,
-	endMatchDB,
-} from "../database/helpers/match_setters.js";
-import { endTournamentDB } from "../database/helpers/tournament_setters.js";
+import { updateMatchDB, endMatchDB } from "../database/matches/setters.js";
+import { endTournamentDB } from "../database/tournaments/setters.js";
 
 export function maybeCompleteGame(match: Match): void {
 	const state = match.state;

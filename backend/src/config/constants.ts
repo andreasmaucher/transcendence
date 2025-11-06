@@ -24,3 +24,6 @@ export const GAME_CONSTANTS = {
 } as const;
 
 export type GameConstants = typeof GAME_CONSTANTS;
+
+export const DEFAULT_AVATAR_URL =
+	"https://res.cloudinary.com/dtl48kr1u/image/upload/v1762435054/transcendence/default-user_h8r9yj.jpg";

@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { getMatchById } from "../database/helpers/match_getters.js";
+import { getMatchById } from "../database/matches/getters.js";
 
 export default async function matchRoutes(fastify: FastifyInstance) {
 	fastify.get("/api/matches/:id", async (request, reply) => {

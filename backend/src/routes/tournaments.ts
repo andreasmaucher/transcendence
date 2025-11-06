@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { getTournamentById } from "../database/helpers/tournament_getters.js";
+import { getTournamentById } from "../database/tournaments/getters.js";
 
 export default async function tournamentRoutes(fastify: FastifyInstance) {
 	fastify.get("/api/tournaments/:id", async (request, reply) => {

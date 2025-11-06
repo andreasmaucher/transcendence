@@ -1,4 +1,4 @@
-import { getJsonUserByUsername } from "../database/helpers/user_getters.js";
+import { getJsonUserByUsername } from "../database/users.ts/getters.js";
 import bcrypt from "bcryptjs";
 
 const SALT_ROUNDS = 10; // security cost factor

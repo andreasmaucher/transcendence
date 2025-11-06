@@ -1,5 +1,5 @@
 import type { Match, Tournament, TournamentState } from "../types/game.js";
-import { startTournamentDB } from "../database/helpers/tournament_setters.js";
+import { startTournamentDB } from "../database/tournaments/setters.js";
 import { createMatch } from "./matchManager.js";
 import { createInitialTournamentState } from "./state.js";
 import crypto from "crypto";

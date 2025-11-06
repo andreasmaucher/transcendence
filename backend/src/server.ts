@@ -9,6 +9,7 @@ import { registerWebsocketRoute } from "./transport/websocket.js";
 import matchRoutes from "./routes/matches.js";
 import tournamentRoutes from "./routes/tournaments.js";
 import userRoutes from "./routes/users.js";
+import testRoutes from "./routes/tests.js";
 import {
 	forEachTournament,
 	getOrCreateTournament,
@@ -80,6 +81,7 @@ fastify.get<{ Params: { id: string } }>(
 await fastify.register(matchRoutes);
 await fastify.register(tournamentRoutes);
 await fastify.register(userRoutes);
+await fastify.register(testRoutes);
 
 registerWebsocketRoute(fastify);
 

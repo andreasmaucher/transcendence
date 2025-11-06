@@ -1,6 +1,20 @@
 import db from "../db_init.js";
 import type { User } from "../../types/utils.js";
 
+// Retrieve all users from the database
+export function getAllUsers(): any[] {
+	const stmt = db.prepare(`
+    SELECT id, username, avatar, provider, provider_id, friends, stats, created_at
+    FROM users
+    ORDER BY id ASC
+  `);
+
+	const users = stmt.all();
+	if (!users) throw new Error(`[DB] No users found`);
+
+	return users;
+}
+
 // Retrieve the desired user from the database (if present) and return it as json
 export function getJsonUserByUsername(username: string): any {
 	const stmt = db.prepare(`
@@ -24,20 +38,20 @@ export function getUserByUsername(username: string): User | undefined {
 	`);
 
 	const json: any = stmt.get(username); // returns one row or undefined
-	if (json) {
-		let user: User = {
-			id: json.id,
-			username: json.username,
-			password: json.password,
-			provider: json.provider,
-			provider_id: json.provider_id,
-			avatar: json.avatar,
-			friends: json.friends,
-			stats: json.stats,
-			created_at: json.created_at,
-		};
-		return user;
-	} else throw new Error(`[DB] User ${username} not found`);
+	if (!json) throw new Error(`[DB] User ${username} not found`);
+
+	const user: User = {
+		id: json.id,
+		username: json.username,
+		password: json.password,
+		provider: json.provider,
+		provider_id: json.provider_id,
+		avatar: json.avatar,
+		friends: json.friends,
+		stats: json.stats,
+		created_at: json.created_at,
+	};
+	return user;
 }
 
 // Check if the username is already present in the database (if present)
@@ -49,5 +63,6 @@ export function getUsername(username: string): boolean {
 	`);
 
 	const json: any = stmt.get(username); // returns one row or undefined
+
 	return !!json; // Convert to boolean
 }

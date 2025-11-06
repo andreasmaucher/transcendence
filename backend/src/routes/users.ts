@@ -2,21 +2,22 @@ import { FastifyInstance } from "fastify";
 import {
 	getJsonUserByUsername,
 	getUsername,
-} from "../database/helpers/user_getters.js";
+} from "../database/users.ts/getters.js";
 import { verifyPassword, hashPassword } from "../user/password.js";
 import {
 	registerUserDB,
 	updateUsernameDB,
 	updatePasswordDB,
 	updateAvatarDB,
-} from "../database/helpers/user_setters.js";
-import db from "../database/db_init.js";
+} from "../database/users.ts/setters.js";
 import {
 	createSessionToken,
 	makeSessionCookie,
 	parseCookies,
 	verifySessionToken,
 } from "../auth/session.js";
+import { uploadAvatar } from "../user/cloudinary.js";
+import { DEFAULT_AVATAR_URL } from "../config/constants.js";
 
 export default async function userRoutes(fastify: FastifyInstance) {
 	// GET user by username
@@ -77,9 +78,10 @@ export default async function userRoutes(fastify: FastifyInstance) {
 	// REGISTER a new user
 	fastify.post("/api/users/register", async (request, reply) => {
 		// Read posted registration data
-		const { username, password } = request.body as {
+		const { username, password, avatar } = request.body as {
 			username: string;
 			password: string;
+			avatar?: string;
 		};
 
 		// Basic validation: required fields
@@ -96,10 +98,14 @@ export default async function userRoutes(fastify: FastifyInstance) {
 				.send({ success: false, message: "Username already taken" });
 
 		try {
+			// Store default avatar if not provided
+			let avatarUrl = "";
+			if (avatar) avatarUrl = await uploadAvatar(avatar);
+			else avatarUrl = DEFAULT_AVATAR_URL;
+
 			// Hash the password and create the user in the database
 			const hashedPassword = await hashPassword(password);
-			// Store empty avatar by default (no avatar URL handled here)
-			registerUserDB(username, hashedPassword, "");
+			registerUserDB(username, hashedPassword, avatarUrl);
 
 			// Immediately create a session so the user is logged in after registering
 			const row = getJsonUserByUsername(username);
@@ -182,7 +188,8 @@ export default async function userRoutes(fastify: FastifyInstance) {
 			}
 		} else if (avatar) {
 			try {
-				updateAvatarDB(username, avatar);
+				const avatarUrl = await uploadAvatar(avatar);
+				updateAvatarDB(username, avatarUrl);
 				return reply.code(200).send({
 					success: true,
 					message: "Avatar updated successfully",
