@@ -8,6 +8,7 @@
 
 import crypto from "node:crypto";
 import { SessionPayload } from "../types/utils.js";
+import { FastifyReply } from "fastify";
 
 // Secret key used to sign tokens. //! TODO: In prod set SESSION_SECRET in env.
 // In development, a default value is used so things work locally.
@@ -115,4 +116,11 @@ export function makeSessionCookie(
 	if (options?.maxAgeSec && options.maxAgeSec > 0)
 		attrs.push(`Max-Age=${Math.floor(options.maxAgeSec)}`);
 	return attrs.join("; ");
+}
+
+export function clearSessionCookie(reply: FastifyReply) {
+	reply.header(
+		"Set-Cookie",
+		"sid=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0"
+	);
 }

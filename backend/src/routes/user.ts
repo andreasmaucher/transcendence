@@ -2,26 +2,27 @@ import { FastifyInstance } from "fastify";
 import {
 	getJsonUserByUsername,
 	getUsername,
-} from "../database/users.ts/getters.js";
+} from "../database/users/getters.js";
 import { verifyPassword, hashPassword } from "../user/password.js";
 import {
 	registerUserDB,
 	updateUsernameDB,
 	updatePasswordDB,
 	updateAvatarDB,
-} from "../database/users.ts/setters.js";
+} from "../database/users/setters.js";
 import {
 	createSessionToken,
 	makeSessionCookie,
 	parseCookies,
 	verifySessionToken,
+	clearSessionCookie,
 } from "../auth/session.js";
 import { uploadAvatar } from "../user/cloudinary.js";
 import { DEFAULT_AVATAR_URL } from "../config/constants.js";
 
 export default async function userRoutes(fastify: FastifyInstance) {
 	// GET user by username
-	fastify.get("/api/users/:username", async (request, reply) => {
+	fastify.get("/api/user/:username", async (request, reply) => {
 		const { username } = request.params as { username: string };
 
 		try {
@@ -36,7 +37,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 	});
 
 	// CHECK if username exists (return boolean)
-	fastify.post("/api/users/check", async (request, reply) => {
+	fastify.post("/api/user/check", async (request, reply) => {
 		const { username } = request.body as { username: string };
 
 		const exists = getUsername(username);
@@ -44,7 +45,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 	});
 
 	// LOGIN existing user
-	fastify.post("/api/users/login", async (request, reply) => {
+	fastify.post("/api/user/login", async (request, reply) => {
 		// Read posted username and password
 		const { username, password } = request.body as {
 			username: string;
@@ -76,7 +77,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 	});
 
 	// REGISTER a new user
-	fastify.post("/api/users/register", async (request, reply) => {
+	fastify.post("/api/user/register", async (request, reply) => {
 		// Read posted registration data
 		const { username, password, avatar } = request.body as {
 			username: string;
@@ -128,7 +129,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 	});
 
 	// UPDATE user information
-	fastify.post("/api/users/update", async (request, reply) => {
+	fastify.post("/api/user/update", async (request, reply) => {
 		// Read posted update data
 		const { username, newUsername, password, avatar } = request.body as {
 			username: string;
@@ -209,21 +210,25 @@ export default async function userRoutes(fastify: FastifyInstance) {
 	});
 
 	// RETURN the current logged-in user, based on the session cookie
-	fastify.get("/api/users/me", async (request, reply) => {
+	fastify.get("/api/user/me", async (request, reply) => {
 		// Extract cookies from the request header
 		const cookies = parseCookies(request.headers.cookie);
 		const sid = cookies["sid"];
-		if (!sid)
+		if (!sid) {
+			clearSessionCookie(reply);
 			return reply
 				.code(401)
 				.send({ success: false, message: "Unauthorized" });
+		}
 
 		// Verify the session token and get the user id
 		const payload = verifySessionToken(sid);
-		if (!payload)
+		if (!payload) {
+			clearSessionCookie(reply);
 			return reply
 				.code(401)
 				.send({ success: false, message: "Unauthorized" });
+		}
 
 		// Look up the user by username in the database
 		try {
@@ -231,6 +236,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 			return reply.code(200).send({ success: true, data: user });
 		} catch (error: any) {
 			console.log(error.message);
+			clearSessionCookie(reply);
 			return reply
 				.code(404)
 				.send({ success: false, message: "User not found" });
@@ -238,7 +244,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 	});
 
 	// LOGOUT user: clears the session cookie on the client
-	fastify.post("/api/users/logout", async (_request, reply) => {
+	fastify.post("/api/user/logout", async (_request, reply) => {
 		// Expire the cookie immediately
 		reply.header(
 			"Set-Cookie",

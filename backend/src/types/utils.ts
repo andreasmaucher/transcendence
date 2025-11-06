@@ -1,5 +1,5 @@
 export type User = {
-	id: number;
+	internal_id: number;
 	username: string;
 	password: string;
 	provider: string;

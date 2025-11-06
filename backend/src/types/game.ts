@@ -15,6 +15,7 @@ export type Tournament = {
 };
 
 export type TournamentDB = {
+	internal_id: number;
 	id: string;
 	size: number;
 	winner: string | null;
@@ -47,13 +48,6 @@ export type GameState = {
 	winningScore: number;
 };
 
-export type Room = {
-	id: string;
-	state: GameState;
-	inputs: Record<PaddleSide, PaddleInput>;
-	clients: Set<WebSocket>;
-};
-
 export type Match = {
 	id: string;
 	tournament_id: string;
@@ -63,6 +57,7 @@ export type Match = {
 };
 
 export type MatchDB = {
+	internal_id: number;
 	id: string;
 	tournament_id: string;
 	player_left_id: number;

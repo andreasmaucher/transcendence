@@ -4,9 +4,9 @@ import type { User } from "../../types/utils.js";
 // Retrieve all users from the database
 export function getAllUsers(): any[] {
 	const stmt = db.prepare(`
-    SELECT id, username, avatar, provider, provider_id, friends, stats, created_at
+    SELECT internal_id, username, avatar, provider, provider_id, friends, stats, created_at
     FROM users
-    ORDER BY id ASC
+    ORDER BY internal_id ASC
   `);
 
 	const users = stmt.all();
@@ -41,7 +41,7 @@ export function getUserByUsername(username: string): User | undefined {
 	if (!json) throw new Error(`[DB] User ${username} not found`);
 
 	const user: User = {
-		id: json.id,
+		internal_id: json.internal_id,
 		username: json.username,
 		password: json.password,
 		provider: json.provider,

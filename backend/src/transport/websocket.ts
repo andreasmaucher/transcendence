@@ -8,7 +8,7 @@ import { parseCookies, verifySessionToken } from "../auth/session.js";
 
 export function registerWebsocketRoute(fastify: FastifyInstance) {
 	fastify.get<{ Params: { id: string } }>(
-		"/api/tournaments/:id/ws",
+		"/api/tournament/:id/ws",
 		{ websocket: true },
 		(socket, request) => {
 			// Check session: requires a valid 'sid' cookie
