@@ -1,5 +1,5 @@
 import type { Match, Tournament, TournamentState } from "../types/game.js";
-import { startTournamentDB } from "../database/helpers/tournament_setters.js";
+import { startTournamentDB } from "../database/tournaments/setters.js";
 import { createMatch } from "./matchManager.js";
 import { createInitialTournamentState } from "./state.js";
 import crypto from "crypto";
@@ -7,10 +7,10 @@ import crypto from "crypto";
 const tournaments = new Map<string, Tournament>();
 
 export function resetTournamentsForTest(): void {
-  tournaments.clear();
+	tournaments.clear();
 }
 
-export function initTournamentMatches(tournamentId: string, size: number, ): Match[] {
+export function initTournamentMatches(tournamentId: string, size: number): Match[] {
 	const matches: Match[] = [];
 	for (let i = 0; i < size / 2; i++) {
 		let matchId = crypto.randomUUID();
@@ -24,7 +24,7 @@ export function getOrCreateTournament(id: string): Tournament {
 	if (!tournament) {
 		let tournamentId = crypto.randomUUID();
 		tournament = {
-			id: tournamentId,              // temporary
+			id: tournamentId, // temporary
 			state: createInitialTournamentState(),
 			matches: [],
 		} as Tournament;
@@ -36,11 +36,11 @@ export function getOrCreateTournament(id: string): Tournament {
 		}
 		tournament.matches = initTournamentMatches(tournamentId, 2); //hardcoded size of 2 for now
 		tournaments.set(tournament.id, tournament);
-  	}
-	
+	}
+
 	return tournament;
 }
 
 export function forEachTournament(fn: (tournament: Tournament) => void): void {
-  for (const tournament of tournaments.values()) fn(tournament);
+	for (const tournament of tournaments.values()) fn(tournament);
 }

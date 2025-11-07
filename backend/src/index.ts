@@ -15,12 +15,12 @@ const ORIGIN = process.env.FRONTEND_ORIGIN ?? "http://localhost:5173";
 await fastify.register(cors, { origin: ORIGIN, credentials: true });
 
 try {
-  // starts the server
-  const address = await fastify.listen({ port: PORT, host: HOST });
-  // logs the address and origin
-  console.log(`[backend] listening on ${address}`);
-  console.log(`[backend] allowing CORS from ${ORIGIN}`);
+	// starts the server
+	const address = await fastify.listen({ port: PORT, host: HOST });
+	// logs the address and origin
+	console.log(`[backend] listening on ${address}`);
+	console.log(`[backend] allowing CORS from ${ORIGIN}`);
 } catch (err) {
-  fastify.log.error(err);
-  process.exit(1);
+	fastify.log.error(err);
+	process.exit(1);
 }
