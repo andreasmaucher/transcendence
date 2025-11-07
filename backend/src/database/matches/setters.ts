@@ -7,10 +7,8 @@ export function startMatchDB(id: string, tournament_id: string, playerLeftId?: n
 	`);
 
 	const result = stmt.run(id, tournament_id, playerLeftId ?? null, playerRightId ?? null);
-	if (result.changes === 0)                                                                      // If DB run fails, throws error
-		throw new Error(`[DB] Failed to create match ${id}`);
-	else
-		console.log(`[DB] Created new match ${id} for tournament ${tournament_id}`);
+	if (result.changes === 0) throw new Error(`[DB] Failed to create match ${id}`); // If DB run fails, throws error
+	else console.log(`[DB] Created new match ${id} for tournament ${tournament_id}`);
 }
 
 export function updateMatchDB(id: string, left: number, right: number): void {
@@ -21,10 +19,8 @@ export function updateMatchDB(id: string, left: number, right: number): void {
 	`);
 
 	const result = stmt.run(left, right, id);
-	if (result.changes === 0)                                                                      // If DB run fails, throws error
-		throw new Error(`[DB] Failed to update match ${id}`);
-	else
-		console.log(`[DB] Match ${id} updated: ${left}-${right}`);
+	if (result.changes === 0) throw new Error(`[DB] Failed to update match ${id}`); // If DB run fails, throws error
+	else console.log(`[DB] Match ${id} updated: ${left}-${right}`);
 }
 
 export function endMatchDB(id: string, winner: string | null): void {
@@ -35,8 +31,6 @@ export function endMatchDB(id: string, winner: string | null): void {
 	`);
 
 	const result = stmt.run(winner, id);
-	if (result.changes === 0)                                                                      // If DB run fails, throws error
-		throw new Error(`[DB] Failed to end match ${id}`);
-	else
-		console.log(`[DB] Match ${id} ended: winner is ${winner ?? "null"}`);
+	if (result.changes === 0) throw new Error(`[DB] Failed to end match ${id}`); // If DB run fails, throws error
+	else console.log(`[DB] Match ${id} ended: winner is ${winner ?? "null"}`);
 }

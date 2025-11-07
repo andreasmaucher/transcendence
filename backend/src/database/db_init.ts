@@ -21,9 +21,11 @@ console.log("[backend] Using database at:", dbPath);
 
 db.exec(`
 	CREATE TABLE IF NOT EXISTS users (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		internal_id INTEGER PRIMARY KEY AUTOINCREMENT,
 		username TEXT UNIQUE NOT NULL,
 		password TEXT NOT NULL,
+		provider TEXT DEFAULT 'local',
+		provider_id TEXT DEFAULT NULL,
 		avatar TEXT,
 		friends TEXT NULL,
 		stats TEXT NULL,
@@ -31,7 +33,8 @@ db.exec(`
 	);
 
 	CREATE TABLE IF NOT EXISTS tournaments (
-		id TEXT PRIMARY KEY,
+		internal_id INTEGER PRIMARY KEY AUTOINCREMENT,
+		id TEXT UNIQUE NOT NULL,
 		size INTEGER,
 		winner TEXT,
 		started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -39,7 +42,8 @@ db.exec(`
 	);
 
 	CREATE TABLE IF NOT EXISTS matches (
-		id TEXT PRIMARY KEY,
+		internal_id INTEGER PRIMARY KEY AUTOINCREMENT,
+		id TEXT UNIQUE NOT NULL,
 		tournament_id TEXT NOT NULL,
 		player_left INTEGER,
 		player_right INTEGER,
