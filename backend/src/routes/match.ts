@@ -10,9 +10,7 @@ export default async function matchRoutes(fastify: FastifyInstance) {
 			return reply.code(200).send({ success: true, data: match });
 		} catch (error: any) {
 			console.log(error.message);
-			return reply
-				.code(404)
-				.send({ success: false, message: "Match not found" });
+			return reply.code(404).send({ success: false, message: "Match not found" });
 		}
 	});
 }

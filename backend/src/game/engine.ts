@@ -26,11 +26,7 @@ export function maybeCompleteGame(match: Match): void {
 		match.inputs.left = 0;
 		match.inputs.right = 0;
 		if (gameEnded) {
-			console.log(
-				`[game] room=${match.id} event=game-over winner=${
-					state.winner ?? "unknown"
-				}`
-			);
+			console.log(`[game] room=${match.id} event=game-over winner=${state.winner ?? "unknown"}`);
 		}
 	}
 }
@@ -44,15 +40,9 @@ export function stepMatch(match: Match, dt: number): void {
 		const paddle = state.paddles[side];
 		const input = inputs[side];
 		const previousY = paddle.y;
-		paddle.y = clamp(
-			paddle.y + input * GAME_CONSTANTS.PADDLE_SPEED * dt,
-			0,
-			maxPaddleY
-		);
+		paddle.y = clamp(paddle.y + input * GAME_CONSTANTS.PADDLE_SPEED * dt, 0, maxPaddleY);
 		if (Math.abs(paddle.y - previousY) > 0.001) {
-			console.log(
-				`[paddle] room=${match.id} paddle=${side} y=${paddle.y.toFixed(1)}`
-			);
+			console.log(`[paddle] room=${match.id} paddle=${side} y=${paddle.y.toFixed(1)}`);
 		}
 	}
 
@@ -71,10 +61,7 @@ export function stepMatch(match: Match, dt: number): void {
 
 	const PADDLE_X = {
 		left: GAME_CONSTANTS.PADDLE_MARGIN,
-		right:
-			GAME_CONSTANTS.FIELD_WIDTH -
-			GAME_CONSTANTS.PADDLE_MARGIN -
-			GAME_CONSTANTS.PADDLE_WIDTH,
+		right: GAME_CONSTANTS.FIELD_WIDTH - GAME_CONSTANTS.PADDLE_MARGIN - GAME_CONSTANTS.PADDLE_WIDTH,
 	} as const;
 
 	const hitsLeft =
@@ -103,18 +90,14 @@ export function stepMatch(match: Match, dt: number): void {
 		// Right player scored
 		state.score.right += 1;
 		updateMatchDB(match.id, state.score.left, state.score.right); // Update database
-		console.log(
-			`[score] room=${match.id} scorer=right score=${state.score.left}-${state.score.right}`
-		);
+		console.log(`[score] room=${match.id} scorer=right score=${state.score.left}-${state.score.right}`);
 		maybeCompleteGame(match);
 		resetBall(state, 1);
 	} else if (ball.x > state.width + GAME_CONSTANTS.SCORE_OUT_MARGIN) {
 		// Left player scored
 		state.score.left += 1;
 		updateMatchDB(match.id, state.score.left, state.score.right); // Update database
-		console.log(
-			`[score] room=${match.id} scorer=left score=${state.score.left}-${state.score.right}`
-		);
+		console.log(`[score] room=${match.id} scorer=left score=${state.score.left}-${state.score.right}`);
 		maybeCompleteGame(match);
 		resetBall(state, -1);
 	}

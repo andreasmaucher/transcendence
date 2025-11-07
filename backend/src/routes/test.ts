@@ -12,9 +12,7 @@ export default async function testRoutes(fastify: FastifyInstance) {
 			return reply.code(200).send({ success: true, data: users });
 		} catch (error: any) {
 			console.log(error.message);
-			return reply
-				.code(500)
-				.send({ success: false, message: "Unable to retrieve users" });
+			return reply.code(500).send({ success: false, message: "Unable to retrieve users" });
 		}
 	});
 
@@ -26,9 +24,7 @@ export default async function testRoutes(fastify: FastifyInstance) {
 			return reply.code(200).send({ success: true, data: matches });
 		} catch (error: any) {
 			console.log(error.message);
-			return reply
-				.code(500)
-				.send({ success: false, message: "Unable to retrieve matches" });
+			return reply.code(500).send({ success: false, message: "Unable to retrieve matches" });
 		}
 	});
 
@@ -40,10 +36,7 @@ export default async function testRoutes(fastify: FastifyInstance) {
 			return reply.code(200).send({ success: true, data: tournaments });
 		} catch (error: any) {
 			console.log(error.message);
-			return reply.code(500).send({
-				success: false,
-				message: "Unable to retrieve tournaments",
-			});
+			return reply.code(500).send({ success: false, message: "Unable to retrieve tournaments" });
 		}
 	});
 }

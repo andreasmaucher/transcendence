@@ -8,8 +8,6 @@ export async function uploadAvatar(filePath: string) {
 		console.log("Avatar uploaded:", result.secure_url);
 		return result.secure_url;
 	} catch (error) {
-		throw new Error(
-			"[Cloudinary] Failed to upload avatar: " + (error as Error).message
-		);
+		throw new Error("[Cloudinary] Failed to upload avatar: " + (error as Error).message);
 	}
 }

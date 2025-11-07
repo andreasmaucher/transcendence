@@ -14,10 +14,7 @@ export function createMatch(id: string, tournament_id: string): Match {
 	try {
 		startMatchDB(match.id, tournament_id, 0, 0);
 	} catch (err) {
-		console.error(
-			`[db] Failed to insert match ${id} for tournament ${tournament_id}:`,
-			err
-		);
+		console.error(`[db] Failed to insert match ${id} for tournament ${tournament_id}:`, err);
 	}
 	return match;
 }

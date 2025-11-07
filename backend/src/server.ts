@@ -10,10 +10,7 @@ import matchRoutes from "./routes/match.js";
 import tournamentRoutes from "./routes/tournament.js";
 import userRoutes from "./routes/user.js";
 import testRoutes from "./routes/test.js";
-import {
-	forEachTournament,
-	getOrCreateTournament,
-} from "./game/tournamentManager.js";
+import { forEachTournament, getOrCreateTournament } from "./game/tournamentManager.js";
 
 export type PaddleSide = "left" | "right";
 type PaddleInput = -1 | 0 | 1; // -1=up, 0=stop, 1=down
@@ -64,19 +61,15 @@ fastify.post("/api/control", async (request, reply) => {
 		return { error: "tournamentId, paddle and direction are required" };
 	}
 	const tournament = getOrCreateTournament(tournamentId);
-	const input: PaddleInput =
-		direction === "up" ? -1 : direction === "down" ? 1 : 0;
+	const input: PaddleInput = direction === "up" ? -1 : direction === "down" ? 1 : 0;
 	tournament.matches[0].inputs[paddle] = input; // hardcoded first match for now
 	return { ok: true };
 });
 
-fastify.get<{ Params: { id: string } }>(
-	"/api/tournaments/:id/state",
-	async (request) => {
-		const tournament = getOrCreateTournament(request.params.id);
-		return buildStatePayload(tournament.matches[0]); // hardcoded first match for now
-	}
-);
+fastify.get<{ Params: { id: string } }>("/api/tournaments/:id/state", async (request) => {
+	const tournament = getOrCreateTournament(request.params.id);
+	return buildStatePayload(tournament.matches[0]); // hardcoded first match for now
+});
 
 await fastify.register(matchRoutes);
 await fastify.register(tournamentRoutes);

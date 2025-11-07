@@ -1,15 +1,7 @@
 import { FastifyInstance } from "fastify";
-import {
-	getJsonUserByUsername,
-	getUsername,
-} from "../database/users/getters.js";
+import { getJsonUserByUsername, getUsername } from "../database/users/getters.js";
 import { verifyPassword, hashPassword } from "../user/password.js";
-import {
-	registerUserDB,
-	updateUsernameDB,
-	updatePasswordDB,
-	updateAvatarDB,
-} from "../database/users/setters.js";
+import { registerUserDB, updateUsernameDB, updatePasswordDB, updateAvatarDB } from "../database/users/setters.js";
 import {
 	createSessionToken,
 	makeSessionCookie,
@@ -30,9 +22,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 			return reply.code(200).send({ success: true, data: user });
 		} catch (error: any) {
 			console.log(error.message);
-			return reply
-				.code(404)
-				.send({ success: false, message: "User not found" });
+			return reply.code(404).send({ success: false, message: "User not found" });
 		}
 	});
 
@@ -47,17 +37,11 @@ export default async function userRoutes(fastify: FastifyInstance) {
 	// LOGIN existing user
 	fastify.post("/api/user/login", async (request, reply) => {
 		// Read posted username and password
-		const { username, password } = request.body as {
-			username: string;
-			password: string;
-		};
+		const { username, password } = request.body as { username: string; password: string };
 
 		// Check if the password matches the stored hash for this username
 		const isValid = await verifyPassword(username, password);
-		if (!isValid)
-			return reply
-				.code(401)
-				.send({ success: false, message: "Invalid credentials" });
+		if (!isValid) return reply.code(401).send({ success: false, message: "Invalid credentials" });
 
 		// Look up the full user row to get the numeric id
 		const row = getJsonUserByUsername(username);
@@ -66,14 +50,9 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		//const { token, maxAgeSec } = createSessionToken(String(row.id), 60);
 		const { token, maxAgeSec } = createSessionToken(username, 60);
 		const secure = process.env.NODE_ENV === "production"; // only set Secure over HTTPS
-		reply.header(
-			"Set-Cookie",
-			makeSessionCookie(token, { secure, maxAgeSec })
-		);
+		reply.header("Set-Cookie", makeSessionCookie(token, { secure, maxAgeSec }));
 
-		return reply
-			.code(200)
-			.send({ success: true, message: "Login successful" });
+		return reply.code(200).send({ success: true, message: "Login successful" });
 	});
 
 	// REGISTER a new user
@@ -87,16 +66,10 @@ export default async function userRoutes(fastify: FastifyInstance) {
 
 		// Basic validation: required fields
 		if (!username || !password)
-			return reply.code(400).send({
-				success: false,
-				message: "Username and password are required",
-			});
+			return reply.code(400).send({ success: false, message: "Username and password are required" });
 
 		// Duplicate username check (clear message for users)
-		if (getUsername(username))
-			return reply
-				.code(409)
-				.send({ success: false, message: "Username already taken" });
+		if (getUsername(username)) return reply.code(409).send({ success: false, message: "Username already taken" });
 
 		try {
 			// Store default avatar if not provided
@@ -112,19 +85,12 @@ export default async function userRoutes(fastify: FastifyInstance) {
 			const row = getJsonUserByUsername(username);
 			const { token, maxAgeSec } = createSessionToken(username, 60);
 			const secure = process.env.NODE_ENV === "production";
-			reply.header(
-				"Set-Cookie",
-				makeSessionCookie(token, { secure, maxAgeSec })
-			);
+			reply.header("Set-Cookie", makeSessionCookie(token, { secure, maxAgeSec }));
 
-			return reply
-				.code(200)
-				.send({ success: true, message: "Registration successful" });
+			return reply.code(200).send({ success: true, message: "Registration successful" });
 		} catch (error: any) {
 			console.log(error.message);
-			return reply
-				.code(400)
-				.send({ success: false, message: "Unable to register user" });
+			return reply.code(400).send({ success: false, message: "Unable to register user" });
 		}
 	});
 
@@ -139,73 +105,42 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		};
 
 		// Basic validation: required fields
-		if (!username)
-			return reply
-				.code(400)
-				.send({ success: false, message: "Username is required" });
+		if (!username) return reply.code(400).send({ success: false, message: "Username is required" });
 
-		const updates = [newUsername, password, avatar].filter(
-			(v) => v !== undefined
-		);
+		const updates = [newUsername, password, avatar].filter((v) => v !== undefined);
 
-		if (updates.length !== 1)
-			return reply
-				.code(400)
-				.send({ success: false, message: "Too many values to update" });
+		if (updates.length !== 1) return reply.code(400).send({ success: false, message: "Too many values to update" });
 
 		if (newUsername) {
 			try {
 				if (getUsername(newUsername))
-					return reply.code(409).send({
-						success: false,
-						message: "Username already in use",
-					});
+					return reply.code(409).send({ success: false, message: "Username already in use" });
 				updateUsernameDB(username, newUsername);
-				return reply.code(200).send({
-					success: true,
-					message: "Username updated successfully",
-				});
+				return reply.code(200).send({ success: true, message: "Username updated successfully" });
 			} catch (error: any) {
 				console.log(error.message);
-				return reply.code(400).send({
-					success: false,
-					message: "Unable to update username",
-				});
+				return reply.code(400).send({ success: false, message: "Unable to update username" });
 			}
 		} else if (password) {
 			try {
 				const hashedPassword = await hashPassword(password);
 				updatePasswordDB(username, hashedPassword);
-				return reply.code(200).send({
-					success: true,
-					message: "Password updated successfully",
-				});
+				return reply.code(200).send({ success: true, message: "Password updated successfully" });
 			} catch (error: any) {
 				console.log(error.message);
-				return reply.code(400).send({
-					success: false,
-					message: "Unable to update password",
-				});
+				return reply.code(400).send({ success: false, message: "Unable to update password" });
 			}
 		} else if (avatar) {
 			try {
 				const avatarUrl = await uploadAvatar(avatar);
 				updateAvatarDB(username, avatarUrl);
-				return reply.code(200).send({
-					success: true,
-					message: "Avatar updated successfully",
-				});
+				return reply.code(200).send({ success: true, message: "Avatar updated successfully" });
 			} catch (error: any) {
 				console.log(error.message);
-				return reply.code(400).send({
-					success: false,
-					message: "Unable to update avatar",
-				});
+				return reply.code(400).send({ success: false, message: "Unable to update avatar" });
 			}
 		} else {
-			return reply
-				.code(400)
-				.send({ success: false, message: "No valid fields to update" });
+			return reply.code(400).send({ success: false, message: "No valid fields to update" });
 		}
 	});
 
@@ -216,18 +151,14 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		const sid = cookies["sid"];
 		if (!sid) {
 			clearSessionCookie(reply);
-			return reply
-				.code(401)
-				.send({ success: false, message: "Unauthorized" });
+			return reply.code(401).send({ success: false, message: "Unauthorized" });
 		}
 
 		// Verify the session token and get the user id
 		const payload = verifySessionToken(sid);
 		if (!payload) {
 			clearSessionCookie(reply);
-			return reply
-				.code(401)
-				.send({ success: false, message: "Unauthorized" });
+			return reply.code(401).send({ success: false, message: "Unauthorized" });
 		}
 
 		// Look up the user by username in the database
@@ -237,19 +168,14 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		} catch (error: any) {
 			console.log(error.message);
 			clearSessionCookie(reply);
-			return reply
-				.code(404)
-				.send({ success: false, message: "User not found" });
+			return reply.code(404).send({ success: false, message: "User not found" });
 		}
 	});
 
 	// LOGOUT user: clears the session cookie on the client
 	fastify.post("/api/user/logout", async (_request, reply) => {
 		// Expire the cookie immediately
-		reply.header(
-			"Set-Cookie",
-			"sid=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0"
-		);
+		reply.header("Set-Cookie", "sid=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0");
 		return reply.code(200).send({ success: true });
 	});
 }

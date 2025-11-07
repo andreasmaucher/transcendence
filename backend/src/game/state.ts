@@ -44,8 +44,7 @@ export function resetBall(state: GameState, direction: -1 | 1): void {
 	state.ball.x = state.width / 2;
 	state.ball.y = state.height / 2;
 	state.ball.vx = direction * GAME_CONSTANTS.BALL_SPEED;
-	state.ball.vy =
-		GAME_CONSTANTS.BALL_SPEED * GAME_CONSTANTS.INITIAL_BALL_VY_RATIO;
+	state.ball.vy = GAME_CONSTANTS.BALL_SPEED * GAME_CONSTANTS.INITIAL_BALL_VY_RATIO;
 }
 
 export function clamp(value: number, min: number, max: number): number {

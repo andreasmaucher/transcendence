@@ -10,10 +10,7 @@ export function resetTournamentsForTest(): void {
 	tournaments.clear();
 }
 
-export function initTournamentMatches(
-	tournamentId: string,
-	size: number
-): Match[] {
+export function initTournamentMatches(tournamentId: string, size: number): Match[] {
 	const matches: Match[] = [];
 	for (let i = 0; i < size / 2; i++) {
 		let matchId = crypto.randomUUID();
@@ -35,10 +32,7 @@ export function getOrCreateTournament(id: string): Tournament {
 		try {
 			startTournamentDB(tournament.id, tournament.state.size);
 		} catch (err) {
-			console.error(
-				`[db] Failed to insert tournament ${tournament.id}:`,
-				err
-			);
+			console.error(`[db] Failed to insert tournament ${tournament.id}:`, err);
 		}
 		tournament.matches = initTournamentMatches(tournamentId, 2); //hardcoded size of 2 for now
 		tournaments.set(tournament.id, tournament);
