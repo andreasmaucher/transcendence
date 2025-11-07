@@ -22,7 +22,7 @@ export function maybeCompleteGame(match: Match): void {
 	}
 	if (state.gameOver) {
 		endMatchDB(match.id, state.winner); // Update database
-		endTournamentDB(match.tournament_id, state.winner); // hardcoded for the moment
+		//endTournamentDB(match.tournament_id, state.winner); // hardcoded for the moment
 		match.inputs.left = 0;
 		match.inputs.right = 0;
 		if (gameEnded) {
@@ -33,6 +33,7 @@ export function maybeCompleteGame(match: Match): void {
 
 export function stepMatch(match: Match, dt: number): void {
 	const { state, inputs } = match;
+	if (!match.isRunning) return; // Game logic starts only when the match starts
 	if (state.gameOver) return;
 
 	const maxPaddleY = state.height - GAME_CONSTANTS.PADDLE_HEIGHT;

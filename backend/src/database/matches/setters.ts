@@ -1,14 +1,58 @@
 import db from "../db_init.js";
 
-export function startMatchDB(id: string, tournament_id: string, playerLeftId?: number, playerRightId?: number): void {
+export function createMatchDB(id: string, tournamentId: string | undefined): void {
 	const stmt = db.prepare(`
-		INSERT INTO matches (id, tournament_id, player_left, player_right, started_at)
-		VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+		INSERT INTO matches (id, tournament_id)
+		VALUES (?, ?)
 	`);
 
-	const result = stmt.run(id, tournament_id, playerLeftId ?? null, playerRightId ?? null);
+	const result = stmt.run(id, tournamentId);
 	if (result.changes === 0) throw new Error(`[DB] Failed to create match ${id}`); // If DB run fails, throws error
-	else console.log(`[DB] Created new match ${id} for tournament ${tournament_id}`);
+	else {
+		if (tournamentId) console.log(`[DB] Created new match ${id} for tournament ${tournamentId}`);
+		else console.log(`[DB] Created new match ${id} for single game`);
+	}
+}
+
+export function setPlayerLeftMatchDB(id: string, playerLeftId: string): void {
+	const stmt = db.prepare(`
+		UPDATE matches
+		SET player_left = ?
+		WHERE id = ?
+	`);
+
+	const result = stmt.run(playerLeftId, id);
+	if (result.changes === 0)
+		throw new Error(`[DB] Failed to add left player to match ${id}`); // If DB run fails, throws error
+	else console.log(`[DB] Added left player for match ${id}`);
+}
+
+export function setPlayerRightMatchDB(id: string, playerRightId: string): void {
+	const stmt = db.prepare(`
+		UPDATE matches
+		SET player_right = ?
+		WHERE id = ?
+	`);
+
+	const result = stmt.run(playerRightId, id);
+	if (result.changes === 0)
+		throw new Error(`[DB] Failed to add right player to match ${id}`); // If DB run fails, throws error
+	else console.log(`[DB] Added right player for match ${id}`);
+}
+
+export function startMatchDB(id: string, tournamentId?: string): void {
+	const stmt = db.prepare(`
+		UPDATE matches
+		SET started_at = CURRENT_TIMESTAMP
+		WHERE id = ?
+	`);
+
+	const result = stmt.run(id);
+	if (result.changes === 0) throw new Error(`[DB] Failed to start match ${id}`); // If DB run fails, throws error
+	else {
+		if (tournamentId) console.log(`[DB] Started new match ${id} for tournament ${tournamentId}`);
+		else console.log(`[DB] Started new match ${id} for single game`);
+	}
 }
 
 export function updateMatchDB(id: string, left: number, right: number): void {
@@ -23,7 +67,7 @@ export function updateMatchDB(id: string, left: number, right: number): void {
 	else console.log(`[DB] Match ${id} updated: ${left}-${right}`);
 }
 
-export function endMatchDB(id: string, winner: string | null): void {
+export function endMatchDB(id: string, winner: string | undefined): void {
 	const stmt = db.prepare(`
 		UPDATE matches
 		SET winner = ?, ended_at = CURRENT_TIMESTAMP
@@ -33,4 +77,9 @@ export function endMatchDB(id: string, winner: string | null): void {
 	const result = stmt.run(winner, id);
 	if (result.changes === 0) throw new Error(`[DB] Failed to end match ${id}`); // If DB run fails, throws error
 	else console.log(`[DB] Match ${id} ended: winner is ${winner ?? "null"}`);
+}
+
+export function removeMatchDB(id: string): void {
+	const stmt = db.prepare("DELETE FROM users WHERE id = ?");
+	stmt.run(id);
 }

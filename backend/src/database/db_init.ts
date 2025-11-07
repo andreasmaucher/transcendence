@@ -44,15 +44,17 @@ db.exec(`
 	CREATE TABLE IF NOT EXISTS matches (
 		internal_id INTEGER PRIMARY KEY AUTOINCREMENT,
 		id TEXT UNIQUE NOT NULL,
-		tournament_id TEXT NOT NULL,
-		player_left INTEGER,
-		player_right INTEGER,
+		tournament_id TEXT,
+		player_left TEXT,
+		player_right TEXT,
 		score_left INTEGER DEFAULT 0,
 		score_right INTEGER DEFAULT 0,
 		winner TEXT,
 		started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		ended_at DATETIME,
 		FOREIGN KEY (tournament_id) REFERENCES tournaments (id)
+		FOREIGN KEY (player_left) REFERENCES users (username),
+		FOREIGN KEY (player_right) REFERENCES users (username)
 	);
 `);
 

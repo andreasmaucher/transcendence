@@ -1,11 +1,10 @@
 // creates a fresh game with everything in starting position
 import { GAME_CONSTANTS } from "../config/constants.js";
-import type { GameState, TournamentState } from "../types/game.js";
+import type { MatchState, TournamentState } from "../types/game.js";
 
-export function createInitialTournamentState(): TournamentState {
+export function createInitialTournamentState(size: number): TournamentState {
 	return {
-		//hardcoded for now
-		size: 0,
+		size: size,
 		tournamentOver: false,
 		winner: null,
 	};
@@ -13,7 +12,7 @@ export function createInitialTournamentState(): TournamentState {
 
 // creates a fresh game with everything in starting position
 // every tick, the backend updates this state and broadcasts a snapshot to clients
-export function createInitialMatchState(): GameState {
+export function createInitialMatchState(): MatchState {
 	return {
 		width: GAME_CONSTANTS.FIELD_WIDTH,
 		height: GAME_CONSTANTS.FIELD_HEIGHT,
@@ -35,12 +34,12 @@ export function createInitialMatchState(): GameState {
 		score: { left: 0, right: 0 },
 		tick: 0,
 		gameOver: false,
-		winner: null,
+		winner: undefined,
 		winningScore: GAME_CONSTANTS.WINNING_SCORE,
 	};
 }
 
-export function resetBall(state: GameState, direction: -1 | 1): void {
+export function resetBall(state: MatchState, direction: -1 | 1): void {
 	state.ball.x = state.width / 2;
 	state.ball.y = state.height / 2;
 	state.ball.vx = direction * GAME_CONSTANTS.BALL_SPEED;

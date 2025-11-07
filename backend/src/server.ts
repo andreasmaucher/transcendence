@@ -10,7 +10,8 @@ import matchRoutes from "./routes/match.js";
 import tournamentRoutes from "./routes/tournament.js";
 import userRoutes from "./routes/user.js";
 import testRoutes from "./routes/test.js";
-import { forEachTournament, getOrCreateTournament } from "./game/tournamentManager.js";
+import { forEachTournament, getOrCreateTournament, getTournament } from "./game/tournamentManager.js";
+import { forEachSingleGame } from "./game/singleGameManager.js";
 
 export type PaddleSide = "left" | "right";
 type PaddleInput = -1 | 0 | 1; // -1=up, 0=stop, 1=down
@@ -51,8 +52,9 @@ fastify.get("/api/constants", async () => ({
 }));
 
 fastify.post("/api/control", async (request, reply) => {
-	const { tournamentId, paddle, direction } = request.body as {
+	const { tournamentId, singleGameId, paddle, direction } = request.body as {
 		tournamentId?: string;
+		singleGameId?: string;
 		paddle?: PaddleSide;
 		direction?: "up" | "down" | "stop";
 	};
@@ -60,15 +62,19 @@ fastify.post("/api/control", async (request, reply) => {
 		reply.code(400);
 		return { error: "tournamentId, paddle and direction are required" };
 	}
-	const tournament = getOrCreateTournament(tournamentId);
-	const input: PaddleInput = direction === "up" ? -1 : direction === "down" ? 1 : 0;
-	tournament.matches[0].inputs[paddle] = input; // hardcoded first match for now
-	return { ok: true };
+
+	const tournament = getTournament(tournamentId);
+	if (tournament) {
+		const input: PaddleInput = direction === "up" ? -1 : direction === "down" ? 1 : 0;
+		tournament.matches[0].inputs[paddle] = input; // hardcoded first match for now
+		return { ok: true };
+	} else return { ok: false };
 });
 
 fastify.get<{ Params: { id: string } }>("/api/tournaments/:id/state", async (request) => {
-	const tournament = getOrCreateTournament(request.params.id);
-	return buildStatePayload(tournament.matches[0]); // hardcoded first match for now
+	const tournament = getTournament(request.params.id);
+	if (tournament) return buildStatePayload(tournament.matches[0]); // hardcoded first match for now
+	else return null;
 });
 
 await fastify.register(matchRoutes);
@@ -87,6 +93,11 @@ setInterval(() => {
 	forEachTournament((tournament) => {
 		stepMatch(tournament.matches[0], dt || 1 / UPDATE_FPS); // hardcoded first match for now
 		broadcast(tournament.matches[0]);
+	});
+	forEachSingleGame((singleGame) => {
+		const match = singleGame.match;
+		stepMatch(match, dt || 1 / UPDATE_FPS);
+		broadcast(match);
 	});
 }, 1000 / UPDATE_FPS);
 

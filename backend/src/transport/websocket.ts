@@ -5,6 +5,7 @@ import { getOrCreateTournament } from "../game/tournamentManager.js";
 import { buildStatePayload, broadcast } from "./broadcaster.js";
 import { GAME_CONSTANTS } from "../config/constants.js";
 import { parseCookies, verifySessionToken } from "../auth/session.js";
+import { getOrCreateSingleGame } from "../game/singleGameManager.js";
 
 function authenticateWebSocket(request: any, socket: any) {
 	const cookies = parseCookies(request.headers.cookie);
@@ -38,7 +39,7 @@ function resetMatchState(match: Match) {
 		score: { left: 0, right: 0 },
 		tick: 0,
 		gameOver: false,
-		winner: null,
+		winner: undefined,
 		winningScore: GAME_CONSTANTS.WINNING_SCORE,
 	};
 	match.inputs = { left: 0, right: 0 };
@@ -47,46 +48,92 @@ function resetMatchState(match: Match) {
 }
 
 export function registerWebsocketRoute(fastify: FastifyInstance) {
-	// Register a single game
-	fastify.get<{ Params: { id: string } }>("/api/single-game/:id/ws", { websocket: true }, (socket: any, request) => {
-		const payload = authenticateWebSocket(request, socket);
-		if (!payload) return;
+	// Register/connect to a local single game
+	fastify.get<{ Params: { id: string } }>(
+		"/api/local-single-game/:id/ws",
+		{ websocket: true },
+		(socket: any, request: any) => {
+			const payload = authenticateWebSocket(request, socket);
+			if (!payload) return;
 
-		const tournamentId = request.params.id;
-		if (!tournamentId) {
-			socket.close(1011, "Room id is missing");
-			return;
-		}
-
-		const tournament = getOrCreateTournament(tournamentId);
-		const match: Match = tournament.matches[0];
-		socket.username = payload.username;
-		match.clients.add(socket);
-
-		socket.send(JSON.stringify(buildStatePayload(match)));
-
-		socket.on("message", (raw: RawData) => {
-			let msg;
-			try {
-				msg = JSON.parse(raw.toString());
-			} catch {
+			const singleGameId = request.params.id;
+			if (!singleGameId) {
+				socket.close(1011, "singleGameId is missing");
 				return;
 			}
 
-			if (msg.type === "input") {
-				const dir = msg.direction === "up" ? -1 : msg.direction === "down" ? 1 : 0;
-				match.inputs[msg.paddle as PaddleSide] = dir;
-			} else if (msg.type === "reset") {
-				resetMatchState(match);
+			const singleGame = getOrCreateSingleGame(singleGameId, payload.username, "local");
+			const match: Match = singleGame.match;
+			socket.username = payload.username;
+			match.clients.add(socket);
+
+			socket.send(JSON.stringify(buildStatePayload(match)));
+
+			socket.on("message", (raw: RawData) => {
+				let msg;
+				try {
+					msg = JSON.parse(raw.toString());
+				} catch {
+					return;
+				}
+
+				if (msg.type === "input") {
+					const dir = msg.direction === "up" ? -1 : msg.direction === "down" ? 1 : 0;
+					match.inputs[msg.paddle as PaddleSide] = dir;
+				} else if (msg.type === "reset") {
+					resetMatchState(match);
+				}
+			});
+
+			socket.on("close", () => match.clients.delete(socket));
+			socket.on("error", (err: any) => console.error(`[ws error] match=${match.id}`, err));
+		}
+	);
+
+	// Register/connect to a single game (not local)
+	fastify.get<{ Params: { id: string } }>(
+		"/api/single-game/:id/ws",
+		{ websocket: true },
+		(socket: any, request: any) => {
+			const payload = authenticateWebSocket(request, socket);
+			if (!payload) return;
+
+			const singleGameId = request.params.id;
+			if (!singleGameId) {
+				socket.close(1011, "singleGameId is missing");
+				return;
 			}
-		});
 
-		socket.on("close", () => match.clients.delete(socket));
-		socket.on("error", (err: any) => console.error(`[ws error] match=${match.id}`, err));
-	});
+			const singleGame = getOrCreateSingleGame(singleGameId, payload.username, "remote");
+			const match: Match = singleGame.match;
+			socket.username = payload.username;
+			match.clients.add(socket);
 
-	// Register a tournament
-	fastify.get<{ Params: { id: string } }>("/api/tournament/:id/ws", { websocket: true }, (socket, request) => {
+			socket.send(JSON.stringify(buildStatePayload(match)));
+
+			socket.on("message", (raw: RawData) => {
+				let msg;
+				try {
+					msg = JSON.parse(raw.toString());
+				} catch {
+					return;
+				}
+
+				if (msg.type === "input") {
+					const dir = msg.direction === "up" ? -1 : msg.direction === "down" ? 1 : 0;
+					match.inputs[msg.paddle as PaddleSide] = dir;
+				} else if (msg.type === "reset") {
+					resetMatchState(match);
+				}
+			});
+
+			socket.on("close", () => match.clients.delete(socket));
+			socket.on("error", (err: any) => console.error(`[ws error] match=${match.id}`, err));
+		}
+	);
+
+	// Register/connect to a tournament
+	/* fastify.get<{ Params: { id: string } }>("/api/tournament/:id/ws", { websocket: true }, (socket, request) => {
 		const payload = authenticateWebSocket(request, socket);
 		if (!payload) return;
 
@@ -121,7 +168,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 
 		socket.on("close", () => match.clients.delete(socket));
 		socket.on("error", (err) => console.error(`[ws error] match=${match.id}`, err));
-	});
+	}); */
 }
 
 /* export function registerWebsocketRoute(fastify: FastifyInstance) {

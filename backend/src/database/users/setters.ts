@@ -70,3 +70,8 @@ export function updateStatsDB(username: string, stats: string) {
 		throw new Error(`[DB] Failed to update stats for user ${username}`); // If DB run fails, throws error
 	else console.log(`[DB] Stats updated for user ${username}`);
 }
+
+export function removeUserDB(username: string): void {
+	const stmt = db.prepare("DELETE FROM users WHERE username = ?");
+	stmt.run(username);
+}

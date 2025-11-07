@@ -7,17 +7,8 @@ import { fetchGameConstants } from "./api/http";
 import { ensureAuthenticated, renderAuthHeader } from "./auth/ui";
 import { WS_PROTOCOL, WS_HOST, WS_PORT, ROOM_ID } from "./config/endpoints";
 import { draw } from "./rendering/canvas";
-import {
-	applyBackendState,
-	type BackendStateMessage,
-	type State,
-} from "./game/state";
-import {
-	setupInputs,
-	setActiveSocket,
-	queueInput,
-	flushInputs,
-} from "./game/input";
+import { applyBackendState, type BackendStateMessage, type State } from "./game/state";
+import { setupInputs, setActiveSocket, queueInput, flushInputs } from "./game/input";
 
 // global constants fetched from backend
 let GAME_CONSTANTS: GameConstants | null = null;
@@ -25,8 +16,7 @@ let GAME_CONSTANTS: GameConstants | null = null;
 // Make the initial game state, paddles starting centered
 function createInitialState(): State {
 	if (!GAME_CONSTANTS) throw new Error("Game constants not loaded");
-	const centerY =
-		(GAME_CONSTANTS.fieldHeight - GAME_CONSTANTS.paddleHeight) / 2;
+	const centerY = (GAME_CONSTANTS.fieldHeight - GAME_CONSTANTS.paddleHeight) / 2;
 	const left = {
 		x: GAME_CONSTANTS.paddleMargin,
 		y: centerY,
@@ -35,10 +25,7 @@ function createInitialState(): State {
 		speed: GAME_CONSTANTS.paddleSpeed,
 	};
 	const right = {
-		x:
-			GAME_CONSTANTS.fieldWidth -
-			GAME_CONSTANTS.paddleMargin -
-			GAME_CONSTANTS.paddleWidth,
+		x: GAME_CONSTANTS.fieldWidth - GAME_CONSTANTS.paddleMargin - GAME_CONSTANTS.paddleWidth,
 		y: centerY,
 		w: GAME_CONSTANTS.paddleWidth,
 		h: GAME_CONSTANTS.paddleHeight,
@@ -69,7 +56,7 @@ function createInitialState(): State {
 // also implements autmatic reconnection in case the connection is lost
 function connectToBackend(state: State): void {
 	// construct the WebSocket URL using the protocol, host, and port + room ID
-	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/tournament/${ROOM_ID}/ws`;
+	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/local-single-game/${ROOM_ID}/ws`;
 	// create a new WebSocket connection to the backend
 	const ws = new WebSocket(wsUrl);
 	setActiveSocket(ws); // store the WebSocket connection in the activeSocket variable

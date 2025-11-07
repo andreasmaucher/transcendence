@@ -1,6 +1,12 @@
 // Shared backend game types
 import type { WebSocket } from "ws";
 
+export type SingleGame = {
+	id: string;
+	type: string;
+	match: Match;
+};
+
 export type TournamentState = {
 	size: number;
 	tournamentOver: boolean;
@@ -36,7 +42,7 @@ export type BallState = {
 	r: number;
 };
 
-export type GameState = {
+export type MatchState = {
 	width: number;
 	height: number;
 	paddles: Record<PaddleSide, PaddleState>;
@@ -44,27 +50,30 @@ export type GameState = {
 	score: Record<PaddleSide, number>;
 	tick: number;
 	gameOver: boolean;
-	winner: PaddleSide | null;
+	winner: PaddleSide | undefined;
 	winningScore: number;
 };
 
 export type Match = {
 	id: string;
 	tournament_id: string;
-	state: GameState;
+	isRunning: boolean;
+	state: MatchState;
 	inputs: Record<PaddleSide, PaddleInput>;
+	players: { left: string | undefined; right: string | undefined };
 	clients: Set<WebSocket>;
 };
 
 export type MatchDB = {
 	internal_id: number;
 	id: string;
-	tournament_id: string;
-	player_left_id: number;
-	player_right_id: number;
+	tournament_id: string | null;
+	player_left_id: string | null;
+	player_right_id: string | null;
 	score_left: number;
 	score_right: number;
 	winner: string | null;
-	started_at: string;
+	is_winner_guest: boolean;
+	started_at: string | null;
 	ended_at: string | null;
 };
