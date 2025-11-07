@@ -14,30 +14,25 @@ export function createMatchDB(id: string, tournamentId: string | undefined): voi
 	}
 }
 
-export function setPlayerLeftMatchDB(id: string, playerLeftId: string): void {
-	const stmt = db.prepare(`
-		UPDATE matches
-		SET player_left = ?
-		WHERE id = ?
-	`);
-
-	const result = stmt.run(playerLeftId, id);
+export function addPlayerMatchDB(id: string, playerId: string, side: string): void {
+	let stmt = null;
+	if (side == "left") {
+		stmt = db.prepare(`
+			UPDATE matches
+			SET player_left = ?
+			WHERE id = ?
+		`);
+	} else {
+		stmt = db.prepare(`
+			UPDATE matches
+			SET player_right = ?
+			WHERE id = ?
+		`);
+	}
+	const result = stmt.run(playerId, id);
 	if (result.changes === 0)
-		throw new Error(`[DB] Failed to add left player to match ${id}`); // If DB run fails, throws error
-	else console.log(`[DB] Added left player for match ${id}`);
-}
-
-export function setPlayerRightMatchDB(id: string, playerRightId: string): void {
-	const stmt = db.prepare(`
-		UPDATE matches
-		SET player_right = ?
-		WHERE id = ?
-	`);
-
-	const result = stmt.run(playerRightId, id);
-	if (result.changes === 0)
-		throw new Error(`[DB] Failed to add right player to match ${id}`); // If DB run fails, throws error
-	else console.log(`[DB] Added right player for match ${id}`);
+		throw new Error(`[DB] Failed to add ${side} player to match ${id}`); // If DB run fails, throws error
+	else console.log(`[DB] Added ${side} player for match ${id}`);
 }
 
 export function startMatchDB(id: string, tournamentId?: string): void {

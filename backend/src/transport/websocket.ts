@@ -6,6 +6,8 @@ import { buildStatePayload, broadcast } from "./broadcaster.js";
 import { GAME_CONSTANTS } from "../config/constants.js";
 import { parseCookies, verifySessionToken } from "../auth/session.js";
 import { getOrCreateSingleGame } from "../game/singleGameManager.js";
+import { addPlayerToMatch } from "../game/matchManager.js";
+import { checkMatchFull } from "../game/matchManager.js";
 
 function authenticateWebSocket(request: any, socket: any) {
 	const cookies = parseCookies(request.headers.cookie);
@@ -107,28 +109,34 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			const singleGame = getOrCreateSingleGame(singleGameId, payload.username, "remote");
 			const match: Match = singleGame.match;
 			socket.username = payload.username;
-			match.clients.add(socket);
+			if (!checkMatchFull(match)) {
+				addPlayerToMatch(match, socket.username);
 
-			socket.send(JSON.stringify(buildStatePayload(match)));
+				match.clients.add(socket);
 
-			socket.on("message", (raw: RawData) => {
-				let msg;
-				try {
-					msg = JSON.parse(raw.toString());
-				} catch {
-					return;
-				}
+				socket.send(JSON.stringify(buildStatePayload(match)));
 
-				if (msg.type === "input") {
-					const dir = msg.direction === "up" ? -1 : msg.direction === "down" ? 1 : 0;
-					match.inputs[msg.paddle as PaddleSide] = dir;
-				} else if (msg.type === "reset") {
-					resetMatchState(match);
-				}
-			});
+				socket.on("message", (raw: RawData) => {
+					let msg;
+					try {
+						msg = JSON.parse(raw.toString());
+					} catch {
+						return;
+					}
 
-			socket.on("close", () => match.clients.delete(socket));
-			socket.on("error", (err: any) => console.error(`[ws error] match=${match.id}`, err));
+					if (msg.type === "input") {
+						const dir = msg.direction === "up" ? -1 : msg.direction === "down" ? 1 : 0;
+						match.inputs[msg.paddle as PaddleSide] = dir;
+					} else if (msg.type === "reset") {
+						resetMatchState(match);
+					}
+				});
+				socket.on("close", () => match.clients.delete(socket));
+				socket.on("error", (err: any) => console.error(`[ws error] match=${match.id}`, err));
+			} else {
+				console.log("[WS] Match already full");
+				socket.close(1008, "Match is already full");
+			}
 		}
 	);
 

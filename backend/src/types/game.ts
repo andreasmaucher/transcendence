@@ -3,8 +3,9 @@ import type { WebSocket } from "ws";
 
 export type SingleGame = {
 	id: string;
-	type: string;
 	match: Match;
+	mode: "remote" | "local";
+	expirationTimer?: NodeJS.Timeout;
 };
 
 export type TournamentState = {
@@ -17,6 +18,7 @@ export type Tournament = {
 	id: string;
 	state: TournamentState;
 	matches: Match[];
+	expirationTimer?: NodeJS.Timeout;
 	//inputs: Record<PaddleSide, PaddleInput>;
 };
 
@@ -25,7 +27,7 @@ export type TournamentDB = {
 	id: string;
 	size: number;
 	winner: string | null;
-	started_at: string;
+	started_at: string | null;
 	ended_at: string | null;
 };
 
@@ -56,7 +58,8 @@ export type MatchState = {
 
 export type Match = {
 	id: string;
-	tournament_id: string;
+	tournamentId: string | undefined;
+	singleGameId: string | undefined;
 	isRunning: boolean;
 	state: MatchState;
 	inputs: Record<PaddleSide, PaddleInput>;
