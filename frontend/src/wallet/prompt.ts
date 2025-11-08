@@ -13,6 +13,8 @@ type SaveHandler = (opts: {
     }
 >;
 
+const SNOWTRACE_TX_BASE = "https://testnet.snowtrace.io/tx/";
+
 let overlayEl: HTMLDivElement | null = null;
 let lastShownForTick = -1;
 
@@ -146,13 +148,18 @@ export function showSaveMatchPrompt(gameState: any, onSave: SaveHandler) {
         return;
       }
       status.textContent = "Saving to blockchain...";
-      await onSave({ address: s.address, state: gameState });
+      const saveResult = await onSave({ address: s.address, state: gameState });
       status.textContent = "Saved! Reading back from chain...";
 
       const tId =
-        (gameState && (gameState.tournamentId || gameState.tournament?.id)) ??
+        (saveResult && (saveResult as any).tournamentId) ||
+        (gameState && (gameState.tournamentId || gameState.tournament?.id)) ||
         null;
-      const gId = (gameState && (gameState.gameId || gameState.id)) ?? null;
+      const gId =
+        (saveResult && (saveResult as any).gameId) ||
+        (gameState && (gameState.gameId || gameState.id)) ||
+        null;
+      const txHash = (saveResult && (saveResult as any).txHash) ?? null;
       if (tId && gId) {
         try {
           const saved = await fetchSavedMatch(
@@ -161,24 +168,33 @@ export function showSaveMatchPrompt(gameState: any, onSave: SaveHandler) {
             String(gId)
           );
           const when = new Date(saved.savedAt * 1000).toISOString();
-          details.textContent =
-            `Contract saved:\n` +
-            `- tournamentId: ${saved.tournamentId}\n` +
-            `- gameId:       ${saved.gameId}\n` +
-            `- gameIndex:    ${saved.gameIndex}\n` +
-            `- players:      ${saved.leftUsername} vs ${saved.rightUsername}\n` +
-            `- score:        ${saved.scoreLeft} - ${saved.scoreRight}\n` +
-            `- reporter:     ${saved.reporter}\n` +
-            `- savedAt:      ${when}`;
+          const txLine = txHash
+            ? `<div>Tx: <a href="${SNOWTRACE_TX_BASE}${txHash}" target="_blank" rel="noopener">${txHash}</a></div>`
+            : "";
+          details.innerHTML =
+            `<div>Contract saved:</div>` +
+            `<div>- tournamentId: ${saved.tournamentId}</div>` +
+            `<div>- gameId:       ${saved.gameId}</div>` +
+            `<div>- gameIndex:    ${saved.gameIndex}</div>` +
+            `<div>- players:      ${saved.leftUsername} vs ${saved.rightUsername}</div>` +
+            `<div>- score:        ${saved.scoreLeft} - ${saved.scoreRight}</div>` +
+            `<div>- reporter:     ${saved.reporter}</div>` +
+            `<div>- savedAt:      ${when}</div>` +
+            txLine;
           status.textContent = "Saved and verified.";
         } catch (err: any) {
-          status.textContent = `Saved, but readback failed: ${
-            err?.message || err
-          }`;
+          const txLine = txHash
+            ? `<div>Tx: <a href="${SNOWTRACE_TX_BASE}${txHash}" target="_blank" rel="noopener">${txHash}</a></div>`
+            : "";
+          details.innerHTML = `Saved, but readback failed: ${err?.message || err}` + txLine;
+          status.textContent = `Saved, but readback failed: ${err?.message || err}`;
         }
       } else {
-        status.textContent =
-          "Saved, but missing tournamentId/gameId for readback.";
+        const txLine = txHash
+          ? `<div>Tx: <a href="${SNOWTRACE_TX_BASE}${txHash}" target="_blank" rel="noopener">${txHash}</a></div>`
+          : "";
+        details.innerHTML = `Saved, but missing tournamentId/gameId for readback.` + txLine;
+        status.textContent = "Saved, but missing tournamentId/gameId for readback.";
       }
     } catch (e: any) {
       status.textContent = `Save failed: ${e?.message || e}`;

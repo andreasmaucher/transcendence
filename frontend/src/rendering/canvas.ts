@@ -86,8 +86,12 @@ export function draw(ctx: CanvasRenderingContext2D, s: State): void {
 
       const { provider } = getWalletState();
       if (!provider) throw new Error("Wallet not connected");
-      await saveMatchOnChain(provider, params);
-      return { tournamentId: params.tournamentId, gameId: params.gameId };
+      const txHash = await saveMatchOnChain(provider, params);
+      return {
+        tournamentId: params.tournamentId,
+        gameId: params.gameId,
+        txHash,
+      };
     });
     ctx.textAlign = "left"; // reset text alignment
   }
