@@ -1,15 +1,15 @@
 import db from "../db_init.js";
 
-export function createMatchDB(id: string, tournamentId: string | undefined): void {
+export function createMatchDB(id: string, round: number, tournamentId?: string): void {
 	const stmt = db.prepare(`
-		INSERT INTO matches (id, tournament_id)
-		VALUES (?, ?)
+		INSERT INTO matches (id, round, tournament_id)
+		VALUES (?, ?, ?)
 	`);
 
-	const result = stmt.run(id, tournamentId);
+	const result = stmt.run(id, round, tournamentId);
 	if (result.changes === 0) throw new Error(`[DB] Failed to create match ${id}`); // If DB run fails, throws error
 	else {
-		if (tournamentId) console.log(`[DB] Created new match ${id} for tournament ${tournamentId}`);
+		if (tournamentId) console.log(`[DB] Created new match ${id} for round ${round} of tournament ${tournamentId}`);
 		else console.log(`[DB] Created new match ${id} for single game`);
 	}
 }

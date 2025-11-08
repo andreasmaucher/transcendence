@@ -5,6 +5,7 @@ import type { MatchState, TournamentState } from "../types/game.js";
 export function createInitialTournamentState(size: number): TournamentState {
 	return {
 		size: size,
+		round: 1,
 		tournamentOver: false,
 		winner: null,
 	};
@@ -12,8 +13,9 @@ export function createInitialTournamentState(size: number): TournamentState {
 
 // creates a fresh game with everything in starting position
 // every tick, the backend updates this state and broadcasts a snapshot to clients
-export function createInitialMatchState(): MatchState {
+export function createInitialMatchState(round: number): MatchState {
 	return {
+		round: round,
 		width: GAME_CONSTANTS.FIELD_WIDTH,
 		height: GAME_CONSTANTS.FIELD_HEIGHT,
 		paddles: {

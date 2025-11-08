@@ -10,15 +10,18 @@ export type SingleGame = {
 
 export type TournamentState = {
 	size: number;
+	round: number;
 	tournamentOver: boolean;
 	winner: PaddleSide | null;
 };
 
 export type Tournament = {
 	id: string;
+	isRunning: boolean;
 	state: TournamentState;
-	matches: Match[];
+	matches: Map<number, Match[]>;
 	expirationTimer?: NodeJS.Timeout;
+
 	//inputs: Record<PaddleSide, PaddleInput>;
 };
 
@@ -45,6 +48,7 @@ export type BallState = {
 };
 
 export type MatchState = {
+	round: number;
 	width: number;
 	height: number;
 	paddles: Record<PaddleSide, PaddleState>;
