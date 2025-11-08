@@ -51,7 +51,14 @@ export function showSaveMatchPrompt(gameState: any, onSave: SaveHandler) {
   card.style.padding = "20px";
   card.style.borderRadius = "8px";
   card.style.minWidth = "320px";
+  card.style.maxWidth = "480px";
+  card.style.width = "calc(100vw - 40px)";
   card.style.boxShadow = "0 8px 24px rgba(0,0,0,0.4)";
+  // hard-center regardless of external CSS
+  card.style.position = "absolute";
+  card.style.top = "50%";
+  card.style.left = "50%";
+  card.style.transform = "translate(-50%, -50%)";
 
   const title = document.createElement("h2");
   title.textContent = "Match finished";
