@@ -1,0 +1,1 @@
+{"root":["./src/constants.ts","./src/main.ts","./src/api/http.ts","./src/auth/ui.ts","./src/config/contract.ts","./src/config/endpoints.ts","./src/game/input.ts","./src/game/state.ts","./src/rendering/canvas.ts","./src/wallet/contract.ts","./src/wallet/prompt.ts","./src/wallet/wallet.ts"],"version":"5.9.3"}

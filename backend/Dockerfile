@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.6
 # ---------- Stage 1: Build Stage ----------
 FROM node:20-bookworm-slim AS builder
 
@@ -13,7 +14,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Copy dependency files and install
 COPY package*.json ./
-RUN npm ci
+
+# Optionally force npm install to run on each build via CACHEBUST build-arg
+ARG CACHEBUST=1
+# Cache-bust layer so npm ci runs on each build when CACHEBUST changes
+RUN echo "CACHEBUST=${CACHEBUST}" > /dev/null
+RUN --mount=type=cache,target=/root/.npm,sharing=locked npm ci
 
 # Copy the source code and build TypeScript
 COPY tsconfig.json ./
@@ -28,7 +34,7 @@ WORKDIR /app
 
 # Install tini for graceful shutdowns
 RUN apt-get update && apt-get install -y --no-install-recommends tini \
-	&& rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy compiled JS and production dependencies only
 COPY --from=builder /app/package*.json ./
@@ -40,9 +46,9 @@ RUN mkdir -p /app/data
 
 # Default environment variables
 ENV NODE_ENV=production \
-	PORT=4000 \
-	HOST=0.0.0.0 \
-	DB_PATH=/app/data/database.sqlite
+    PORT=4000 \
+    HOST=0.0.0.0 \
+    DB_PATH=/app/data/database.sqlite
 
 EXPOSE 4000
 
