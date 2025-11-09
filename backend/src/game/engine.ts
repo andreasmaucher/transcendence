@@ -31,10 +31,12 @@ export function maybeCompleteGame(match: Match): void {
 	}
 }
 
+// ...existing code...
 export function stepMatch(match: Match, dt: number): void {
 	const { state, inputs } = match;
 	if (state.gameOver) return;
 
+	// Move paddles
 	const maxPaddleY = state.height - GAME_CONSTANTS.PADDLE_HEIGHT;
 	for (const side of ["left", "right"] as const) {
 		const paddle = state.paddles[side];
@@ -47,56 +49,83 @@ export function stepMatch(match: Match, dt: number): void {
 	}
 
 	const ball = state.ball;
+
+	// Track previous position for swept collision
+	const prevX = ball.x;
+	const prevY = ball.y;
+
+	// Integrate ball
 	ball.x += ball.vx * dt;
 	ball.y += ball.vy * dt;
 
+	// Wall collisions (top/bottom)
 	if (ball.y - ball.r <= 0 && ball.vy < 0) {
 		console.log(`[ball] room=${match.id} event=wall-bounce wall=top`);
 		ball.vy = Math.abs(ball.vy);
+		ball.y = ball.r; // positional correction
 	}
 	if (ball.y + ball.r >= state.height && ball.vy > 0) {
 		console.log(`[ball] room=${match.id} event=wall-bounce wall=bottom`);
 		ball.vy = -Math.abs(ball.vy);
+		ball.y = state.height - ball.r;
 	}
 
-	const PADDLE_X = {
-		left: GAME_CONSTANTS.PADDLE_MARGIN,
-		right: GAME_CONSTANTS.FIELD_WIDTH - GAME_CONSTANTS.PADDLE_MARGIN - GAME_CONSTANTS.PADDLE_WIDTH,
-	} as const;
+	// Paddle front planes
+	const LEFT_FRONT = GAME_CONSTANTS.PADDLE_MARGIN + GAME_CONSTANTS.PADDLE_WIDTH;
+	const RIGHT_FRONT = GAME_CONSTANTS.FIELD_WIDTH - GAME_CONSTANTS.PADDLE_MARGIN;
 
-	const hitsLeft =
-		ball.vx < 0 &&
-		ball.x - ball.r <= PADDLE_X.left + GAME_CONSTANTS.PADDLE_WIDTH &&
-		ball.y >= state.paddles.left.y &&
-		ball.y <= state.paddles.left.y + GAME_CONSTANTS.PADDLE_HEIGHT;
-	const hitsRight =
-		ball.vx > 0 &&
-		ball.x + ball.r >= PADDLE_X.right &&
-		ball.y >= state.paddles.right.y &&
-		ball.y <= state.paddles.right.y + GAME_CONSTANTS.PADDLE_HEIGHT;
+	// Vertical overlap helpers
+	const leftPad = state.paddles.left;
+	const rightPad = state.paddles.right;
+	const overlapsLeftVert = ball.y + ball.r >= leftPad.y && ball.y - ball.r <= leftPad.y + GAME_CONSTANTS.PADDLE_HEIGHT;
+	const overlapsRightVert =
+		ball.y + ball.r >= rightPad.y && ball.y - ball.r <= rightPad.y + GAME_CONSTANTS.PADDLE_HEIGHT;
 
-	if (hitsLeft) {
-		console.log(`[ball] room=${match.id} event=paddle-hit paddle=left`);
-	}
-	if (hitsRight) {
-		console.log(`[ball] room=${match.id} event=paddle-hit paddle=right`);
-	}
-	if (hitsLeft || hitsRight) {
+	// Swept tests: did we cross the front plane this frame?
+	const crossedLeftFront =
+		overlapsLeftVert && ball.vx < 0 && prevX - ball.r > LEFT_FRONT && ball.x - ball.r <= LEFT_FRONT;
+
+	const crossedRightFront =
+		overlapsRightVert && ball.vx > 0 && prevX + ball.r < RIGHT_FRONT && ball.x + ball.r >= RIGHT_FRONT;
+
+	// Penetration (paddle moved into ball) without crossing: push out, no bounce
+	const penetratedFromBehindLeft =
+		overlapsLeftVert &&
+		ball.vx > 0 && // ball moving away from left paddle
+		ball.x - ball.r < LEFT_FRONT &&
+		prevX - ball.r <= LEFT_FRONT;
+
+	const penetratedFromBehindRight =
+		overlapsRightVert && ball.vx < 0 && ball.x + ball.r > RIGHT_FRONT && prevX + ball.r >= RIGHT_FRONT;
+
+	if (crossedLeftFront) {
+		console.log(`[ball] room=${match.id} event=paddle-hit paddle=left type=front`);
+		// Snap to surface and bounce
+		ball.x = LEFT_FRONT + ball.r;
 		ball.vx = -ball.vx;
+	} else if (penetratedFromBehindLeft) {
+		// Just extrude
+		ball.x = LEFT_FRONT + ball.r;
 	}
 
-	// Check for scoring
+	if (crossedRightFront) {
+		console.log(`[ball] room=${match.id} event=paddle-hit paddle=right type=front`);
+		ball.x = RIGHT_FRONT - ball.r;
+		ball.vx = -ball.vx;
+	} else if (penetratedFromBehindRight) {
+		ball.x = RIGHT_FRONT - ball.r;
+	}
+
+	// Scoring (after collision resolution so we don't falsely score mid-penetration)
 	if (ball.x < -GAME_CONSTANTS.SCORE_OUT_MARGIN) {
-		// Right player scored
 		state.score.right += 1;
-		updateMatchDB(match.id, state.score.left, state.score.right); // Update database
+		updateMatchDB(match.id, state.score.left, state.score.right);
 		console.log(`[score] room=${match.id} scorer=right score=${state.score.left}-${state.score.right}`);
 		maybeCompleteGame(match);
 		resetBall(state, 1);
 	} else if (ball.x > state.width + GAME_CONSTANTS.SCORE_OUT_MARGIN) {
-		// Left player scored
 		state.score.left += 1;
-		updateMatchDB(match.id, state.score.left, state.score.right); // Update database
+		updateMatchDB(match.id, state.score.left, state.score.right);
 		console.log(`[score] room=${match.id} scorer=left score=${state.score.left}-${state.score.right}`);
 		maybeCompleteGame(match);
 		resetBall(state, -1);
