@@ -31,10 +31,13 @@ export function maybeCompleteGame(match: Match): void {
 	}
 }
 
-// ...existing code...
 export function stepMatch(match: Match, dt: number): void {
 	const { state, inputs } = match;
 	if (state.gameOver) return;
+
+	// Capture previous paddle positions to derive per-frame velocity
+	const prevLeftY = state.paddles.left.y;
+	const prevRightY = state.paddles.right.y;
 
 	// Move paddles
 	const maxPaddleY = state.height - GAME_CONSTANTS.PADDLE_HEIGHT;
@@ -47,6 +50,9 @@ export function stepMatch(match: Match, dt: number): void {
 			console.log(`[paddle] room=${match.id} paddle=${side} y=${paddle.y.toFixed(1)}`);
 		}
 	}
+	// Per-frame paddle vertical velocity (units per second)
+	const leftPaddleVel = (state.paddles.left.y - prevLeftY) / dt;
+	const rightPaddleVel = (state.paddles.right.y - prevRightY) / dt;
 
 	const ball = state.ball;
 
@@ -77,41 +83,53 @@ export function stepMatch(match: Match, dt: number): void {
 	// Vertical overlap helpers
 	const leftPad = state.paddles.left;
 	const rightPad = state.paddles.right;
+
 	const overlapsLeftVert = ball.y + ball.r >= leftPad.y && ball.y - ball.r <= leftPad.y + GAME_CONSTANTS.PADDLE_HEIGHT;
 	const overlapsRightVert =
 		ball.y + ball.r >= rightPad.y && ball.y - ball.r <= rightPad.y + GAME_CONSTANTS.PADDLE_HEIGHT;
 
-	// Swept tests: did we cross the front plane this frame?
 	const crossedLeftFront =
 		overlapsLeftVert && ball.vx < 0 && prevX - ball.r > LEFT_FRONT && ball.x - ball.r <= LEFT_FRONT;
 
 	const crossedRightFront =
 		overlapsRightVert && ball.vx > 0 && prevX + ball.r < RIGHT_FRONT && ball.x + ball.r >= RIGHT_FRONT;
 
-	// Penetration (paddle moved into ball) without crossing: push out, no bounce
 	const penetratedFromBehindLeft =
-		overlapsLeftVert &&
-		ball.vx > 0 && // ball moving away from left paddle
-		ball.x - ball.r < LEFT_FRONT &&
-		prevX - ball.r <= LEFT_FRONT;
+		overlapsLeftVert && ball.vx > 0 && ball.x - ball.r < LEFT_FRONT && prevX - ball.r <= LEFT_FRONT;
 
 	const penetratedFromBehindRight =
 		overlapsRightVert && ball.vx < 0 && ball.x + ball.r > RIGHT_FRONT && prevX + ball.r >= RIGHT_FRONT;
 
+	// Spin tuning constants
+	// const IMPACT_OFFSET_SPIN_SCALE = 0.6; // how strongly off-center impact modifies vy
+	// const PADDLE_MOVE_SPIN_SCALE = 0.15; // how strongly paddle vertical velocity adds spin
+	// const MAX_VY = GAME_CONSTANTS.BALL_SPEED * 0.85; // cap vertical speed
+
 	if (crossedLeftFront) {
-		console.log(`[ball] room=${match.id} event=paddle-hit paddle=left type=front`);
-		// Snap to surface and bounce
 		ball.x = LEFT_FRONT + ball.r;
 		ball.vx = -ball.vx;
+		// Impact offset relative to paddle center (-1 top, +1 bottom)
+		const centerY = leftPad.y + GAME_CONSTANTS.PADDLE_HEIGHT / 2;
+		const impactOffset = (ball.y - centerY) / (GAME_CONSTANTS.PADDLE_HEIGHT / 2);
+		// New spin contribution
+		const spinFromOffset = impactOffset * GAME_CONSTANTS.IMPACT_OFFSET_SPIN_SCALE * Math.abs(ball.vx);
+		const spinFromMove = leftPaddleVel * GAME_CONSTANTS.PADDLE_MOVE_SPIN_SCALE;
+		ball.vy += spinFromOffset + spinFromMove;
+		// Clamp vertical velocity
+		ball.vy = clamp(ball.vy, -GAME_CONSTANTS.MAX_VY, GAME_CONSTANTS.MAX_VY);
 	} else if (penetratedFromBehindLeft) {
-		// Just extrude
-		ball.x = LEFT_FRONT + ball.r;
+		ball.x = LEFT_FRONT + ball.r; // extrude only, no spin
 	}
 
 	if (crossedRightFront) {
-		console.log(`[ball] room=${match.id} event=paddle-hit paddle=right type=front`);
 		ball.x = RIGHT_FRONT - ball.r;
 		ball.vx = -ball.vx;
+		const centerY = rightPad.y + GAME_CONSTANTS.PADDLE_HEIGHT / 2;
+		const impactOffset = (ball.y - centerY) / (GAME_CONSTANTS.PADDLE_HEIGHT / 2);
+		const spinFromOffset = impactOffset * GAME_CONSTANTS.IMPACT_OFFSET_SPIN_SCALE * Math.abs(ball.vx);
+		const spinFromMove = rightPaddleVel * GAME_CONSTANTS.PADDLE_MOVE_SPIN_SCALE;
+		ball.vy += spinFromOffset + spinFromMove;
+		ball.vy = clamp(ball.vy, -GAME_CONSTANTS.MAX_VY, GAME_CONSTANTS.MAX_VY);
 	} else if (penetratedFromBehindRight) {
 		ball.x = RIGHT_FRONT - ball.r;
 	}
