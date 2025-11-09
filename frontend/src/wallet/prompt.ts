@@ -1,13 +1,12 @@
 import { connectWallet, getWalletState, isMetaMaskAvailable } from "./wallet";
 import { ensureFujiNetwork, FUJI_CHAIN_ID_HEX } from "./wallet";
 import { fetchSavedMatch } from "./contract";
+import { SNOWTRACE_TX_BASE } from "../config/contract";
 
 type SaveHandler = (opts: { address: string; state: unknown }) => Promise<void | {
 	tournamentId: string;
 	gameId: string;
 }>;
-
-const SNOWTRACE_TX_BASE = "https://testnet.snowtrace.io/tx/";
 
 let overlayEl: HTMLDivElement | null = null;
 let lastShownForTick = -1;

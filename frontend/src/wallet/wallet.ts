@@ -2,6 +2,7 @@
 import { BrowserProvider } from "ethers";
 export const FUJI_CHAIN_ID_HEX: string = (import.meta as any).env?.VITE_AVALANCHE_FUJI_CHAIN_ID_HEX as string;
 export const VITE_FUJI_RPC_URL: string = (import.meta as any).env?.VITE_FUJI_RPC_URL as string;
+export const VITE_SNOWTRACE_TX_BASE: string = (import.meta as any).env?.VITE_SNOWTRACE_TX_BASE as string;
 
 type EthereumProvider = {
 	isMetaMask?: boolean;
@@ -68,8 +69,6 @@ export async function connectWallet(): Promise<WalletState> {
 	return state;
 }
 
-// export const AVALANCHE_FUJI_CHAIN_ID_HEX = "0xa869";
-
 export async function ensureFujiNetwork(): Promise<void> {
 	if (!window.ethereum) throw new Error("No EVM wallet detected. Please install MetaMask.");
 	try {
@@ -90,8 +89,8 @@ export async function ensureFujiNetwork(): Promise<void> {
 						chainId: FUJI_CHAIN_ID_HEX,
 						chainName: "Avalanche Fuji C-Chain",
 						nativeCurrency: { name: "Avalanche", symbol: "AVAX", decimals: 18 },
-						rpcUrls: [(import.meta as any).env?.VITE_FUJI_RPC_URL],
-						blockExplorerUrls: ["https://testnet.snowtrace.io"],
+						rpcUrls: VITE_FUJI_RPC_URL,
+						blockExplorerUrls: VITE_SNOWTRACE_TX_BASE,
 					},
 				],
 			});
