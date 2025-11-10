@@ -11,7 +11,9 @@ export function buildStatePayload(match: Match) {
 }
 
 export function broadcast(match: Match): void {
-	if (!match.state.isRunning) return; // Game logic starts only when the match starts
+	const { state } = match;
+	// Skip broadcasting only when the match hasn't started yet; still send the final game-over snapshot.
+	if (!state.isRunning && !state.isOver) return;
 	if (!match.clients.size) return;
 	const payload = JSON.stringify(buildStatePayload(match));
 	//console.log("[DEBUG BACKEND → CLIENT]", payload);

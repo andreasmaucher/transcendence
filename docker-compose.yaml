@@ -6,8 +6,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       args:
-        # Bump this (or set via env) to force npm install to run during image build
-        - CACHEBUST=${CACHEBUST}
+        - CACHEBUST=1
     container_name: transcendence-backend
     ports:
       - "4000:4000"
@@ -29,8 +28,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        # Bump this (or set via env) to force npm install to run during image build
-        - CACHEBUST=${CACHEBUST}
+        - CACHEBUST=1
     container_name: transcendence-frontend
     ports:
       - "5173:5173"
@@ -47,4 +45,3 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
-
