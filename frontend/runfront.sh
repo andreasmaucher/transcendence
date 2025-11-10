@@ -7,5 +7,4 @@
 docker run --rm -it \
   -p 5173:5173 \
   -v "$PWD:/app" \
-  -v /app/node_modules \
   front_img

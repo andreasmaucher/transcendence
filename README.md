@@ -2,14 +2,14 @@
 
 **Controls**
 
-- Left paddle: `W` (up) / `S` (down)
-- Right paddle: `↑` (up) / `↓` (down)
+-  Left paddle: `W` (up) / `S` (down)
+-  Right paddle: `↑` (up) / `↓` (down)
 
 ## Run with Docker + Makefile
 
 Prerequisites
 
-- Docker Desktop (or Docker Engine) with Compose v2 (uses `docker compose`, not `docker-compose`).
+-  Docker Desktop (or Docker Engine) with Compose v2 (uses `docker compose`, not `docker-compose`).
 
 Quick start
 
@@ -25,54 +25,54 @@ make logs   # follow logs for both services
 
 Hot reload
 
-- Source folders are bind-mounted into containers, so Vite and the Fastify dev server reload on file changes.
-- On macOS, file watching is enabled via `CHOKIDAR_USEPOLLING=1` in Compose.
+-  Source folders are bind-mounted into containers, so Vite and the Fastify dev server reload on file changes.
+-  On macOS, file watching is enabled via `CHOKIDAR_USEPOLLING=1` in Compose.
 
 What each Make target does (under the hood)
 
-- `make up`
-  - Runs: `docker compose up -d`
-  - Builds images if missing and starts both services detached.
-- `make down`
-  - Runs: `docker compose down`
-  - Stops and removes containers and the default network (keeps volumes).
-- `make stop`
-  - Runs: `docker compose stop`
-  - Gracefully stops containers without removing them.
-- `make build`
-  - Runs: `docker compose build`
-  - Rebuilds images using cache.
-- `make rebuild`
-  - Runs: `docker compose build --no-cache`
-  - Full rebuild without cache (use after changing Dockerfiles or lockfiles).
-- `make restart`
-  - Runs: `docker compose restart`
-  - Restarts running containers.
-- `make logs`
-  - Runs: `docker compose logs -f`
-  - Tails logs for all services.
-- `make ps`
-  - Runs: `docker compose ps`
-  - Shows container status.
-- `make clean`
-  - Runs: `docker compose down -v`
-  - Stops and removes containers, network, and volumes (resets container `node_modules`).
-- `make prune`
-  - Runs: `docker system prune -f`
-  - Removes dangling images/containers/networks (be careful).
+-  `make up`
+   -  Runs: `docker compose up -d`
+   -  Builds images if missing and starts both services detached.
+-  `make down`
+   -  Runs: `docker compose down`
+   -  Stops and removes containers and the default network (keeps volumes).
+-  `make stop`
+   -  Runs: `docker compose stop`
+   -  Gracefully stops containers without removing them.
+-  `make build`
+   -  Runs: `docker compose build`
+   -  Rebuilds images using cache.
+-  `make rebuild`
+   -  Runs: `docker compose build --no-cache`
+   -  Full rebuild without cache (use after changing Dockerfiles or lockfiles).
+-  `make restart`
+   -  Runs: `docker compose restart`
+   -  Restarts running containers.
+-  `make logs`
+   -  Runs: `docker compose logs -f`
+   -  Tails logs for all services.
+-  `make ps`
+   -  Runs: `docker compose ps`
+   -  Shows container status.
+-  `make clean`
+   -  Runs: `docker compose down -v`
+   -  Stops and removes containers, network, and volumes (resets container `node_modules`).
+-  `make prune`
+   -  Runs: `docker system prune -f`
+   -  Removes dangling images/containers/networks (be careful).
 
 Notes from `docker-compose.yaml`
 
-- Ports
-  - Frontend: `5173:5173` (Vite dev server)
-  - Backend: `4000:4000` (Fastify HTTP/WebSocket)
-- Volumes
-  - `./frontend:/app` and `./backend:/app` for live reload.
-  - `/app/node_modules` as an anonymous volume so container installs don’t pollute the host.
-- Commands
-  - Backend runs `npm run dev` (watch mode).
-  - Frontend runs Vite dev server bound to `0.0.0.0:5173`.
-- If dependencies get out of sync, use `make clean && make up` or `make rebuild`.
+-  Ports
+   -  Frontend: `5173:5173` (Vite dev server)
+   -  Backend: `4000:4000` (Fastify HTTP/WebSocket)
+-  Volumes
+   -  `./frontend:/app` and `./backend:/app` for live reload.
+   -  `/app/node_modules` as an anonymous volume so container installs don’t pollute the host.
+-  Commands
+   -  Backend runs `npm run dev` (watch mode).
+   -  Frontend runs Vite dev server bound to `0.0.0.0:5173`.
+-  If dependencies get out of sync, use `make clean && make up` or `make rebuild`.
 
 ## Running the backend and frontend directly (no Docker)
 
@@ -91,22 +91,27 @@ Open `http://localhost:5173` in the browser once both servers are running. The f
 
 ## Architecture Overview
 
-- Fastify drives the authoritative Pong simulation and exposes REST + WebSocket APIs.
-- Vite-powered frontend renders the game canvas and relays paddle inputs to the backend via WebSocket commands.
-- Game state (paddles, ball, score, winner) is streamed from backend → frontend ~60 FPS.
+-  Fastify drives the authoritative Pong simulation and exposes REST + WebSocket APIs.
+-  Vite-powered frontend renders the game canvas and relays paddle inputs to the backend via WebSocket commands.
+-  Game state (paddles, ball, score, winner) is streamed from backend → frontend ~60 FPS.
 
 ### Backend Endpoints
 
 All backend endpoints return JSON format. All POST request expect the data to be sent in the body.
 
-| Method | Path                         | Description                                                     | Returns                                       |
-| ------ | ---------------------------- | --------------------------------------------------------------- | --------------------------------------------- |
-| `GET`  | `/api/health`                | Service heartbeat                                               |                                               | 
-| `GET`  | `/api/config`                | (env override supported)                                        | Returns `{ winningScore }`                    |
-| `POST` | `/api/control`               | Optional HTTP paddle control `{ roomId, paddle, direction }`    |                                               |
+| Method | Path           | Description                                                  | Returns                    |
+| ------ | -------------- | ------------------------------------------------------------ | -------------------------- |
+| `GET`  | `/api/health`  | Service heartbeat                                            |                            |
+| `GET`  | `/api/config`  | (env override supported)                                     | Returns `{ winningScore }` |
+| `POST` | `/api/control` | Optional HTTP paddle control `{ roomId, paddle, direction }` |                            |
 
 ## TOURNAMENT
 
+| Method | Path                         | Description                                                     | Returns                                       |
+| ------ | ---------------------------- | --------------------------------------------------------------- | --------------------------------------------- |
+| `GET`  | `/api/tournaments/:id/state` | [PROBABLY NOT WORKING]                                          | One-off JSON snapshot of a room               |
+| `WS`   | `/api/tournaments/:id/ws`    | [PROBABLY NOT WORKING] Live state stream + paddle/input channel |                                               |
+| `GET`  | `/api/tournaments/:id`       | Access the database using the tournament id as key              | Returns the data (or a error message)         |
 | Method | Path                         | Description                                                     | Returns                                       |
 | ------ | ---------------------------- | --------------------------------------------------------------- | --------------------------------------------- |
 | `GET`  | `/api/tournament/:id/state`  | [PROBABLY NOT WORKING]                                          | One-off JSON snapshot of a room               |
@@ -117,26 +122,28 @@ All backend endpoints return JSON format. All POST request expect the data to be
 
 | Method | Path                        | Description                                                     | Returns                                       |
 | ------ | --------------------------- | --------------------------------------------------------------- | --------------------------------------------- |
+| `GET`  | `/api/matches/:id`          | Access the database using the match id as key                   | Returns the match data (or a error message)   |
+| Method | Path                        | Description                                                     | Returns                                       |
+| ------ | --------------------------- | --------------------------------------------------------------- | --------------------------------------------- |
 | `GET`  | `/api/match/:id`            | Access the database using the match id as key                   | Returns the match data (or a error message)   |
 
 ## USER
 
-| Method | Path                        | Description                                                     | Returns                                       |
-| ------ | --------------------------- | --------------------------------------------------------------- | --------------------------------------------- |
-| `GET`  | `/api/user/:username`       | Access the database using the username as key                   | Returns the user data (or a error message)    |
-| `POST` | `/api/user/check`           | Checks if username already exist, expect body                   | Returns a boolean                             |
-| `POST` | `/api/user/login`           | Checks user credentials                                         | Returns success: true or false                |
-| `POST` | `/api/user/register`        | Register new user                                               | Returns success: true or false                |
-| `POST` | `/api/user/update`          | Update user information, one by one                             | Returns success: true or false                |
+| Method | Path                  | Description                                   | Returns                                    |
+| ------ | --------------------- | --------------------------------------------- | ------------------------------------------ |
+| `GET`  | `/api/user/:username` | Access the database using the username as key | Returns the user data (or a error message) |
+| `POST` | `/api/user/check`     | Checks if username already exist, expect body | Returns a boolean                          |
+| `POST` | `/api/user/login`     | Checks user credentials                       | Returns success: true or false             |
+| `POST` | `/api/user/register`  | Register new user                             | Returns success: true or false             |
+| `POST` | `/api/user/update`    | Update user information, one by one           | Returns success: true or false             |
 
 ## TEST
 
-| Method | Path                         | Description                                                     | Returns                                       |
-| ------ | ---------------------------- | --------------------------------------------------------------- | --------------------------------------------- |
-| `GET`  | `/api/test/print-users`      | Returns all users and prints them in backend logs               | Returns all users in database                 |
-| `GET`  | `/api/test/print-matches`    | Returns all matches and prints them in backend logs             | Returns all matches in database               |
-| `GET`  | `/api/test/print-tournaments`| Returns all tournaments and prints them in backend logs         | Returns all tournaments in database           |
-
+| Method | Path                          | Description                                             | Returns                             |
+| ------ | ----------------------------- | ------------------------------------------------------- | ----------------------------------- |
+| `GET`  | `/api/test/print-users`       | Returns all users and prints them in backend logs       | Returns all users in database       |
+| `GET`  | `/api/test/print-matches`     | Returns all matches and prints them in backend logs     | Returns all matches in database     |
+| `GET`  | `/api/test/print-tournaments` | Returns all tournaments and prints them in backend logs | Returns all tournaments in database |
 
 WebSocket commands from the frontend:
 
