@@ -15,10 +15,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy dependency files and install
 COPY package*.json ./
 
-# Optionally force npm install to run on each build via CACHEBUST build-arg
+# Keep a configurable (but defaulted) cache-busting arg so npm ci can be forced when needed.
 ARG CACHEBUST=1
-# Cache-bust layer so npm ci runs on each build when CACHEBUST changes
 RUN echo "CACHEBUST=${CACHEBUST}" > /dev/null
+
 RUN --mount=type=cache,target=/root/.npm,sharing=locked npm ci
 
 # Copy the source code and build TypeScript
