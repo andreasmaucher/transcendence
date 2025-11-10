@@ -27,7 +27,7 @@ db.exec(`
 		provider TEXT DEFAULT 'local',
 		provider_id TEXT DEFAULT NULL,
 		avatar TEXT,
-		friends TEXT NULL,
+		friends TEXT DEFAULT '[]',
 		stats TEXT NULL,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
@@ -44,6 +44,7 @@ db.exec(`
 	CREATE TABLE IF NOT EXISTS matches (
 		internal_id INTEGER PRIMARY KEY AUTOINCREMENT,
 		id TEXT UNIQUE NOT NULL,
+		type TEXT,
 		player_left TEXT,
 		player_right TEXT,
 		tournament_id TEXT,

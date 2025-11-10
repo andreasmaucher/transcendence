@@ -1,7 +1,8 @@
 // creates a fresh game with everything in starting position
 import { GAME_CONSTANTS } from "../config/constants.js";
 import { broadcast } from "../transport/broadcaster.js";
-import type { Match, MatchState, TournamentState } from "../types/game.js";
+import type { TournamentState } from "../types/game.js";
+import { Match, MatchState } from "../types/match.js";
 
 export function createInitialTournamentState(size: number): TournamentState {
 	return {

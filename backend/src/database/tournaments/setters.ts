@@ -1,4 +1,4 @@
-import { PaddleSide } from "../../types/game.js";
+import { PaddleSide } from "../../types/match.js";
 import db from "../db_init.js";
 
 export function createTournamentDB(id: string, size: number): void {

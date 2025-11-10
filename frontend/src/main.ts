@@ -32,6 +32,7 @@ function createInitialState(): State {
 		speed: GAME_CONSTANTS.paddleSpeed,
 	};
 	return {
+		isRunning: true,
 		width: GAME_CONSTANTS.fieldWidth,
 		height: GAME_CONSTANTS.fieldHeight,
 		left,
@@ -45,7 +46,7 @@ function createInitialState(): State {
 		},
 		scoreL: 0,
 		scoreR: 0,
-		gameOver: false,
+		isOver: false,
 		winner: null,
 		winningScore: GAME_CONSTANTS.winningScore,
 		tick: 0,
@@ -60,12 +61,10 @@ function connectToBackend(state: State): void {
 	// create a new WebSocket connection to the backend
 	const ws = new WebSocket(wsUrl);
 	setActiveSocket(ws); // store the WebSocket connection in the activeSocket variable
+	let resetRequested = false; // ensure we only trigger reset once per game
 
 	// Handler: when the WebSocket connection is opened
 	ws.addEventListener("open", () => {
-		// Reset game to fresh state on connection
-		ws.send(JSON.stringify({ type: "reset" }));
-
 		// stop the paddles from moving when the connection is established
 		queueInput("left", "stop");
 		queueInput("right", "stop");
@@ -84,16 +83,24 @@ function connectToBackend(state: State): void {
 		}
 		// if the message is not valid JSON or not an object, ignore it
 		if (!parsed || typeof parsed !== "object") return;
-		const payload = parsed as Partial<BackendStateMessage>;
+		const payload = parsed as BackendStateMessage;
 		// if the message is a state message and has the required fields, apply the backend state to the local frontend game state
-		if (payload.type === "state" && payload.ball && payload.score) {
-			applyBackendState(state, payload as BackendStateMessage);
+		if (payload.type === "state") {
+			const wasGameOver = state.isOver;
+			applyBackendState(state, payload);
+			if (state.isOver && !wasGameOver && !resetRequested) {
+				ws.send(JSON.stringify({ type: "reset" }));
+				resetRequested = true;
+			} else if (!state.isOver) {
+				resetRequested = false;
+			}
 		}
 	});
 
 	// Handler: when the WebSocket connection is closed
 	ws.addEventListener("close", () => {
 		setActiveSocket(null);
+		resetRequested = false;
 		// schedule a new connection attempt after a 1 second delay
 		setTimeout(() => connectToBackend(state), 1000);
 	});

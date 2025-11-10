@@ -1,9 +1,10 @@
-import type { SingleGame, Match } from "../types/game.js";
+import type { SingleGame } from "../types/game.js";
 import { createMatch } from "./matchManager.js";
 import crypto from "crypto";
 import { singleGames } from "../config/structures.js";
 import { checkMatchFull } from "./matchManager.js";
 import { removeMatchDB } from "../database/matches/setters.js";
+import { Match } from "../types/match.js";
 
 export function resetSingleGamesForTest(): void {
 	singleGames.clear();

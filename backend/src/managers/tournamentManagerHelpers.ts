@@ -1,6 +1,7 @@
-import type { Match, Tournament, TournamentMatchType } from "../types/game.js";
+import type { Tournament } from "../types/game.js";
 import { tournaments } from "../config/structures.js";
 import { checkMatchFull, createMatch } from "./matchManager.js";
+import { Match, TournamentMatchType } from "../types/match.js";
 
 export function resetTournamentsForTest(): void {
 	tournaments.clear();

@@ -1,4 +1,4 @@
-import type { SingleGame, Match, Tournament, TournamentMatchType, TournamentMatchInfo } from "../types/game.js";
+import type { SingleGame, Tournament } from "../types/game.js";
 import { createInitialMatchState } from "../game/state.js";
 import { addPlayerMatchDB, createMatchDB, endMatchDB, startMatchDB } from "../database/matches/setters.js";
 import { getSingleGame } from "./singleGameManager.js";
@@ -6,6 +6,7 @@ import { endTournamentDB } from "../database/tournaments/setters.js";
 import { tournaments } from "../config/structures.js";
 import { isTournamentOver } from "./tournamentManagerHelpers.js";
 import { endTournament } from "./tournamentManager.js";
+import { Match, TournamentMatchInfo, TournamentMatchType } from "../types/match.js";
 
 export function initTournamentMatchInfo(
 	tournament: Tournament,

@@ -1,4 +1,4 @@
-import type { Match, Tournament } from "../types/game.js";
+import type { Tournament } from "../types/game.js";
 import {
 	createTournamentDB,
 	startTournamentDB,
@@ -15,6 +15,7 @@ import {
 	initTournamentMatches,
 } from "./tournamentManagerHelpers.js";
 import crypto from "crypto";
+import { Match } from "../types/match.js";
 
 export function getOrCreateTournament(id: string): Tournament {
 	let tournament = tournaments.get(id);

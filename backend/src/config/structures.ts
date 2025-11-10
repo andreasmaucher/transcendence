@@ -1,4 +1,5 @@
-import { SingleGame, Tournament, Match } from "../types/game.js";
+import { SingleGame, Tournament } from "../types/game.js";
+import { Match } from "../types/match.js";
 import { User } from "../types/utils.js";
 
 export const singleGames = new Map<string, SingleGame>();

@@ -4,18 +4,15 @@ import Fastify, { FastifyInstance } from "fastify";
 import fastifyWebsocket from "@fastify/websocket";
 import { GAME_CONSTANTS } from "./config/constants.js";
 import { stepMatch } from "./game/engine.js";
-import { buildStatePayload, broadcast } from "./transport/broadcaster.js";
+import { broadcast } from "./transport/broadcaster.js";
 import { registerWebsocketRoute } from "./transport/websocket.js";
 import matchRoutes from "./routes/match.js";
 import tournamentRoutes from "./routes/tournament.js";
 import userRoutes from "./routes/user.js";
 import testRoutes from "./routes/test.js";
-import { forEachTournament } from "./managers/tournamentManager.js";
 import { getTournament } from "./managers/tournamentManagerHelpers.js";
 import { forEachSingleGame } from "./managers/singleGameManager.js";
-
-export type PaddleSide = "left" | "right";
-type PaddleInput = -1 | 0 | 1; // -1=up, 0=stop, 1=down
+import { PaddleSide } from "./types/match.js";
 
 const FIELD_WIDTH = GAME_CONSTANTS.FIELD_WIDTH;
 const FIELD_HEIGHT = GAME_CONSTANTS.FIELD_HEIGHT;

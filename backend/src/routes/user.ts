@@ -1,7 +1,14 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { getJsonUserByUsername, getUsername } from "../database/users/getters.js";
+import { getJsonUserByUsername, getUserFriends, getUsername } from "../database/users/getters.js";
 import { verifyPassword, hashPassword } from "../user/password.js";
-import { registerUserDB, updateUsernameDB, updatePasswordDB, updateAvatarDB } from "../database/users/setters.js";
+import {
+	registerUserDB,
+	updateUsernameDB,
+	updatePasswordDB,
+	updateAvatarDB,
+	addFriendDB,
+	removeFriendDB,
+} from "../database/users/setters.js";
 import {
 	createSessionToken,
 	makeSessionCookie,
@@ -141,6 +148,49 @@ export default async function userRoutes(fastify: FastifyInstance) {
 			}
 		} else {
 			return reply.code(400).send({ success: false, message: "No valid fields to update" });
+		}
+	});
+
+	// Add a FRIEND to the user
+	fastify.post("/api/user/add-friend", async (request: FastifyRequest, reply: FastifyReply) => {
+		// Read posted update data
+		const { username, friend } = request.body as {
+			username: string;
+			friend: string;
+		};
+
+		// Basic validation: required fields
+		if (!username) return reply.code(400).send({ success: false, message: "Username is required" });
+
+		try {
+			addFriendDB(username, friend);
+			return reply.code(200).send({ success: true, message: "Friend added successfully" });
+		} catch (error: any) {
+			console.log(error.message);
+			return reply.code(400).send({ success: false, message: "Unable to add friend" });
+		}
+	});
+
+	// Remove a FRIEND from the user
+	fastify.post("/api/user/remove-friend", async (request: FastifyRequest, reply: FastifyReply) => {
+		// Read posted update data
+		const { username, friend } = request.body as {
+			username: string;
+			friend: string;
+		};
+
+		// Basic validation: required fields
+		if (!username) return reply.code(400).send({ success: false, message: "Username is required" });
+
+		try {
+			const friends = getUserFriends(username);
+			if (friends.includes(friend)) {
+				removeFriendDB(username, friend);
+				return reply.code(200).send({ success: true, message: "Friend added successfully" });
+			} else reply.code(400).send({ success: false, message: "Friend not present in user friends list" });
+		} catch (error: any) {
+			console.log(error.message);
+			return reply.code(400).send({ success: false, message: "Unable to add friend" });
 		}
 	});
 

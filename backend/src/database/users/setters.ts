@@ -1,5 +1,6 @@
 import db from "../db_init.js";
 
+// Add (register) a new user to the database
 export function registerUserDB(username: string, hashedPassword: string, avatar: string) {
 	const stmt = db.prepare(`
 		INSERT INTO users (username, password, avatar, created_at)
@@ -11,6 +12,7 @@ export function registerUserDB(username: string, hashedPassword: string, avatar:
 	else console.log(`[DB] Registered new user ${username}`);
 }
 
+// Update the username column
 export function updateUsernameDB(username: string, newUsername: string) {
 	const stmt = db.prepare(`
 		UPDATE users
@@ -23,6 +25,7 @@ export function updateUsernameDB(username: string, newUsername: string) {
 	else console.log(`[DB] Username updated for user ${username}`);
 }
 
+// Update the password column
 export function updatePasswordDB(username: string, hashedPassword: string) {
 	const stmt = db.prepare(`
 		UPDATE users
@@ -35,6 +38,7 @@ export function updatePasswordDB(username: string, hashedPassword: string) {
 	else console.log(`[DB] Password updated for user ${username}`);
 }
 
+// Update the avatar column
 export function updateAvatarDB(username: string, avatar: string) {
 	const stmt = db.prepare(`
 		UPDATE users
@@ -47,16 +51,40 @@ export function updateAvatarDB(username: string, avatar: string) {
 	else console.log(`[DB] Avatar updated for user ${username}`);
 }
 
-export function updateFriendsDB(username: string, friends: string) {
-	const stmt = db.prepare(`
-		UPDATE users
-		SET friends = ?
-		WHERE username = ?
-	`);
-	const result = stmt.run(friends, username);
+// Add a friend (ID) from the user.friends column
+export function addFriendDB(username: string, friend: string) {
+	const json: any = db.prepare(`SELECT friends FROM users WHERE username = ?`).get(username);
+
+	// Parse the JSON
+	const friends = JSON.parse(json.friends);
+
+	// Add a new friend
+	friends.push(friend);
+
+	// Update back into the DB
+	const stmt = db.prepare("UPDATE users SET friends = ? WHERE username = ?");
+	const result = stmt.run(JSON.stringify(friends), username);
 	if (result.changes === 0)
-		throw new Error(`[DB] Failed to update friends for user ${username}`); // If DB run fails, throws error
-	else console.log(`[DB] Friends updated for user ${username}`);
+		throw new Error(`[DB] Failed to add friend ${friend} to user ${username}`); // If DB run fails, throws error
+	else console.log(`[DB] Friend ${friend} added to user ${username}`);
+}
+
+// Remove friend (ID) from the user.friends column
+export function removeFriendDB(username: string, friend: string) {
+	const json: any = db.prepare(`SELECT friends FROM users WHERE username = ?`).get(username);
+
+	// Parse the JSON
+	const friends = JSON.parse(json.friends);
+
+	// Remove a friend
+	const updatedFriends = friends.filter((f: string) => f !== friend);
+
+	// Update back into the DB
+	const stmt = db.prepare("UPDATE users SET friends = ? WHERE username = ?");
+	const result = stmt.run(JSON.stringify(updatedFriends), username);
+	if (result.changes === 0)
+		throw new Error(`[DB] Failed to remove friend ${friend} from user ${username}`); // If DB run fails, throws error
+	else console.log(`[DB] Friend ${friend} removed from user ${username}`);
 }
 
 export function updateStatsDB(username: string, stats: string) {
@@ -71,6 +99,7 @@ export function updateStatsDB(username: string, stats: string) {
 	else console.log(`[DB] Stats updated for user ${username}`);
 }
 
+// Remove an user from the database
 export function removeUserDB(username: string): void {
 	const stmt = db.prepare("DELETE FROM users WHERE username = ?");
 	stmt.run(username);

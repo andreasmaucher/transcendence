@@ -1,12 +1,12 @@
 import { RawData } from "ws";
 import type { FastifyInstance } from "fastify";
-import type { PaddleSide, Match } from "../types/game.js";
 import { buildStatePayload } from "./broadcaster.js";
 import { parseCookies, verifySessionToken } from "../auth/session.js";
 import { getOrCreateSingleGame } from "../managers/singleGameManager.js";
 import { getOrCreateTournament, addPlayerToTournament } from "../managers/tournamentManager.js";
 import { addPlayerToMatch, checkMatchFull } from "../managers/matchManager.js";
 import { resetMatchState } from "../game/state.js";
+import { Match, PaddleSide } from "../types/match.js";
 
 function authenticateWebSocket(request: any, socket: any) {
 	const cookies = parseCookies(request.headers.cookie);
