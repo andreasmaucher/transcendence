@@ -1,13 +1,12 @@
 import { RawData } from "ws";
 import type { FastifyInstance } from "fastify";
 import type { PaddleSide, Match } from "../types/game.js";
-
-import { buildStatePayload, broadcast } from "./broadcaster.js";
-import { GAME_CONSTANTS } from "../config/constants.js";
+import { buildStatePayload } from "./broadcaster.js";
 import { parseCookies, verifySessionToken } from "../auth/session.js";
-import { getOrCreateSingleGame } from "../game/singleGameManager.js";
-import { getOrCreateTournament, addPlayerToTournament } from "../game/tournamentManager.js";
-import { addPlayerToMatch, checkMatchFull } from "../game/matchManager.js";
+import { getOrCreateSingleGame } from "../managers/singleGameManager.js";
+import { getOrCreateTournament, addPlayerToTournament } from "../managers/tournamentManager.js";
+import { addPlayerToMatch, checkMatchFull } from "../managers/matchManager.js";
+import { resetMatchState } from "../game/state.js";
 
 function authenticateWebSocket(request: any, socket: any) {
 	const cookies = parseCookies(request.headers.cookie);
@@ -20,33 +19,6 @@ function authenticateWebSocket(request: any, socket: any) {
 		return null;
 	}
 	return payload;
-}
-
-function resetMatchState(match: Match) {
-	match.state = {
-		...match.state,
-		width: GAME_CONSTANTS.FIELD_WIDTH,
-		height: GAME_CONSTANTS.FIELD_HEIGHT,
-		paddles: {
-			left: { y: (GAME_CONSTANTS.FIELD_HEIGHT - GAME_CONSTANTS.PADDLE_HEIGHT) / 2 },
-			right: { y: (GAME_CONSTANTS.FIELD_HEIGHT - GAME_CONSTANTS.PADDLE_HEIGHT) / 2 },
-		},
-		ball: {
-			x: GAME_CONSTANTS.FIELD_WIDTH / 2,
-			y: GAME_CONSTANTS.FIELD_HEIGHT / 2,
-			vx: GAME_CONSTANTS.BALL_SPEED,
-			vy: GAME_CONSTANTS.BALL_SPEED * GAME_CONSTANTS.INITIAL_BALL_VY_RATIO,
-			r: GAME_CONSTANTS.BALL_RADIUS,
-		},
-		score: { left: 0, right: 0 },
-		tick: 0,
-		gameOver: false,
-		winner: undefined,
-		winningScore: GAME_CONSTANTS.WINNING_SCORE,
-	};
-	match.inputs = { left: 0, right: 0 };
-	console.log(`[game] match=${match.id} reset`);
-	broadcast(match);
 }
 
 export function registerWebsocketRoute(fastify: FastifyInstance) {

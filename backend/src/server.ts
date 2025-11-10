@@ -10,9 +10,9 @@ import matchRoutes from "./routes/match.js";
 import tournamentRoutes from "./routes/tournament.js";
 import userRoutes from "./routes/user.js";
 import testRoutes from "./routes/test.js";
-import { forEachTournament } from "./game/tournamentManager.js";
-import { getTournament } from "./game/tournamentManagerHelpers.js";
-import { forEachSingleGame } from "./game/singleGameManager.js";
+import { forEachTournament } from "./managers/tournamentManager.js";
+import { getTournament } from "./managers/tournamentManagerHelpers.js";
+import { forEachSingleGame } from "./managers/singleGameManager.js";
 
 export type PaddleSide = "left" | "right";
 type PaddleInput = -1 | 0 | 1; // -1=up, 0=stop, 1=down

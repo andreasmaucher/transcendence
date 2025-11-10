@@ -1,16 +1,27 @@
+import { Match } from "../../types/game.js";
 import db from "../db_init.js";
 
-export function createMatchDB(id: string, round: number, tournamentId?: string): void {
+export function createMatchDB(match: Match): void {
 	const stmt = db.prepare(`
-		INSERT INTO matches (id, round, tournament_id)
-		VALUES (?, ?, ?)
+		INSERT INTO matches (id, type, round, tournament_id, in_tournament_type, in_tournament_placement_range)
+		VALUES (?, ?, ?, ?, ?, ?)
 	`);
 
-	const result = stmt.run(id, round, tournamentId);
-	if (result.changes === 0) throw new Error(`[DB] Failed to create match ${id}`); // If DB run fails, throws error
+	let result = undefined;
+	if (match.tournament) {
+		const { id, round, type, placementRange } = match.tournament;
+		const placementRangeStr = placementRange.join(",");
+		result = stmt.run(match.id, match.type, round, id, type, placementRangeStr);
+	} else result = stmt.run(match.id, match.type, 0);
+
+	if (result.changes === 0)
+		throw new Error(`[DB] Failed to create match ${match.id}`); // If DB run fails, throws error
 	else {
-		if (tournamentId) console.log(`[DB] Created new match ${id} for round ${round} of tournament ${tournamentId}`);
-		else console.log(`[DB] Created new match ${id} for single game`);
+		if (match.tournament)
+			console.log(
+				`[DB] Created new match ${match.id} for round ${match.tournament.round} of tournament ${match.tournament.id}`
+			);
+		else console.log(`[DB] Created new match ${match.id} for single game`);
 	}
 }
 

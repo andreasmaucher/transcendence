@@ -24,7 +24,6 @@ export function getOrCreateSingleGame(id: string, userId: string, mode: string):
 			singleGame.match = createMatch({
 				id: matchId,
 				mode: mode,
-				round: 0,
 				userId: userId,
 				singleGame: singleGame,
 			});
@@ -46,7 +45,7 @@ export function getOrCreateSingleGame(id: string, userId: string, mode: string):
 				); // 5 minutes
 			}
 		} catch (error: any) {
-			console.error(error.message);
+			console.error("[SGM]" + error.message);
 		}
 		singleGames.set(singleGame.id, singleGame);
 	}

@@ -1,14 +1,20 @@
 import type { Match, Tournament } from "../types/game.js";
-import { createTournamentDB, startTournamentDB, removeTournamentDB } from "../database/tournaments/setters.js";
-import { addPlayerToMatch, checkMatchFull, createMatch, startMatch } from "./matchManager.js";
-import { createInitialTournamentState } from "./state.js";
+import {
+	createTournamentDB,
+	startTournamentDB,
+	removeTournamentDB,
+	endTournamentDB,
+} from "../database/tournaments/setters.js";
+import { addPlayerToMatch, checkMatchFull, startMatch } from "./matchManager.js";
+import { createInitialTournamentState } from "../game/state.js";
 import { tournaments } from "../config/structures.js";
-import { initTournamentMatches } from "./tournamentManagerHelpers.js";
+import {
+	checkTournamentFull,
+	extractMatchLoser,
+	extractMatchWinner,
+	initTournamentMatches,
+} from "./tournamentManagerHelpers.js";
 import crypto from "crypto";
-
-export function resetTournamentsForTest(): void {
-	tournaments.clear();
-}
 
 export function getOrCreateTournament(id: string): Tournament {
 	let tournament = tournaments.get(id);
@@ -53,7 +59,7 @@ export function getOrCreateTournament(id: string): Tournament {
 				tournament
 			); // 5 minutes
 		} catch (error: any) {
-			console.error(error.message);
+			console.error("[TM] " + error.message);
 		}
 		tournaments.set(tournament.id, tournament);
 	}
@@ -69,10 +75,10 @@ export function startTournament(tournament: Tournament) {
 		if (matches) {
 			for (const match of matches) startMatch(match);
 			startTournamentDB(tournament.id);
-			tournament.isRunning = true;
+			tournament.state.isRunning = true;
 		}
 	} catch (error: any) {
-		console.error(error.message);
+		console.error("[TM] " + error.message);
 	}
 }
 
@@ -91,21 +97,46 @@ export function addPlayerToTournament(tournament: Tournament, playerId: string):
 
 		return undefined; // If all matches already full
 	} catch (error: any) {
-		console.error(error.message);
+		console.error("[TM] " + error.message);
 	}
 }
 
-export function checkTournamentFull(tournament: Tournament) {
-	const matches = tournament.matches.get(tournament.state.round);
-	if (matches) {
-		for (const match of matches) {
-			if (!checkMatchFull(match)) return false;
+export function assignPlayersToRound(tournament: Tournament) {
+	const prevRound = tournament.matches.get(tournament.state.round - 1);
+	const nextRound = tournament.matches.get(tournament.state.round);
+	if (prevRound && nextRound) {
+		for (const match of prevRound) {
+			const winner = extractMatchWinner(match);
+			addPlayerToTournament(tournament, winner);
+		}
+		for (const match of prevRound) {
+			const loser = extractMatchLoser(match);
+			addPlayerToTournament(tournament, loser);
 		}
 	}
-
-	return true;
 }
 
-export function forEachTournament(fn: (tournament: Tournament) => void): void {
-	for (const tournament of tournaments.values()) fn(tournament);
+export function goToNextRound(tournament: Tournament) {
+	tournament.state.round++;
+	const matches = initTournamentMatches(tournament, tournament.state.size);
+	tournament.matches.set(tournament.state.round, matches);
+	assignPlayersToRound(tournament);
+	for (const match of matches) startMatch(match);
+}
+
+// End tournament on the database
+export function endTournament(tournament: Tournament) {
+	if (tournament.state.isOver) return;
+
+	const finalRoundMatches = tournament.matches.get(tournament.state.round);
+	if (!finalRoundMatches) return;
+	const finalMatch = finalRoundMatches.find((m) => m.tournament?.type === "final");
+	if (!finalMatch) {
+		console.error(`[TM] No final match found for tournament ${tournament.id}`);
+		return;
+	}
+
+	endTournamentDB(tournament.id, finalMatch.state.winner);
+	tournament.state.isRunning = false;
+	tournament.state.isOver = true;
 }

@@ -1,42 +1,64 @@
-import type { SingleGame, Match, Tournament } from "../types/game.js";
-import { createInitialMatchState } from "./state.js";
-import { addPlayerMatchDB, createMatchDB, startMatchDB } from "../database/matches/setters.js";
+import type { SingleGame, Match, Tournament, TournamentMatchType, TournamentMatchInfo } from "../types/game.js";
+import { createInitialMatchState } from "../game/state.js";
+import { addPlayerMatchDB, createMatchDB, endMatchDB, startMatchDB } from "../database/matches/setters.js";
 import { getSingleGame } from "./singleGameManager.js";
+import { endTournamentDB } from "../database/tournaments/setters.js";
+import { tournaments } from "../config/structures.js";
+import { isTournamentOver } from "./tournamentManagerHelpers.js";
+import { endTournament } from "./tournamentManager.js";
+
+export function initTournamentMatchInfo(
+	tournament: Tournament,
+	type: TournamentMatchType,
+	placementRange: [number, number]
+) {
+	let tournamentMatchInfo: TournamentMatchInfo = {
+		id: tournament.id,
+		round: tournament.state.round,
+		type: type,
+		placementRange: placementRange,
+	};
+	return tournamentMatchInfo;
+}
 
 export function createMatch({
 	id,
 	mode,
-	round,
 	userId,
 	singleGame,
 	tournament,
+	type,
+	placementRange,
 }: {
 	id: string;
 	mode: string;
-	round: number;
 	userId?: string;
 	singleGame?: SingleGame;
 	tournament?: Tournament;
+	type?: TournamentMatchType;
+	placementRange?: [number, number];
 }): Match {
 	let match = {
 		id,
-		tournamentId: tournament?.id,
+		tournament: undefined,
 		singleGameId: singleGame?.id,
-		isRunning: false,
-		state: createInitialMatchState(round),
+		state: createInitialMatchState(),
 		inputs: { left: 0, right: 0 },
 		players: { left: undefined, right: undefined },
 		clients: new Set(),
 	} as Match;
 
+	if (tournament && type && placementRange)
+		match.tournament = initTournamentMatchInfo(tournament, type, placementRange);
+
 	try {
 		// Add new match to database (without starting it)
-		createMatchDB(match.id, round, tournament?.id);
+		createMatchDB(match);
 		// Start it only if it's a local session
 		if (mode == "local" && userId) {
 			addPlayerMatchDB(match.id, userId, "left");
 			startMatchDB(id);
-			match.isRunning = true;
+			match.state.isRunning = true;
 		}
 	} catch (error: any) {
 		console.error(error.message);
@@ -55,12 +77,20 @@ export function startMatch(match: Match) {
 				console.log(`[WS] Match ${match.id} now full — timer cleared`);
 				startMatchDB(match.id);
 			}
-		} else if (match.tournamentId) startMatchDB(match.id, match.tournamentId);
+		} else if (match.tournament) startMatchDB(match.id, match.tournament.id);
 		else return; // Temporary error handling
-		match.isRunning = true;
+		match.state.isRunning = true;
 	} catch (error: any) {
 		console.error(error.message);
 	}
+}
+
+export function endMatch(match: Match) {
+	match.state.isRunning = false;
+	endMatchDB(match.id, match.state.winner); // Update database
+	if (!match.tournament) return;
+	const tournament = tournaments.get(match.tournament.id);
+	if (tournament && isTournamentOver(tournament)) endTournament(tournament);
 }
 
 export function addPlayerToMatch(match: Match, playerId: string) {

@@ -10,14 +10,15 @@ export type SingleGame = {
 
 export type TournamentState = {
 	size: number;
+	isRunning: boolean;
 	round: number;
-	tournamentOver: boolean;
+	isOver: boolean;
 	winner: PaddleSide | null;
 };
 
 export type Tournament = {
 	id: string;
-	isRunning: boolean;
+
 	state: TournamentState;
 	matches: Map<number, Match[]>;
 	expirationTimer?: NodeJS.Timeout;
@@ -48,35 +49,49 @@ export type BallState = {
 };
 
 export type MatchState = {
-	round: number;
+	isRunning: boolean;
 	width: number;
 	height: number;
 	paddles: Record<PaddleSide, PaddleState>;
 	ball: BallState;
 	score: Record<PaddleSide, number>;
 	tick: number;
-	gameOver: boolean;
+	isOver: boolean;
 	winner: PaddleSide | undefined;
 	winningScore: number;
 };
 
+export type TournamentMatchType = "normal" | "final" | "thirdPlace" | "placement"; // Types for tournament matches
+
+export type TournamentMatchInfo = {
+	id: string;
+	round: number;
+	type: TournamentMatchType;
+	placementRange: [number, number];
+};
+
+export type MatchType = "local" | "remote";
+
 export type Match = {
 	id: string;
-	tournamentId: string | undefined;
+	tournament: TournamentMatchInfo | undefined;
 	singleGameId: string | undefined;
-	isRunning: boolean;
 	state: MatchState;
 	inputs: Record<PaddleSide, PaddleInput>;
 	players: { left: string | undefined; right: string | undefined };
+	type: MatchType;
 	clients: Set<WebSocket>;
 };
 
 export type MatchDB = {
 	internal_id: number;
 	id: string;
-	tournament_id: string | null;
 	player_left_id: string | null;
 	player_right_id: string | null;
+	tournament_id: string | null;
+	round: number;
+	in_tournament_type: TournamentMatchType | null;
+	in_tournament_placement_range: string | null;
 	score_left: number;
 	score_right: number;
 	winner: string | null;

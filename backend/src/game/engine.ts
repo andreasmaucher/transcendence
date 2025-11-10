@@ -2,27 +2,26 @@
 import { GAME_CONSTANTS } from "../config/constants.js";
 import type { Match } from "../types/game.js";
 import { clamp, resetBall } from "./state.js";
-import { updateMatchDB, endMatchDB } from "../database/matches/setters.js";
-import { endTournamentDB } from "../database/tournaments/setters.js";
+import { updateMatchDB } from "../database/matches/setters.js";
+import { endMatch } from "../managers/matchManager.js";
 
 export function maybeCompleteGame(match: Match): void {
 	const state = match.state;
 	const { score, winningScore } = state;
-	if (state.gameOver) return;
+	if (state.isOver) return;
 	let gameEnded = false;
 	if (score.left >= winningScore) {
-		state.gameOver = true;
+		state.isOver = true;
 		state.winner = "left";
 		gameEnded = true;
 	}
 	if (score.right >= winningScore) {
-		state.gameOver = true;
+		state.isOver = true;
 		state.winner = "right";
 		gameEnded = true;
 	}
-	if (state.gameOver) {
-		endMatchDB(match.id, state.winner); // Update database
-		//endTournamentDB(match.tournament_id, state.winner); // hardcoded for the moment
+	if (state.isOver) {
+		endMatch(match);
 		match.inputs.left = 0;
 		match.inputs.right = 0;
 		if (gameEnded) {
@@ -33,8 +32,7 @@ export function maybeCompleteGame(match: Match): void {
 
 export function stepMatch(match: Match, dt: number): void {
 	const { state, inputs } = match;
-	if (!match.isRunning) return; // Game logic starts only when the match starts
-	if (state.gameOver) return;
+	if (!match.state.isRunning || state.isOver) return; // Game logic starts only when the match starts and stops when the match is over
 
 	const maxPaddleY = state.height - GAME_CONSTANTS.PADDLE_HEIGHT;
 	for (const side of ["left", "right"] as const) {

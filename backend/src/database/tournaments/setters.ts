@@ -1,3 +1,4 @@
+import { PaddleSide } from "../../types/game.js";
 import db from "../db_init.js";
 
 export function createTournamentDB(id: string, size: number): void {
@@ -33,7 +34,7 @@ export function updateTournamentDB(id: string, left: number, right: number): voi
 	else console.log(`[DB] Updated tournament ${id}: ${left}-${right}`);
 }
 
-export function endTournamentDB(id: string, winner: string | null): void {
+export function endTournamentDB(id: string, winner?: PaddleSide): void {
 	const stmt = db.prepare(`
 		UPDATE tournaments
 		SET winner = ?, ended_at = CURRENT_TIMESTAMP
