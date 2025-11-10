@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { getMatchById } from "../database/matches/getters.js";
 
 export default async function matchRoutes(fastify: FastifyInstance) {
+	// Get a match by id
 	fastify.get("/api/match/:id", async (request, reply) => {
 		const { id } = request.params as { id: string };
 

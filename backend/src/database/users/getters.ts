@@ -66,3 +66,15 @@ export function getUsername(username: string): boolean {
 
 	return !!json; // Convert to boolean
 }
+
+// Retrieve the frieds of the user
+export function getUserFriends(username: string): string[] {
+	const stmt = db.prepare(`SELECT friends FROM users WHERE username = ?`);
+
+	const result: any = stmt.get(username); // returns one row or undefined
+	if (!result) throw new Error(`[DB] Friends of ${username} not found`);
+
+	const friends: string[] = JSON.parse(result.friends);
+
+	return friends;
+}
