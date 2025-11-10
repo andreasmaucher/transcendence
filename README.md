@@ -156,14 +156,17 @@ Server → client messages:
 
 ```json
 {
-	"type": "state",
-	"tick": 42,
-	"paddles": { "left": { "y": 210 }, "right": { "y": 240 } },
-	"ball": { "x": 400, "y": 225, "r": 8 },
-	"score": { "left": 3, "right": 2 },
-	"gameOver": false,
-	"winner": null,
-	"winningScore": 11
+  "type": "state",
+  "isRunning": true,
+  "width": 800,
+  "height": 450,
+  "tick": 42,
+  "paddles": { "left": { "y": 210 }, "right": { "y": 240 } },
+  "ball": { "x": 400, "y": 225, "vx": -180, "vy": 90, "r": 8 },
+  "score": { "left": 3, "right": 2 },
+  "isOver": false,
+  "winner": null,
+  "winningScore": 11
 }
 ```
 

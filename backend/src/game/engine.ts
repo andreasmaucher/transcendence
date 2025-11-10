@@ -1,39 +1,36 @@
 // main game loop and collision/score logic
 import { GAME_CONSTANTS } from "../config/constants.js";
-import type { Match } from "../types/game.js";
 import { clamp, resetBall } from "./state.js";
-import { updateMatchDB, endMatchDB } from "../database/matches/setters.js";
-import { endTournamentDB } from "../database/tournaments/setters.js";
+import { updateMatchDB } from "../database/matches/setters.js";
+import { endMatch } from "../managers/matchManager.js";
+import { Match } from "../types/match.js";
 
-export function maybeCompleteGame(match: Match): void {
+export function isGameOver(match: Match): void {
 	const state = match.state;
 	const { score, winningScore } = state;
-	if (state.gameOver) return;
-	let gameEnded = false;
+	if (state.isOver) return;
+	let gameOver = false;
 	if (score.left >= winningScore) {
-		state.gameOver = true;
+		state.isOver = true;
 		state.winner = "left";
-		gameEnded = true;
+		gameOver = true;
 	}
 	if (score.right >= winningScore) {
-		state.gameOver = true;
+		state.isOver = true;
 		state.winner = "right";
-		gameEnded = true;
+		gameOver = true;
 	}
-	if (state.gameOver) {
-		endMatchDB(match.id, state.winner); // Update database
-		endTournamentDB(match.tournament_id, state.winner); // hardcoded for the moment
+	if (state.isOver) {
+		endMatch(match);
 		match.inputs.left = 0;
 		match.inputs.right = 0;
-		if (gameEnded) {
-			console.log(`[game] room=${match.id} event=game-over winner=${state.winner ?? "unknown"}`);
-		}
+		if (gameOver) console.log(`[ENGINE] Match ${match.id} is over and winner is ${state.winner ?? "unknown"}`);
 	}
 }
 
 export function stepMatch(match: Match, dt: number): void {
 	const { state, inputs } = match;
-	if (state.gameOver) return;
+	if (!match.state.isRunning || state.isOver) return; // Game logic starts only when the match starts and stops when the match is over
 
 	// Capture previous paddle positions to derive per-frame velocity
 	const prevLeftY = state.paddles.left.y;
@@ -139,13 +136,13 @@ export function stepMatch(match: Match, dt: number): void {
 		state.score.right += 1;
 		updateMatchDB(match.id, state.score.left, state.score.right);
 		console.log(`[score] room=${match.id} scorer=right score=${state.score.left}-${state.score.right}`);
-		maybeCompleteGame(match);
+		isGameOver(match);
 		resetBall(state, 1);
 	} else if (ball.x > state.width + GAME_CONSTANTS.SCORE_OUT_MARGIN) {
 		state.score.left += 1;
 		updateMatchDB(match.id, state.score.left, state.score.right);
 		console.log(`[score] room=${match.id} scorer=left score=${state.score.left}-${state.score.right}`);
-		maybeCompleteGame(match);
+		isGameOver(match);
 		resetBall(state, -1);
 	}
 

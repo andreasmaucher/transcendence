@@ -27,7 +27,7 @@ db.exec(`
 		provider TEXT DEFAULT 'local',
 		provider_id TEXT DEFAULT NULL,
 		avatar TEXT,
-		friends TEXT NULL,
+		friends TEXT DEFAULT '[]',
 		stats TEXT NULL,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
@@ -44,16 +44,39 @@ db.exec(`
 	CREATE TABLE IF NOT EXISTS matches (
 		internal_id INTEGER PRIMARY KEY AUTOINCREMENT,
 		id TEXT UNIQUE NOT NULL,
-		tournament_id TEXT NOT NULL,
-		player_left INTEGER,
-		player_right INTEGER,
+		type TEXT,
+		player_left TEXT,
+		player_right TEXT,
+		tournament_id TEXT,
+		round INTEGER,
+		in_tournament_type TEXT,
+		in_tournament_placement_range TEXT,
 		score_left INTEGER DEFAULT 0,
 		score_right INTEGER DEFAULT 0,
 		winner TEXT,
 		started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		ended_at DATETIME,
-		FOREIGN KEY (tournament_id) REFERENCES tournaments (id)
+		FOREIGN KEY (tournament_id) REFERENCES tournaments (id) ON DELETE CASCADE,
+		FOREIGN KEY (player_left) REFERENCES users (username),
+		FOREIGN KEY (player_right) REFERENCES users (username)
 	);
 `);
+
+function cleanupIncompleteGames() {
+	try {
+		const deletedMatches = db.prepare(`DELETE FROM matches WHERE winner IS NULL`).run();
+
+		const deletedTournaments = db.prepare(`DELETE FROM tournaments WHERE winner IS NULL`).run();
+
+		console.log(
+			`[DB] Cleanup complete — removed ${deletedMatches.changes} unfinished matches and ${deletedTournaments.changes} unfinished tournaments.`
+		);
+	} catch (error: any) {
+		console.error("[DB] Cleanup failed:", error.message);
+	}
+}
+
+// Run cleanup on startup
+cleanupIncompleteGames();
 
 export default db;

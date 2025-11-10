@@ -7,17 +7,8 @@ import { fetchGameConstants } from "./api/http";
 import { ensureAuthenticated, renderAuthHeader } from "./auth/ui";
 import { WS_PROTOCOL, WS_HOST, WS_PORT, ROOM_ID } from "./config/endpoints";
 import { draw } from "./rendering/canvas";
-import {
-	applyBackendState,
-	type BackendStateMessage,
-	type State,
-} from "./game/state";
-import {
-	setupInputs,
-	setActiveSocket,
-	queueInput,
-	flushInputs,
-} from "./game/input";
+import { applyBackendState, type BackendStateMessage, type State } from "./game/state";
+import { setupInputs, setActiveSocket, queueInput, flushInputs } from "./game/input";
 
 // global constants fetched from backend
 let GAME_CONSTANTS: GameConstants | null = null;
@@ -25,8 +16,7 @@ let GAME_CONSTANTS: GameConstants | null = null;
 // Make the initial game state, paddles starting centered
 function createInitialState(): State {
 	if (!GAME_CONSTANTS) throw new Error("Game constants not loaded");
-	const centerY =
-		(GAME_CONSTANTS.fieldHeight - GAME_CONSTANTS.paddleHeight) / 2;
+	const centerY = (GAME_CONSTANTS.fieldHeight - GAME_CONSTANTS.paddleHeight) / 2;
 	const left = {
 		x: GAME_CONSTANTS.paddleMargin,
 		y: centerY,
@@ -35,16 +25,14 @@ function createInitialState(): State {
 		speed: GAME_CONSTANTS.paddleSpeed,
 	};
 	const right = {
-		x:
-			GAME_CONSTANTS.fieldWidth -
-			GAME_CONSTANTS.paddleMargin -
-			GAME_CONSTANTS.paddleWidth,
+		x: GAME_CONSTANTS.fieldWidth - GAME_CONSTANTS.paddleMargin - GAME_CONSTANTS.paddleWidth,
 		y: centerY,
 		w: GAME_CONSTANTS.paddleWidth,
 		h: GAME_CONSTANTS.paddleHeight,
 		speed: GAME_CONSTANTS.paddleSpeed,
 	};
 	return {
+		isRunning: true,
 		width: GAME_CONSTANTS.fieldWidth,
 		height: GAME_CONSTANTS.fieldHeight,
 		left,
@@ -58,7 +46,7 @@ function createInitialState(): State {
 		},
 		scoreL: 0,
 		scoreR: 0,
-		gameOver: false,
+		isOver: false,
 		winner: null,
 		winningScore: GAME_CONSTANTS.winningScore,
 		tick: 0,
@@ -69,16 +57,14 @@ function createInitialState(): State {
 // also implements autmatic reconnection in case the connection is lost
 function connectToBackend(state: State): void {
 	// construct the WebSocket URL using the protocol, host, and port + room ID
-	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/tournament/${ROOM_ID}/ws`;
+	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/local-single-game/${ROOM_ID}/ws`;
 	// create a new WebSocket connection to the backend
 	const ws = new WebSocket(wsUrl);
 	setActiveSocket(ws); // store the WebSocket connection in the activeSocket variable
+	let resetRequested = false; // ensure we only trigger reset once per game
 
 	// Handler: when the WebSocket connection is opened
 	ws.addEventListener("open", () => {
-		// Reset game to fresh state on connection
-		ws.send(JSON.stringify({ type: "reset" }));
-
 		// stop the paddles from moving when the connection is established
 		queueInput("left", "stop");
 		queueInput("right", "stop");
@@ -97,16 +83,24 @@ function connectToBackend(state: State): void {
 		}
 		// if the message is not valid JSON or not an object, ignore it
 		if (!parsed || typeof parsed !== "object") return;
-		const payload = parsed as Partial<BackendStateMessage>;
+		const payload = parsed as BackendStateMessage;
 		// if the message is a state message and has the required fields, apply the backend state to the local frontend game state
-		if (payload.type === "state" && payload.ball && payload.score) {
-			applyBackendState(state, payload as BackendStateMessage);
+		if (payload.type === "state") {
+			const wasGameOver = state.isOver;
+			applyBackendState(state, payload);
+			if (state.isOver && !wasGameOver && !resetRequested) {
+				ws.send(JSON.stringify({ type: "reset" }));
+				resetRequested = true;
+			} else if (!state.isOver) {
+				resetRequested = false;
+			}
 		}
 	});
 
 	// Handler: when the WebSocket connection is closed
 	ws.addEventListener("close", () => {
 		setActiveSocket(null);
+		resetRequested = false;
 		// schedule a new connection attempt after a 1 second delay
 		setTimeout(() => connectToBackend(state), 1000);
 	});

@@ -41,7 +41,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: State): void {
 	ctx.fillText(String(s.scoreR), s.width * 0.6, 32);
 
 	// show winner message if game is over
-	if (s.gameOver && s.winner) {
+	if (s.isOver && s.winner) {
 		ctx.fillStyle = "#fbbf24"; // bright yellow for winner text
 		ctx.font = "32px system-ui";
 		ctx.textAlign = "center";
