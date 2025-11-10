@@ -82,3 +82,17 @@ export async function logout(): Promise<void> {
 	});
 	if (!res.ok) throw new Error("logout failed");
 }
+
+// 
+export async function postJSON<T>(url: string, body: unknown): Promise<T> {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include", // allow backend session cookie
+    body: JSON.stringify(body),
+  });
+
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw { status: res.status, json };
+  return json as T;
+}

@@ -22,3 +22,9 @@ export const CONTRACT_ABI = [
 	"function getGame(string,string) view returns (string,string,uint32,string,string,uint8,uint8,address,uint64)",
 	"function exists(string,string) view returns (bool)",
 ];
+
+// src/config/endpoints.ts
+export const API = {
+  LOGIN: "/api/user/login",
+  REGISTER: "/api/user/register",
+} as const;
