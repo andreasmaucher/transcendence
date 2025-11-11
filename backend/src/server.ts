@@ -13,6 +13,8 @@ import testRoutes from "./routes/test.js";
 import { getTournament } from "./managers/tournamentManagerHelpers.js";
 import { forEachSingleGame } from "./managers/singleGameManager.js";
 import { PaddleSide } from "./types/match.js";
+import { usersOnline } from "./config/structures.js";
+import { removeUserOnline } from "./user/online.js";
 
 const FIELD_WIDTH = GAME_CONSTANTS.FIELD_WIDTH;
 const FIELD_HEIGHT = GAME_CONSTANTS.FIELD_HEIGHT;
@@ -84,6 +86,7 @@ registerWebsocketRoute(fastify);
 
 let previousTick = process.hrtime.bigint();
 
+// Updates game logic
 setInterval(() => {
 	const now = process.hrtime.bigint();
 	const dt = Number(now - previousTick) / 1e9;
@@ -98,5 +101,28 @@ setInterval(() => {
 		broadcast(match);
 	});
 }, 1000 / UPDATE_FPS);
+
+// Ping the frontend to check if user is still online
+setInterval(() => {
+	// Loop through all the online users
+	for (const [username, user] of usersOnline.entries()) {
+		const socket = user.socket;
+
+		// If socket is already not alive terminates it
+		if (socket.isAlive === false) {
+			console.log(`[WS] Socket of ${username} timed out`);
+			socket.terminate();
+			removeUserOnline(username);
+			continue;
+		}
+
+		socket.isAlive = false;
+		try {
+			socket.ping();
+		} catch {
+			removeUserOnline(username);
+		}
+	}
+}, 30000);
 
 export default fastify;

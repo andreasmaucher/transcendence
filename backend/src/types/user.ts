@@ -1,13 +1,13 @@
+// The User structure stored in the usersOnline map
 export type User = {
-	internal_id: number;
 	username: string;
-	password: string;
 	provider: string;
 	provider_id: string;
 	avatar: string;
-	friends: User[];
-	stats: string | null;
-	created_at: string;
+	socket: WebSocket;
+	game: WebSocket | undefined;
+	//friends: User[];
+	//stats: string | null;
 };
 
 // This is the data that is put inside the token.
