@@ -107,19 +107,19 @@ All backend endpoints return JSON format. All POST request expect the data to be
 
 ## USER
 
-| Method | Path                         | Description                                   | Return                                     |
-| ------ | ---------------------------- | --------------------------------------------- | ------------------------------------------ |
-| `GET`  | `/api/users/all`             | GET req with no params                        | All users in database                      |
-| ------ | ---------------------------- | --------------------------------------------- | ------------------------------------------ |
-| `GET`  | `/api/user/:username`        | GET req with username as param                | The user (if it exists)                    |
-| `POST` | `/api/user/check`            | POST req, check if username already exists    | True: exists, false: doesn't               |
-| `POST` | `/api/user/register`         | POST req, register new user                   | Success: true or false                     |
-| `POST` | `/api/user/login`            | POST req, check user credentials (login)      | Success: true or false                     |
-| `POST` | `/api/user/logout`           | POST req, log user out                        | Success: true or false                     |
-| `POST` | `/api/user/update`           | POST req, update user information, one by one | Success: true or false                     |
-| `POST` | `/api/user/add-friend`       | POST req, add other user as friend            | Success: true or false                     |
-| `POST` | `/api/user/remove-friend`    | POST req, remove other user as friend         | Success: true or false                     |
-| `POST` | `/api/user/me`               | POST req with session cookie                  | Current logged-in user                     |
+| Method | Path                         | Description                                   | Params                                     | Return                                   |
+| ------ | ---------------------------- | --------------------------------------------- | ------------------------------------------ | ---------------------------------------- |
+| `GET`  | `/api/users/all`             | GET req                                       | None                                       | All users in database                    |
+| ------ | ---------------------------- | --------------------------------------------- | ------------------------------------------ | ---------------------------------------- |
+| `GET`  | `/api/user/:username`        | GET req with username as param                | Username                                   | The user (if it exists)                  |
+| `POST` | `/api/user/check`            | POST req, check if username already exists    | Username                                   | True: exists, false: doesn't             |
+| `POST` | `/api/user/register`         | POST req, register new user                   | Username, password, avatar?                | Success: true or false                   |
+| `POST` | `/api/user/login`            | POST req, check user credentials (login)      | Username, password                         | Success: true or false                   |
+| `POST` | `/api/user/logout`           | POST req, log user out                        | Username                                   | Success: true or false                   |
+| `POST` | `/api/user/update`           | POST req, update user information, one by one | Username, newUsername?, newPassword?, newAvatar?| Success: true or false              |
+| `POST` | `/api/user/add-friend`       | POST req, add other user as friend            | Username, friend                           | Success: true or false                   |
+| `POST` | `/api/user/remove-friend`    | POST req, remove other user as friend         | Username, friend                           | Success: true or false                   |
+| `GET`  | `/api/user/me`               | GET req                                       | None, but session cookie                   | Current logged-in user                   |
 
 ## SINGLE GAME
 
@@ -146,11 +146,11 @@ All backend endpoints return JSON format. All POST request expect the data to be
 
 ## TEST
 
-| Method | Path                          | Description                                             | Return                              |
-| ------ | ----------------------------- | ------------------------------------------------------- | ----------------------------------- |
-| `GET`  | `/api/test/print-users`       | GET req with no params, print in backend logs           | All users in database               |
-| `GET`  | `/api/test/print-matches`     | GET req with no params, print in backend logs           | All matches in database             |
-| `GET`  | `/api/test/print-tournaments` | GET req with no params, print in backend logs           | All tournaments in database         |
+| Method | Path                          | Description                                   | Return                      |
+| ------ | ----------------------------- | --------------------------------------------- | --------------------------- |
+| `GET`  | `/api/test/print-users`       | GET req with no params, print in backend logs | All users in database       |
+| `GET`  | `/api/test/print-matches`     | GET req with no params, print in backend logs | All matches in database     |
+| `GET`  | `/api/test/print-tournaments` | GET req with no params, print in backend logs | All tournaments in database |
 
 WebSocket commands from the frontend:
 
