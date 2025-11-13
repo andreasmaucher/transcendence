@@ -1,5 +1,5 @@
 import { usersOnline } from "../config/structures.js";
-import { getJsonUserByUsername } from "../database/users/getters.js";
+import { getJsonUserByUsernameDB } from "../database/users/getters.js";
 import { User } from "../types/user.js";
 
 export function getCurrentDateTime(): string {
@@ -21,7 +21,7 @@ export function isUserOnline(username: string): boolean {
 
 // Add user to the usersOnline map structure (if not already there)
 export function addUserOnline(username: string, socket: WebSocket) {
-	const userDB = getJsonUserByUsername(username);
+	const userDB = getJsonUserByUsernameDB(username);
 	if (userDB && !isUserOnline(userDB.username)) {
 		const user = {
 			username: userDB.username,

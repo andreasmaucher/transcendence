@@ -118,3 +118,21 @@ export function getTournament(id: string): Tournament | undefined {
 	if (!tournament) console.log("[TM] Tournament not found");
 	return tournament;
 }
+
+export function isTournamentOpen(tournament: Tournament): boolean {
+	if (tournament.state.isRunning || tournament.state.isOver) return false;
+
+	const matches = tournament.matches.get(1);
+	if (!matches) return false;
+
+	// If any match has an empty player slot, tournament is open
+	return matches.some((match) => !match.players.left || !match.players.right);
+}
+
+export function getOpenTournaments(): Tournament[] {
+	let openTournaments: Tournament[] = [];
+	for (const tournament of tournaments.values()) {
+		if (isTournamentOpen(tournament)) openTournaments.push(tournament);
+	}
+	return openTournaments;
+}

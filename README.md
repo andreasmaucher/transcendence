@@ -105,45 +105,52 @@ All backend endpoints return JSON format. All POST request expect the data to be
 | `GET`  | `/api/config`  | (env override supported)                                     | Returns `{ winningScore }` |
 | `POST` | `/api/control` | Optional HTTP paddle control `{ roomId, paddle, direction }` |                            |
 
+## USER
+
+| Method | Path                         | Description                                   | Return                                     |
+| ------ | ---------------------------- | --------------------------------------------- | ------------------------------------------ |
+| `GET`  | `/api/users/all`             | GET req with no params                        | All users in database                      |
+| ------ | ---------------------------- | --------------------------------------------- | ------------------------------------------ |
+| `GET`  | `/api/user/:username`        | GET req with username as param                | The user (if it exists)                    |
+| `POST` | `/api/user/check`            | POST req, check if username already exists    | True: exists, false: doesn't               |
+| `POST` | `/api/user/register`         | POST req, register new user                   | Success: true or false                     |
+| `POST` | `/api/user/login`            | POST req, check user credentials (login)      | Success: true or false                     |
+| `POST` | `/api/user/logout`           | POST req, log user out                        | Success: true or false                     |
+| `POST` | `/api/user/update`           | POST req, update user information, one by one | Success: true or false                     |
+| `POST` | `/api/user/add-friend`       | POST req, add other user as friend            | Success: true or false                     |
+| `POST` | `/api/user/remove-friend`    | POST req, remove other user as friend         | Success: true or false                     |
+| `POST` | `/api/user/me`               | POST req with session cookie                  | Current logged-in user                     |
+
+## SINGLE GAME
+
+| Method | Path                     | Description            | Return                                      |
+| ------ | ------------------------ | ---------------------- | ------------------------------------------- |
+| `WS`   | `/api/single-games/open` | GET req with no params | All open (waiting for players) single games |
+
 ## TOURNAMENT
 
-| Method | Path                         | Description                                                     | Returns                                       |
+| Method | Path                         | Description                                                     | Return                                        |
 | ------ | ---------------------------- | --------------------------------------------------------------- | --------------------------------------------- |
-| `GET`  | `/api/tournaments/:id/state` | [PROBABLY NOT WORKING]                                          | One-off JSON snapshot of a room               |
-| `WS`   | `/api/tournaments/:id/ws`    | [PROBABLY NOT WORKING] Live state stream + paddle/input channel |                                               |
-| `GET`  | `/api/tournaments/:id`       | Access the database using the tournament id as key              | Returns the data (or a error message)         |
-| Method | Path                         | Description                                                     | Returns                                       |
+| `GET`  | `/api/tournaments/all`       | GET req with no params                                          | All tournaments in database                   |
+| `WS`   | `/api/tournaments/open`      | GET req with no params                                          | All open (waiting for players) tournaments    |
 | ------ | ---------------------------- | --------------------------------------------------------------- | --------------------------------------------- |
-| `GET`  | `/api/tournament/:id/state`  | [PROBABLY NOT WORKING]                                          | One-off JSON snapshot of a room               |
-| `WS`   | `/api/tournament/:id/ws`     | [PROBABLY NOT WORKING] Live state stream + paddle/input channel |                                               |
-| `GET`  | `/api/tournament/:id`        | Access the database using the tournament id as key              | Returns the data (or a error message)         |
+| `GET`  | `/api/tournament/:id`        | GET req with tournament id as param                             | The tournament (if it exists)                 |
 
 ## MATCH
 
-| Method | Path                        | Description                                                     | Returns                                       |
+| Method | Path                        | Description                                                     | Return                                        |
 | ------ | --------------------------- | --------------------------------------------------------------- | --------------------------------------------- |
-| `GET`  | `/api/matches/:id`          | Access the database using the match id as key                   | Returns the match data (or a error message)   |
-| Method | Path                        | Description                                                     | Returns                                       |
+| `GET`  | `/api/matches/all`          | GET req with no params                                          | All matches in database                       |
 | ------ | --------------------------- | --------------------------------------------------------------- | --------------------------------------------- |
-| `GET`  | `/api/match/:id`            | Access the database using the match id as key                   | Returns the match data (or a error message)   |
-
-## USER
-
-| Method | Path                  | Description                                   | Returns                                    |
-| ------ | --------------------- | --------------------------------------------- | ------------------------------------------ |
-| `GET`  | `/api/user/:username` | Access the database using the username as key | Returns the user data (or a error message) |
-| `POST` | `/api/user/check`     | Checks if username already exist, expect body | Returns a boolean                          |
-| `POST` | `/api/user/login`     | Checks user credentials                       | Returns success: true or false             |
-| `POST` | `/api/user/register`  | Register new user                             | Returns success: true or false             |
-| `POST` | `/api/user/update`    | Update user information, one by one           | Returns success: true or false             |
+| `GET`  | `/api/match/:id`            | GET req with match id as param                                  | The match (if it exists)                      |
 
 ## TEST
 
-| Method | Path                          | Description                                             | Returns                             |
+| Method | Path                          | Description                                             | Return                              |
 | ------ | ----------------------------- | ------------------------------------------------------- | ----------------------------------- |
-| `GET`  | `/api/test/print-users`       | Returns all users and prints them in backend logs       | Returns all users in database       |
-| `GET`  | `/api/test/print-matches`     | Returns all matches and prints them in backend logs     | Returns all matches in database     |
-| `GET`  | `/api/test/print-tournaments` | Returns all tournaments and prints them in backend logs | Returns all tournaments in database |
+| `GET`  | `/api/test/print-users`       | GET req with no params, print in backend logs           | All users in database               |
+| `GET`  | `/api/test/print-matches`     | GET req with no params, print in backend logs           | All matches in database             |
+| `GET`  | `/api/test/print-tournaments` | GET req with no params, print in backend logs           | All tournaments in database         |
 
 WebSocket commands from the frontend:
 
@@ -156,17 +163,17 @@ Server → client messages:
 
 ```json
 {
-  "type": "state",
-  "isRunning": true,
-  "width": 800,
-  "height": 450,
-  "tick": 42,
-  "paddles": { "left": { "y": 210 }, "right": { "y": 240 } },
-  "ball": { "x": 400, "y": 225, "vx": -180, "vy": 90, "r": 8 },
-  "score": { "left": 3, "right": 2 },
-  "isOver": false,
-  "winner": null,
-  "winningScore": 11
+	"type": "state",
+	"isRunning": true,
+	"width": 800,
+	"height": 450,
+	"tick": 42,
+	"paddles": { "left": { "y": 210 }, "right": { "y": 240 } },
+	"ball": { "x": 400, "y": 225, "vx": -180, "vy": 90, "r": 8 },
+	"score": { "left": 3, "right": 2 },
+	"isOver": false,
+	"winner": null,
+	"winningScore": 11
 }
 ```
 

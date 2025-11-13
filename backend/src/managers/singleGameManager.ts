@@ -10,6 +10,10 @@ export function resetSingleGamesForTest(): void {
 	singleGames.clear();
 }
 
+export function forEachSingleGame(fn: (singleGame: SingleGame) => void): void {
+	for (const singleGame of singleGames.values()) fn(singleGame);
+}
+
 // Get or Create a single game, called only when creating a socket connection
 export function getOrCreateSingleGame(id: string, userId: string, mode: string): SingleGame {
 	let singleGame = singleGames.get(id);
@@ -74,6 +78,11 @@ export function getMatchInSingleGame(matchId: string): Match | undefined {
 	return found;
 }
 
-export function forEachSingleGame(fn: (singleGame: SingleGame) => void): void {
-	for (const singleGame of singleGames.values()) fn(singleGame);
+export function getOpenSingleGames(): SingleGame[] {
+	const openSingleGames: SingleGame[] = [];
+	for (const singleGame of singleGames.values()) {
+		const { players } = singleGame.match;
+		if (!players.right || !players.left) openSingleGames.push(singleGame);
+	}
+	return openSingleGames;
 }

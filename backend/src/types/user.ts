@@ -8,6 +8,7 @@ export type User = {
 	game: WebSocket | undefined;
 	//friends: User[];
 	//stats: string | null;
+	created_at: string;
 };
 
 // This is the data that is put inside the token.

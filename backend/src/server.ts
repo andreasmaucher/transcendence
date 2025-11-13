@@ -15,6 +15,7 @@ import { forEachSingleGame } from "./managers/singleGameManager.js";
 import { PaddleSide } from "./types/match.js";
 import { usersOnline } from "./config/structures.js";
 import { removeUserOnline } from "./user/online.js";
+import singleGameRoutes from "./routes/singleGame.js";
 
 const FIELD_WIDTH = GAME_CONSTANTS.FIELD_WIDTH;
 const FIELD_HEIGHT = GAME_CONSTANTS.FIELD_HEIGHT;
@@ -77,9 +78,10 @@ fastify.get<{ Params: { id: string } }>("/api/tournaments/:id/state", async (req
 	//else return null;
 });
 
-await fastify.register(matchRoutes);
-await fastify.register(tournamentRoutes);
 await fastify.register(userRoutes);
+await fastify.register(singleGameRoutes);
+await fastify.register(tournamentRoutes);
+await fastify.register(matchRoutes);
 await fastify.register(testRoutes);
 
 registerWebsocketRoute(fastify);
