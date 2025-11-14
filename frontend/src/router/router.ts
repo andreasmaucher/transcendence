@@ -1,14 +1,18 @@
 // src/router/router.ts
 import { fetchMe } from "../api/http";
 
-export type View = (container: HTMLElement) => void;
+export type View = (container: HTMLElement) => void | (() => void);
 type Routes = Record<string, View>;
 
 let routes: Routes = {};
 let containerEl: HTMLElement;
+let activeCleanup: (() => void) | null = null;
+
 let renderLock = false;
 let lastNavigateAt = 0;
-const NAV_THROTTLE_MS = 300;
+const NAV_THROTTLE_MS = 200;
+
+//public api
 
 export function registerRoutes(map: Routes) {
   routes = map;
@@ -19,13 +23,12 @@ export function startRouter(container: HTMLElement) {
 
   window.addEventListener(
     "hashchange",
-    () => {
-      void renderCurrent();
-    },
+    () => void renderCurrent(),
     { passive: true }
   );
+
   if (!location.hash) {
-    history.replaceState(null, "", "#/login");
+    location.hash = "#/login";
   }
 
   void renderCurrent();
@@ -43,29 +46,23 @@ export function navigate(hash: string) {
   }
 }
 
-// Helpers
+// helpers
 
 async function requireSessionOrRedirect(): Promise<boolean> {
   try {
     const me = await fetchMe();
     if (me) return true;
   } catch {
+    // ignored
   }
 
-  // Force login 
-  history.replaceState(null, "", "#/login");
-  const loginView = routes["#/login"];
-  if (loginView) {
-    containerEl.replaceChildren();
-    loginView(containerEl);
-  }
+  location.hash = "#/login";
   return false;
 }
 
 // render
 
 async function renderCurrent() {
-  if (!containerEl) return;
   if (renderLock) return;
   renderLock = true;
 
@@ -74,13 +71,22 @@ async function renderCurrent() {
     const view = routes[hash] ?? routes["#/login"];
     if (!view) return;
 
-    if (hash !== "#/login") {
+      if (hash !== "#/login") {
       const ok = await requireSessionOrRedirect();
       if (!ok) return;
     }
 
+    if (activeCleanup) {
+      activeCleanup();
+      activeCleanup = null;
+    }
+
     containerEl.replaceChildren();
-    view(containerEl);
+    const cleanup = view(containerEl);
+
+    if (typeof cleanup === "function") {
+      activeCleanup = cleanup;
+    }
 
   } finally {
     renderLock = false;
