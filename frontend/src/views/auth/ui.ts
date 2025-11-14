@@ -1,4 +1,7 @@
 // src/views/auth/ui.ts
+//
+
+
 import { loginUser, registerUser, fetchMe } from "../../api/http";
 import { navigate } from "../../router/router";
 
@@ -18,12 +21,18 @@ const initialState: AuthState = {
   mode: "login",
   loading: false,
   message: null,
-  fieldErrors: { username: null, password: null },
+  fieldErrors: {
+    username: null,
+    password: null,
+  },
 };
 
 export function renderAuth(container: HTMLElement) {
+  container.replaceChildren();
+
   const state: AuthState = { ...initialState };
 
+  /// DOM
   const root = document.createElement("div");
   root.className = "auth-screen";
 
@@ -31,11 +40,15 @@ export function renderAuth(container: HTMLElement) {
   card.className = "auth-card";
   root.appendChild(card);
 
+  // Title
   const title = document.createElement("h2");
+  title.className = "auth-title";
   title.textContent = "Welcome";
   card.appendChild(title);
 
+  // Mode tabs
   const tabs = document.createElement("div");
+  tabs.className = "auth-tabs";
   tabs.innerHTML = `
     <button id="auth-tab-login" class="auth-tab">Login</button>
     <button id="auth-tab-register" class="auth-tab">Register</button>
@@ -49,29 +62,36 @@ export function renderAuth(container: HTMLElement) {
   messageBox.className = "auth-message";
   card.appendChild(messageBox);
 
+  // Form
   const form = document.createElement("form");
+  form.className = "auth-form";
   form.innerHTML = `
-    <label>Username
-      <input id="auth-input-username" type="text" autocomplete="username"/>
+    <label class="auth-label">
+      Username
+      <input id="auth-input-username" class="auth-input" type="text" autocomplete="username"/>
       <div id="auth-error-username" class="auth-field-error"></div>
     </label>
-    <label>Password
-      <input id="auth-input-password" type="password" autocomplete="current-password"/>
+
+    <label class="auth-label">
+      Password
+      <input id="auth-input-password" class="auth-input" type="password" autocomplete="current-password"/>
       <div id="auth-error-password" class="auth-field-error"></div>
     </label>
-    <button id="auth-submit" type="submit">Login</button>
+
+    <button id="auth-submit" class="auth-submit" type="submit">Login</button>
   `;
   card.appendChild(form);
 
   const inputUsername = form.querySelector("#auth-input-username") as HTMLInputElement;
   const inputPassword = form.querySelector("#auth-input-password") as HTMLInputElement;
-  const errorUsername = form.querySelector("#auth-error-username")!;
-  const errorPassword = form.querySelector("#auth-error-password")!;
+  const errorUsername = form.querySelector("#auth-error-username") as HTMLDivElement;
+  const errorPassword = form.querySelector("#auth-error-password") as HTMLDivElement;
   const submitBtn = form.querySelector("#auth-submit") as HTMLButtonElement;
 
   container.appendChild(root);
 
-  // helpers
+  /// helepers
+
   function setMode(mode: Mode) {
     state.mode = mode;
     state.message = null;
@@ -82,51 +102,61 @@ export function renderAuth(container: HTMLElement) {
 
     submitBtn.textContent = mode === "login" ? "Login" : "Register";
     messageBox.textContent = "";
+
     errorUsername.textContent = "";
     errorPassword.textContent = "";
   }
 
-  function setLoading(v: boolean) {
-    state.loading = v;
-    submitBtn.disabled = v;
+  function setLoading(loading: boolean) {
+    state.loading = loading;
+    submitBtn.disabled = loading;
+    submitBtn.classList.toggle("loading", loading);
   }
 
   function setMessage(msg: string | null) {
     state.message = msg;
     messageBox.textContent = msg ?? "";
+    messageBox.classList.toggle("visible", !!msg);
   }
 
-  function setFieldErrors(errs: { username?: string; password?: string }) {
-    errorUsername.textContent = errs.username ?? "";
-    errorPassword.textContent = errs.password ?? "";
+  function setFieldErrors(errs: { username?: string | null; password?: string | null }) {
+    state.fieldErrors.username = errs.username ?? null;
+    state.fieldErrors.password = errs.password ?? null;
+
+    errorUsername.textContent = state.fieldErrors.username ?? "";
+    errorPassword.textContent = state.fieldErrors.password ?? "";
   }
 
-  function validate(u: string, p: string) {
-    const e: any = {};
-    if (!u || u.length < 3) e.username = "Username must be at least 3 chars.";
-    if (!p || p.length < 4) e.password = "Password must be at least 4 chars.";
-    return e;
+  /// validae
+
+  function validate(username: string, password: string) {
+    const errors: { username?: string; password?: string } = {};
+
+    if (!username || username.trim().length < 3) {
+      errors.username = "Username must be at least 3 chars.";
+    }
+
+    if (!password || password.length < 4) {
+      errors.password = "Password must be at least 4 chars.";
+    }
+
+    return errors;
   }
 
-//// 
+  // handle evnts
+  loginTab.addEventListener("click", () => setMode("login"));
+  registerTab.addEventListener("click", () => setMode("register"));
 
-  function onLoginTab() {
-    setMode("login");
-  }
-
-  function onRegisterTab() {
-    setMode("register");
-  }
-
-  async function onSubmit(e: Event) {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
     if (state.loading) return;
 
     const username = inputUsername.value.trim();
     const password = inputPassword.value;
 
+    // Validate
     const errs = validate(username, password);
-    if (Object.keys(errs).length) {
+    if (Object.keys(errs).length > 0) {
       setFieldErrors(errs);
       setMessage("Please fix the errors.");
       return;
@@ -137,11 +167,10 @@ export function renderAuth(container: HTMLElement) {
     setLoading(true);
 
     try {
-      if (state.mode === "register") {
-        await registerUser({ username, password });
-        await loginUser({ username, password }); // key fix
-      } else {
+      if (state.mode === "login") {
         await loginUser({ username, password });
+      } else {
+        await registerUser({ username, password });
       }
 
       const me = await fetchMe();
@@ -151,24 +180,14 @@ export function renderAuth(container: HTMLElement) {
       }
 
       navigate("#/menu");
+
     } catch (err: any) {
       setMessage(err?.message || "Authentication failed.");
     } finally {
       setLoading(false);
     }
-  }
-
-  loginTab.addEventListener("click", onLoginTab);
-  registerTab.addEventListener("click", onRegisterTab);
-  form.addEventListener("submit", onSubmit);
+  });
 
   // Initial mode
   setMode("login");
-
-  // clean
-  return () => {
-    loginTab.removeEventListener("click", onLoginTab);
-    registerTab.removeEventListener("click", onRegisterTab);
-    form.removeEventListener("submit", onSubmit);
-  };
 }
