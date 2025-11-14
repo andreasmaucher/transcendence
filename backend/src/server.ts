@@ -111,14 +111,14 @@ setInterval(() => {
 		const socket = user.socket;
 
 		// If socket is already not alive terminates it
-		if (socket.isAlive === false) {
+		if (user.isAlive === false) {
 			console.log(`[WS] Socket of ${username} timed out`);
 			socket.terminate();
 			removeUserOnline(username);
 			continue;
 		}
 
-		socket.isAlive = false;
+		user.isAlive = false;
 		try {
 			socket.ping();
 		} catch {

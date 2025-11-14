@@ -1,6 +1,7 @@
 import { usersOnline } from "../config/structures.js";
 import { getJsonUserByUsernameDB } from "../database/users/getters.js";
 import { User } from "../types/user.js";
+import type WebSocket from "ws";
 
 // Check if user is in the usersOnline map structure
 export function isUserOnline(username: string): boolean {
@@ -9,7 +10,7 @@ export function isUserOnline(username: string): boolean {
 }
 
 // Add user to the usersOnline map structure (if not already there)
-export function addUserOnline(username: string, socket: WebSocket) {
+export function addUserOnline(username: string, socket: WebSocket): User | undefined {
 	const userDB = getJsonUserByUsernameDB(username);
 	if (userDB && !isUserOnline(userDB.username)) {
 		const user = {
@@ -18,11 +19,13 @@ export function addUserOnline(username: string, socket: WebSocket) {
 			provider_id: userDB.provider_id,
 			avatar: userDB.avatar,
 			socket: socket,
+			isAlive: true,
 		} as User;
 
 		usersOnline.set(user.username, user);
 		console.log(`User ${user.username} is now online`);
-	}
+		return user;
+	} else return undefined;
 }
 
 // Update information (username and avatar) stored in the usersOnline map structure
@@ -44,7 +47,6 @@ export function updateUserOnline({
 			usersOnline.delete(username);
 			usersOnline.set(newUsername, user);
 		} else if (user && newAvatar) user.avatar = newAvatar;
-		else if (user && newPing) user.lastPing = newPing;
 	}
 }
 
