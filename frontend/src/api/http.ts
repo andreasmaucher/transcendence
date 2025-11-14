@@ -1,98 +1,97 @@
-// http client for fetching game constants from the backend
-// Builds the URL from API_BASE and calls /api/constants via fetch(), without cookies (credentials: "omit")
-// API_BASE is the base URL for the backend HTTP API e.g. if you open http://localhost:5173/, API_BASE = http://localhost:4000
-
+// src/api/http.ts
 import { API_BASE } from "../config/endpoints";
 import type { GameConstants } from "../constants";
 
-export async function fetchGameConstants(): Promise<GameConstants> {
-	const res = await fetch(`${API_BASE}/api/constants`, {
-		credentials: "omit",
-	});
-	if (!res.ok) throw new Error("constants fetch failed");
-	const data = await res.json();
-	return data as GameConstants;
+// -json helper get
+async function getJSON<T>(url: string, opts: RequestInit = {}): Promise<T> {
+  const res = await fetch(url, {
+    ...opts,
+    credentials: opts.credentials ?? "include",
+  });
+
+  const json = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    const err: any = new Error(json?.message || `GET ${url} failed`);
+    err.status = res.status;
+    throw err;
+  }
+
+  return json as T;
 }
 
-// Check current logged-in user using the session cookie
-export async function fetchMe(): Promise<{
-	id: number;
-	username: string;
-	avatar: string | null;
-	created_at: string;
-} | null> {
-	const res = await fetch(`${API_BASE}/api/user/me`, {
-		credentials: "include",
-	});
-	if (res.status === 401) return null;
-	if (!res.ok) throw new Error("me fetch failed");
-	const body = await res.json();
-	return body?.data ?? null;
-}
-
-// Register a new user (also creates a session cookie on success)
-export async function registerUser(params: {
-	username: string;
-	password: string;
-}): Promise<void> {
-	const res = await fetch(`${API_BASE}/api/user/register`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		credentials: "include",
-		body: JSON.stringify(params),
-	});
-	if (!res.ok) {
-		const text = await res.text();
-		let message = "register failed";
-		try {
-			const body = JSON.parse(text);
-			message = body?.message || message;
-		} catch {}
-		throw new Error(message);
-	}
-}
-
-// Login existing user (sets session cookie on success)
-export async function loginUser(params: {
-	username: string;
-	password: string;
-}): Promise<void> {
-	const res = await fetch(`${API_BASE}/api/user/login`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		credentials: "include",
-		body: JSON.stringify(params),
-	});
-	if (!res.ok) {
-		const text = await res.text();
-		let message = "login failed";
-		try {
-			const body = JSON.parse(text);
-			message = body?.message || message;
-		} catch {}
-		throw new Error(message);
-	}
-}
-
-// Logout current user (clears the cookie on the server)
-export async function logout(): Promise<void> {
-	const res = await fetch(`${API_BASE}/api/user/logout`, {
-		method: "POST",
-		credentials: "include",
-	});
-	if (!res.ok) throw new Error("logout failed");
-}
-
-// 
-export async function postJSON<T>(url: string, body: unknown): Promise<T> {
+// json helper post
+async function postJSON<T>(url: string, body: unknown): Promise<T> {
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    credentials: "include", // allow backend session cookie
+    credentials: "include",
     body: JSON.stringify(body),
   });
 
   const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw { status: res.status, json };
+
+  if (!res.ok) {
+    const err: any = new Error(json?.message || `POST ${url} failed`);
+    err.status = res.status;
+    throw err;
+  }
+
   return json as T;
+}
+
+export { postJSON };
+
+// the game
+export async function fetchGameConstants(): Promise<GameConstants> {
+  return await getJSON<GameConstants>(`${API_BASE}/api/constants`, {
+    credentials: "omit",
+  });
+}
+
+// auth fetch
+export type User = {
+  id: number;
+  username: string;
+  avatar: string | null;
+  created_at: string;
+};
+
+export async function fetchMe(): Promise<User | null> {
+  try {
+    const me: any = await getJSON(`${API_BASE}/api/user/me`);
+
+    if (
+      me &&
+      typeof me.id === "number" &&
+      typeof me.username === "string" &&
+      typeof me.created_at === "string"
+    ) {
+      return me as User;
+    }
+
+    return null;
+  } catch (err: any) {
+    if (err.status === 401) return null;
+    return null;
+  }
+}
+
+// auth
+export async function registerUser(params: {
+  username: string;
+  password: string;
+}): Promise<void> {
+  await postJSON(`${API_BASE}/api/user/register`, params);
+}
+
+export async function loginUser(params: {
+  username: string;
+  password: string;
+}): Promise<void> {
+  await postJSON(`${API_BASE}/api/user/login`, params);
+}
+
+export async function logout(): Promise<void> {
+  await postJSON(`${API_BASE}/api/user/logout`, {});
 }
