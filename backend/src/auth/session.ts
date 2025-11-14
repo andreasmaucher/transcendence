@@ -7,7 +7,7 @@
 // - makeSessionCookie(token, options) -> builds a safe Set-Cookie header value for the response.
 
 import crypto from "node:crypto";
-import { SessionPayload } from "../types/utils.js";
+import { SessionPayload } from "../types/user.js";
 import { FastifyReply } from "fastify";
 
 // Secret key used to sign tokens. //! TODO: In prod set SESSION_SECRET in env.
