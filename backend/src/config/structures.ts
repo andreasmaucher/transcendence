@@ -1,6 +1,6 @@
 import { SingleGame, Tournament } from "../types/game.js";
 import { Match } from "../types/match.js";
-import { User } from "../types/utils.js";
+import { User } from "../types/user.js";
 
 export const singleGames = new Map<string, SingleGame>();
 export const tournaments = new Map<string, Tournament>();

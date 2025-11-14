@@ -1,5 +1,7 @@
 // USER RELATED TYPES
 
+import type WebSocket from "ws";
+
 // The User structure stored in the usersOnline map
 export type User = {
 	username: string;
@@ -7,10 +9,11 @@ export type User = {
 	provider_id: string;
 	avatar: string;
 	socket: WebSocket;
-	game: WebSocket | undefined;
+	isAlive: boolean;
+	game?: WebSocket | undefined;
 	//friends: User[];
 	//stats: string | null;
-	created_at: string;
+	created_at?: string;
 };
 
 // This is the data that is put inside the token.

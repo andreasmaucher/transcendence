@@ -31,12 +31,15 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 		console.log(`[WS] Websocket for User: ${payload.username} registered`);
 
 		socket.username = payload.username;
-		addUserOnline(payload.username, socket);
+		const user = addUserOnline(payload.username, socket);
+		if (!user) {
+			socket.close(1011, "User not in database");
+			return;
+		}
 
-		socket.isAlive = true;
 		// Client responds to ping with pong automatically
 		socket.on("pong", () => {
-			socket.isAlive = true;
+			user.isAlive = true;
 		});
 
 		socket.on("close", () => {
