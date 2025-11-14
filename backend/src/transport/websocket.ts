@@ -4,7 +4,7 @@ import { buildStatePayload } from "./broadcaster.js";
 import { parseCookies, verifySessionToken } from "../auth/session.js";
 import { getOrCreateSingleGame } from "../managers/singleGameManager.js";
 import { getOrCreateTournament, addPlayerToTournament } from "../managers/tournamentManager.js";
-import { addPlayerToMatch, checkMatchFull } from "../managers/matchManager.js";
+import { addPlayerToMatch, checkMatchFull, startMatch } from "../managers/matchManager.js";
 import { resetMatchState } from "../game/state.js";
 import { Match, PaddleSide } from "../types/match.js";
 import { addUserOnline, removeUserOnline } from "../user/online.js";
@@ -61,15 +61,15 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				return;
 			}
 
-			if (singleGameId == "default")
-				console.log(`[WS] Websocket for LocalSingleGame: ${singleGameId} and User: ${payload.username} registered`);
-			else
-				console.log(`[WS] Websocket for LocalSingleGame: ${singleGameId} and User: ${payload.username} connected`);
+			console.log(`[WS] Websocket for LocalSingleGame: ${singleGameId} and User: ${payload.username} registered`);
 
+			socket.username = payload.username;
 			const singleGame = getOrCreateSingleGame(singleGameId, payload.username, "local");
 			const match: Match = singleGame.match;
-			socket.username = payload.username;
+			// Since it's a local game add user and start the game
+			addPlayerToMatch(match, socket.username);
 			match.clients.add(socket);
+			startMatch(match);
 
 			socket.send(JSON.stringify(buildStatePayload(match)));
 
@@ -112,45 +112,46 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				console.log(`[WS] Websocket for SingleGame: ${singleGameId} and User: ${payload.username} registered`);
 			else console.log(`[WS] Websocket for SingleGame: ${singleGameId} and User: ${payload.username} connected`);
 
+			socket.username = payload.username;
+
 			const singleGame = getOrCreateSingleGame(singleGameId, payload.username, "remote");
 			const match: Match = singleGame.match;
-			socket.username = payload.username;
-			if (!checkMatchFull(match)) {
-				addPlayerToMatch(match, socket.username);
 
-				match.clients.add(socket);
-
-				socket.send(
-					JSON.stringify({
-						type: "match-assigned",
-						matchId: match.id,
-						playerSide: match.players.left === payload.username ? "left" : "right",
-					})
-				);
-
-				socket.send(JSON.stringify(buildStatePayload(match)));
-
-				socket.on("message", (raw: RawData) => {
-					let msg;
-					try {
-						msg = JSON.parse(raw.toString());
-					} catch {
-						return;
-					}
-
-					if (msg.type === "input") {
-						const dir = msg.direction === "up" ? -1 : msg.direction === "down" ? 1 : 0;
-						match.inputs[msg.paddle as PaddleSide] = dir;
-					} else if (msg.type === "reset") {
-						resetMatchState(match);
-					}
-				});
-				socket.on("close", () => match.clients.delete(socket));
-				socket.on("error", (err: any) => console.error(`[ws error] match=${match.id}`, err));
-			} else {
+			if (checkMatchFull(match)) {
 				console.log("[WS] Match already full");
 				socket.close(1008, "Match is already full");
 			}
+
+			addPlayerToMatch(match, socket.username);
+			match.clients.add(socket);
+
+			socket.send(
+				JSON.stringify({
+					type: "match-assigned",
+					matchId: match.id,
+					playerSide: match.players.left === payload.username ? "left" : "right",
+				})
+			);
+
+			socket.send(JSON.stringify(buildStatePayload(match)));
+
+			socket.on("message", (raw: RawData) => {
+				let msg;
+				try {
+					msg = JSON.parse(raw.toString());
+				} catch {
+					return;
+				}
+
+				if (msg.type === "input") {
+					const dir = msg.direction === "up" ? -1 : msg.direction === "down" ? 1 : 0;
+					match.inputs[msg.paddle as PaddleSide] = dir;
+				} else if (msg.type === "reset") {
+					resetMatchState(match);
+				}
+			});
+			socket.on("close", () => match.clients.delete(socket));
+			socket.on("error", (err: any) => console.error(`[ws error] match=${match.id}`, err));
 		}
 	);
 
@@ -171,12 +172,11 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			if (tournamentId == "default")
 				console.log(`[WS] Websocket for Tournament: ${tournamentId} and User: ${payload.username} registered`);
 			else console.log(`[WS] Websocket for Tournament: ${tournamentId} and User: ${payload.username} connected`);
+			socket.username = payload.username;
 
 			const tournament = getOrCreateTournament(tournamentId);
 			const match = addPlayerToTournament(tournament, socket.username);
 			if (match) {
-				socket.username = payload.username;
-
 				match.clients.add(socket);
 
 				socket.send(

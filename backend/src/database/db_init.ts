@@ -44,7 +44,7 @@ db.exec(`
 	CREATE TABLE IF NOT EXISTS matches (
 		internal_id INTEGER PRIMARY KEY AUTOINCREMENT,
 		id TEXT UNIQUE NOT NULL,
-		type TEXT,
+		mode TEXT,
 		player_left TEXT,
 		player_right TEXT,
 		tournament_id TEXT,

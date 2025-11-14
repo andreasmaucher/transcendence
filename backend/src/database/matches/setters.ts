@@ -11,8 +11,8 @@ export function createMatchDB(match: Match): void {
 	let result = null;
 	if (match.tournament) {
 		const { id, round, type, placementRange } = match.tournament;
-		result = stmt.run(match.id, match.type, round, id, type, JSON.stringify(placementRange));
-	} else result = stmt.run(match.id, match.type, 0, null, null, null);
+		result = stmt.run(match.id, match.mode, round, id, type, JSON.stringify(placementRange));
+	} else result = stmt.run(match.id, match.mode, 0, null, null, null);
 
 	if (result.changes === 0)
 		throw new Error(`[DB] Failed to create match ${match.id}`); // If DB run fails, throws error
