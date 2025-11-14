@@ -2,17 +2,6 @@ import { usersOnline } from "../config/structures.js";
 import { getJsonUserByUsernameDB } from "../database/users/getters.js";
 import { User } from "../types/user.js";
 
-export function getCurrentDateTime(): string {
-	const now = new Date();
-	const year = now.getFullYear();
-	const month = String(now.getMonth() + 1).padStart(2, "0");
-	const day = String(now.getDate()).padStart(2, "0");
-	const hours = String(now.getHours()).padStart(2, "0");
-	const minutes = String(now.getMinutes()).padStart(2, "0");
-	const seconds = String(now.getSeconds()).padStart(2, "0");
-	return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-}
-
 // Check if user is in the usersOnline map structure
 export function isUserOnline(username: string): boolean {
 	const online = usersOnline.get(username);
@@ -67,6 +56,7 @@ export function removeUserOnline(username: string) {
 	console.log(`User ${username} is now offline`);
 }
 
+// Return user data from usersOnline Map structure (if present)
 export function getUserOnline(username: string): User | undefined {
 	if (isUserOnline(username)) return usersOnline.get(username);
 	else return undefined;

@@ -1,6 +1,5 @@
-// main entry point that starts the backend server
+// Main entry point that starts the backend server
 import "dotenv/config"; // loads backend/.env at startup
-
 import fastify from "./server.js";
 import cors from "@fastify/cors";
 

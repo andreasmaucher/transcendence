@@ -1,6 +1,5 @@
+// MACTH RELATED TYPES
 import type { WebSocket } from "ws";
-
-// Match related type
 
 export type PaddleSide = "left" | "right";
 export type PaddleInput = -1 | 0 | 1; // -1=up, 0=stop, 1=down

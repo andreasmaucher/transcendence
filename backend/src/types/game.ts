@@ -1,4 +1,4 @@
-// Shared backend game types
+// GAMES RELATED TYPES
 import { Match, PaddleSide } from "./match.js";
 
 export type SingleGame = {
@@ -18,10 +18,7 @@ export type TournamentState = {
 
 export type Tournament = {
 	id: string;
-
 	state: TournamentState;
 	matches: Map<number, Match[]>;
 	expirationTimer?: NodeJS.Timeout;
-
-	//inputs: Record<PaddleSide, PaddleInput>;
 };

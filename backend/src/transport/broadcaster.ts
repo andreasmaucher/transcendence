@@ -1,7 +1,7 @@
-// sends the current game state to all connected players (clients)
 import type { WebSocket } from "ws";
 import { Match } from "../types/match.js";
 
+// Create state payload for socket
 export function buildStatePayload(match: Match) {
 	const { state } = match;
 	return {

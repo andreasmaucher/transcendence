@@ -58,13 +58,14 @@ export function getOrCreateSingleGame(id: string, userId: string, mode: string):
 	return singleGame;
 }
 
-// Retrieve a specific single game
+// Get a specific single game from the singleGames Map structure
 export function getSingleGame(singleGameId: string): SingleGame | undefined {
 	let singleGame = singleGames.get(singleGameId);
 	if (!singleGame) console.log("[SGM] SingleGame not found");
 	return singleGame;
 }
 
+// Get a specific match from the singleGames Map structure
 export function getMatchInSingleGame(matchId: string): Match | undefined {
 	let found: Match | undefined = undefined;
 
@@ -78,6 +79,7 @@ export function getMatchInSingleGame(matchId: string): Match | undefined {
 	return found;
 }
 
+// Get all open (waiting for players) single games
 export function getOpenSingleGames(): SingleGame[] {
 	const openSingleGames: SingleGame[] = [];
 	for (const singleGame of singleGames.values()) {

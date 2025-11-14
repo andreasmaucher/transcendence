@@ -17,6 +17,7 @@ import {
 import crypto from "crypto";
 import { Match } from "../types/match.js";
 
+// Get or Create a tournament, called only when creating a socket connection
 export function getOrCreateTournament(id: string): Tournament {
 	let tournament = tournaments.get(id);
 	if (!tournament) {
@@ -67,6 +68,7 @@ export function getOrCreateTournament(id: string): Tournament {
 	return tournament;
 }
 
+// Start a tournament
 export function startTournament(tournament: Tournament) {
 	try {
 		clearTimeout(tournament.expirationTimer);
@@ -83,6 +85,7 @@ export function startTournament(tournament: Tournament) {
 	}
 }
 
+// Add a player to an open tournament
 export function addPlayerToTournament(tournament: Tournament, playerId: string): Match | undefined {
 	try {
 		const matches = tournament.matches.get(tournament.state.round);
@@ -102,6 +105,7 @@ export function addPlayerToTournament(tournament: Tournament, playerId: string):
 	}
 }
 
+// Assign players to the next round based on the results
 export function assignPlayersToRound(tournament: Tournament) {
 	const prevRound = tournament.matches.get(tournament.state.round - 1);
 	const nextRound = tournament.matches.get(tournament.state.round);
@@ -117,6 +121,7 @@ export function assignPlayersToRound(tournament: Tournament) {
 	}
 }
 
+// Move tournament logic to the next round
 export function goToNextRound(tournament: Tournament) {
 	tournament.state.round++;
 	const matches = initTournamentMatches(tournament, tournament.state.size);

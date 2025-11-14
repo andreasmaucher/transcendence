@@ -1,3 +1,5 @@
+// USER RELATED TYPES
+
 // The User structure stored in the usersOnline map
 export type User = {
 	username: string;

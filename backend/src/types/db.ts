@@ -1,12 +1,12 @@
-import { TournamentMatchType } from "./match.js";
+// DATABASE STRUCTURES
 
-// Database structures
+import { TournamentMatchType } from "./match.js";
 
 export type UserDB = {
 	internal_id: number;
 	username: string;
 	password: string;
-	provider: string;
+	provider: string; // External auth provider (e.g. Github)
 	provider_id: string | null;
 	avatar: string;
 	friends: string[];

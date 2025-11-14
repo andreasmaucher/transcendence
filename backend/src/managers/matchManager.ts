@@ -8,6 +8,7 @@ import { isTournamentOver } from "./tournamentManagerHelpers.js";
 import { endTournament } from "./tournamentManager.js";
 import { Match, TournamentMatchInfo, TournamentMatchType } from "../types/match.js";
 
+// Set the starting state of the tournament match info
 export function initTournamentMatchInfo(
 	tournament: Tournament,
 	type: TournamentMatchType,
@@ -22,6 +23,7 @@ export function initTournamentMatchInfo(
 	return tournamentMatchInfo;
 }
 
+// Create the match
 export function createMatch({
 	id,
 	mode,
@@ -67,6 +69,7 @@ export function createMatch({
 	return match;
 }
 
+// Start match
 export function startMatch(match: Match) {
 	try {
 		if (match.singleGameId) {
@@ -86,6 +89,7 @@ export function startMatch(match: Match) {
 	}
 }
 
+// End match
 export function endMatch(match: Match) {
 	match.state.isRunning = false;
 	endMatchDB(match.id, match.state.winner); // Update database
@@ -94,6 +98,7 @@ export function endMatch(match: Match) {
 	if (tournament && isTournamentOver(tournament)) endTournament(tournament);
 }
 
+// Add player to open match
 export function addPlayerToMatch(match: Match, playerId: string) {
 	try {
 		if (!match.players.left) addPlayerMatchDB(match.id, playerId, "left");
@@ -105,6 +110,7 @@ export function addPlayerToMatch(match: Match, playerId: string) {
 	}
 }
 
+// Check if match is full
 export function checkMatchFull(match: Match) {
 	return match.players.left && match.players.right;
 }

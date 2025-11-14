@@ -1,4 +1,4 @@
-// backend server that handles the game logic and websocket connections
+// Backend server that handles the game logic and websocket connections
 
 import Fastify, { FastifyInstance } from "fastify";
 import fastifyWebsocket from "@fastify/websocket";

@@ -11,6 +11,7 @@ export function forEachTournament(fn: (tournament: Tournament) => void): void {
 	for (const tournament of tournaments.values()) fn(tournament);
 }
 
+// Create all the matches of the actual round of the tournament
 export function initTournamentMatches(tournament: Tournament, size: number): Match[] {
 	const matches: Match[] = [];
 	const round = tournament.state.round;
@@ -50,6 +51,7 @@ export function initTournamentMatches(tournament: Tournament, size: number): Mat
 	return matches;
 }
 
+// Get the player id of the match winner
 export function extractMatchWinner(match: Match): string {
 	const { players, state } = match;
 
@@ -67,6 +69,7 @@ export function extractMatchWinner(match: Match): string {
 	return "error";
 }
 
+// Get the player id of the match loser
 export function extractMatchLoser(match: Match): string {
 	const { players, state } = match;
 
@@ -82,14 +85,17 @@ export function extractMatchLoser(match: Match): string {
 	return "error";
 }
 
+// Get a tournament's total rounds based on the size
 export function getTotalRounds(tournament: Tournament) {
 	return Math.ceil(Math.log2(tournament.state.size));
 }
 
+// Check if tournament is in final round
 export function isFinalRound(tournament: Tournament) {
 	return tournament.state.round >= getTotalRounds(tournament);
 }
 
+// Check if tournament is over
 export function isTournamentOver(tournament: Tournament) {
 	if (!isFinalRound(tournament)) return false;
 	const matches = tournament.matches.get(tournament.state.round);
@@ -101,6 +107,7 @@ export function isTournamentOver(tournament: Tournament) {
 	}
 }
 
+// Check if tournament is full (all matches of first round have players)
 export function checkTournamentFull(tournament: Tournament) {
 	const matches = tournament.matches.get(tournament.state.round);
 	if (matches) {
@@ -112,13 +119,14 @@ export function checkTournamentFull(tournament: Tournament) {
 	return true;
 }
 
-// Retrive a specific tournament's data
+// Get a specific tournament from the tournaments Map structure
 export function getTournament(id: string): Tournament | undefined {
 	let tournament = tournaments.get(id);
 	if (!tournament) console.log("[TM] Tournament not found");
 	return tournament;
 }
 
+// Check if tournament is open (waiting for players)
 export function isTournamentOpen(tournament: Tournament): boolean {
 	if (tournament.state.isRunning || tournament.state.isOver) return false;
 
@@ -129,6 +137,7 @@ export function isTournamentOpen(tournament: Tournament): boolean {
 	return matches.some((match) => !match.players.left || !match.players.right);
 }
 
+// Get all open (waiting for players) tournaments
 export function getOpenTournaments(): Tournament[] {
 	let openTournaments: Tournament[] = [];
 	for (const tournament of tournaments.values()) {
