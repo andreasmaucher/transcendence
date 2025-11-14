@@ -2,7 +2,8 @@
 import { API_BASE } from "../config/endpoints";
 import type { GameConstants } from "../constants";
 
-// -json helper get
+// helpers
+
 async function getJSON<T>(url: string, opts: RequestInit = {}): Promise<T> {
   const res = await fetch(url, {
     ...opts,
@@ -10,17 +11,11 @@ async function getJSON<T>(url: string, opts: RequestInit = {}): Promise<T> {
   });
 
   const json = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    const err: any = new Error(json?.message || `GET ${url} failed`);
-    err.status = res.status;
-    throw err;
-  }
+  if (!res.ok) throw new Error(json?.message || `GET ${url} failed`);
 
   return json as T;
 }
 
-// json helper post
 async function postJSON<T>(url: string, body: unknown): Promise<T> {
   const res = await fetch(url, {
     method: "POST",
@@ -30,54 +25,38 @@ async function postJSON<T>(url: string, body: unknown): Promise<T> {
   });
 
   const json = await res.json().catch(() => ({}));
-
   if (!res.ok) {
-    const err: any = new Error(json?.message || `POST ${url} failed`);
-    err.status = res.status;
-    throw err;
+    throw new Error(json?.message || `POST ${url} failed`);
   }
 
   return json as T;
 }
 
-export { postJSON };
+export { postJSON }; 
 
-// the game
 export async function fetchGameConstants(): Promise<GameConstants> {
   return await getJSON<GameConstants>(`${API_BASE}/api/constants`, {
     credentials: "omit",
   });
 }
 
-// auth fetch
-export type User = {
+// auth
+
+export async function fetchMe(): Promise<{
   id: number;
   username: string;
   avatar: string | null;
   created_at: string;
-};
-
-export async function fetchMe(): Promise<User | null> {
+} | null> {
   try {
-    const me: any = await getJSON(`${API_BASE}/api/user/me`);
-
-    if (
-      me &&
-      typeof me.id === "number" &&
-      typeof me.username === "string" &&
-      typeof me.created_at === "string"
-    ) {
-      return me as User;
-    }
-
-    return null;
+    const data = await getJSON<{ data?: any }>(`${API_BASE}/api/user/me`);
+    return data?.data ?? null;
   } catch (err: any) {
-    if (err.status === 401) return null;
-    return null;
+    if (String(err.message).includes("401")) return null;
+    return null; // 
   }
 }
 
-// auth
 export async function registerUser(params: {
   username: string;
   password: string;
