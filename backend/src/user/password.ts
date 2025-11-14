@@ -1,11 +1,11 @@
-import { getJsonUserByUsername } from "../database/users/getters.js";
+import { getJsonUserByUsernameDB } from "../database/users/getters.js";
 import bcrypt from "bcryptjs";
 
 const SALT_ROUNDS = 10; // security cost factor
 
 export async function verifyPassword(userId: string, password: string): Promise<boolean> {
 	try {
-		const user: any = getJsonUserByUsername(userId);
+		const user: any = getJsonUserByUsernameDB(userId);
 		const match = await bcrypt.compare(password, user.password);
 		return match;
 	} catch (error: any) {

@@ -1,7 +1,7 @@
 import db from "../db_init.js";
 
 // Retrieve all tournaments from the database
-export function getAllTournaments(): any[] {
+export function getAllTournamentsDB(): any[] {
 	const stmt = db.prepare(`
     SELECT internal_id, id, size, winner, started_at, ended_at
     FROM tournaments
@@ -15,7 +15,7 @@ export function getAllTournaments(): any[] {
 }
 
 // Retrieve the desired tournament from the database (if present) and return it as json
-export function getTournamentById(id: string) {
+export function getTournamentByIdDB(id: string) {
 	const stmt = db.prepare(`
 		SELECT *
 		FROM tournaments

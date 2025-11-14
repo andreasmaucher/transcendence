@@ -7,6 +7,7 @@ import { getOrCreateTournament, addPlayerToTournament } from "../managers/tourna
 import { addPlayerToMatch, checkMatchFull } from "../managers/matchManager.js";
 import { resetMatchState } from "../game/state.js";
 import { Match, PaddleSide } from "../types/match.js";
+import { addUserOnline, removeUserOnline } from "../user/online.js";
 
 function authenticateWebSocket(request: any, socket: any) {
 	const cookies = parseCookies(request.headers.cookie);
@@ -22,6 +23,27 @@ function authenticateWebSocket(request: any, socket: any) {
 }
 
 export function registerWebsocketRoute(fastify: FastifyInstance) {
+	// Register user socket
+	fastify.get("/api/user/ws", { websocket: true }, (request: any, socket: any) => {
+		const payload = authenticateWebSocket(request, socket);
+		if (!payload) return;
+
+		console.log(`[WS] Websocket for User: ${payload.username} registered`);
+
+		socket.username = payload.username;
+		addUserOnline(payload.username, socket);
+
+		socket.isAlive = true;
+		// Client responds to ping with pong automatically
+		socket.on("pong", () => {
+			socket.isAlive = true;
+		});
+
+		socket.on("close", () => {
+			removeUserOnline(payload.username);
+		});
+	});
+
 	// Register/connect to a local single game
 	fastify.get<{ Params: { id: string } }>(
 		"/api/local-single-game/:id/ws",
@@ -35,6 +57,11 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				socket.close(1011, "singleGameId is missing");
 				return;
 			}
+
+			if (singleGameId == "default")
+				console.log(`[WS] Websocket for LocalSingleGame: ${singleGameId} and User: ${payload.username} registered`);
+			else
+				console.log(`[WS] Websocket for LocalSingleGame: ${singleGameId} and User: ${payload.username} connected`);
 
 			const singleGame = getOrCreateSingleGame(singleGameId, payload.username, "local");
 			const match: Match = singleGame.match;
@@ -77,6 +104,10 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				socket.close(1011, "singleGameId is missing");
 				return;
 			}
+
+			if (singleGameId == "default")
+				console.log(`[WS] Websocket for SingleGame: ${singleGameId} and User: ${payload.username} registered`);
+			else console.log(`[WS] Websocket for SingleGame: ${singleGameId} and User: ${payload.username} connected`);
 
 			const singleGame = getOrCreateSingleGame(singleGameId, payload.username, "remote");
 			const match: Match = singleGame.match;
@@ -133,6 +164,10 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				socket.close(1011, "Tournament id missing");
 				return;
 			}
+
+			if (tournamentId == "default")
+				console.log(`[WS] Websocket for Tournament: ${tournamentId} and User: ${payload.username} registered`);
+			else console.log(`[WS] Websocket for Tournament: ${tournamentId} and User: ${payload.username} connected`);
 
 			const tournament = getOrCreateTournament(tournamentId);
 			const match = addPlayerToTournament(tournament, socket.username);

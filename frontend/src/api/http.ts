@@ -31,10 +31,7 @@ export async function fetchMe(): Promise<{
 }
 
 // Register a new user (also creates a session cookie on success)
-export async function registerUser(params: {
-	username: string;
-	password: string;
-}): Promise<void> {
+export async function registerUser(params: { username: string; password: string }): Promise<void> {
 	const res = await fetch(`${API_BASE}/api/user/register`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -53,10 +50,7 @@ export async function registerUser(params: {
 }
 
 // Login existing user (sets session cookie on success)
-export async function loginUser(params: {
-	username: string;
-	password: string;
-}): Promise<void> {
+export async function loginUser(params: { username: string; password: string }): Promise<void> {
 	const res = await fetch(`${API_BASE}/api/user/login`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -75,10 +69,11 @@ export async function loginUser(params: {
 }
 
 // Logout current user (clears the cookie on the server)
-export async function logout(): Promise<void> {
+export async function logout(params: { username: string }): Promise<void> {
 	const res = await fetch(`${API_BASE}/api/user/logout`, {
 		method: "POST",
 		credentials: "include",
+		body: JSON.stringify(params),
 	});
 	if (!res.ok) throw new Error("logout failed");
 }
