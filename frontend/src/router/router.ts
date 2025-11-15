@@ -1,7 +1,7 @@
 // src/router/router.ts
 import { fetchMe } from "../api/http";
 
-export type View = (root: HTMLElement) => void | (() => void);
+export type View = (container: HTMLElement) => void | (() => void) | Promise<void | (() => void)>;
 export type Routes = Record<string, View>;
 
 let routes: Routes = {};
@@ -58,17 +58,18 @@ async function render() {
   isRendering = true;
 
   try {
-    const hash = location.hash || "#/login";
+    // FIX: remove ?query from hash
+    const fullHash = location.hash || "#/login";
+    const hash = fullHash.split("?")[0];
+
     let view = routes[hash];
 
-    // If route does not exist → go to menu or login
     if (!view) {
       const authenticated = await isAuthenticated();
       navigate(authenticated ? "#/menu" : "#/login");
       return;
     }
 
-    // Guard protected routes (all except login)
     if (hash !== "#/login") {
       const ok = await isAuthenticated();
       if (!ok) {
@@ -77,19 +78,15 @@ async function render() {
       }
     }
 
-    // Cleanup previous view
     if (cleanup) {
       cleanup();
       cleanup = null;
     }
 
-    // Render new view
     root.replaceChildren();
-    const maybeCleanup = view(root);
+    const maybeCleanup = await view(root);  // <--- also important
 
-    if (typeof maybeCleanup === "function") {
-      cleanup = maybeCleanup;
-    }
+    if (typeof maybeCleanup === "function") cleanup = maybeCleanup;
 
   } finally {
     isRendering = false;
