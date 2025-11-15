@@ -6,6 +6,8 @@ import { renderMenu } from "./views/menu/ui";
 import { renderAuth } from "./views/auth/ui";
 import { renderGame } from "./views/game/ui";
 import { renderProfile } from "./views/profile/ui";
+import { renderTournament } from "./views/tournament/ui";
+
 
 const app = document.getElementById("app");
 if (!app) {
@@ -19,6 +21,7 @@ registerRoutes({
   "#/menu": renderMenu,
   "#/game": renderGame,
   "#/profile": renderProfile,
+  "#/tournament": renderTournament,
 });
 
 startRouter(app);
