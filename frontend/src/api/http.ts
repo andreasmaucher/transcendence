@@ -77,3 +77,32 @@ export async function logout(params: { username: string }): Promise<void> {
 	});
 	if (!res.ok) throw new Error("logout failed");
 }
+
+export async function updateUser(params: {
+	username: string;
+	newUsername?: string;
+	newPassword?: string;
+	newAvatar?: string;
+}): Promise<void> {
+	const res = await fetch(`${API_BASE}/api/user/update`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		credentials: "include",
+		body: JSON.stringify(params),
+	});
+
+	const text = await res.text();
+	let message = "update failed";
+
+	try {
+		const body = JSON.parse(text);
+		if (!res.ok || body?.success === false) {
+			message = body?.message || message;
+			throw new Error(message);
+		}
+	} catch (err) {
+		if (!res.ok) {
+			throw new Error(message);
+		}
+	}
+}
