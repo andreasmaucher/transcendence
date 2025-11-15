@@ -106,3 +106,36 @@ export async function updateUser(params: {
 		}
 	}
 }
+
+
+// tournament
+
+export type Tournament = {
+  id: number;
+  name: string;
+  status: string;
+};
+
+
+
+////////// HARDCODED ##### TEMPORARY
+export async function fetchTournamentList(): Promise<Tournament[]> {
+  const res = await fetch(`${API_BASE}/api/tournament/list`, {
+    credentials: "include",
+  });
+
+  if (res.status === 404) {
+    // hardcoded tournoments *******************************
+    return [
+      { id: 1, name: "42 League", status: "open" },
+      { id: 2, name: "Berlin", status: "open" },
+    ];
+  }
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch tournament list");
+  }
+
+  const body = await res.json();
+  return (body.data as Tournament[]) ?? [];
+}
