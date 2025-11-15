@@ -6,190 +6,148 @@ export function renderProfile(container: HTMLElement) {
   container.innerHTML = "";
   let cancelled = false;
 
+  // Title
   const title = document.createElement("h1");
-  title.textContent = "Profile";
+  title.textContent = "Edit Profile";
   container.append(title);
 
-  const backBtn = document.createElement("button");
-  backBtn.textContent = "← Back";
-  backBtn.onclick = () => navigate("#/menu");
-  container.append(backBtn);
+  // Back button
+  const back = document.createElement("button");
+  back.textContent = "← Back to Menu";
+  back.onclick = () => navigate("#/menu");
+  container.append(back);
 
+  // Main content box
   const box = document.createElement("div");
   box.textContent = "Loading…";
   container.append(box);
 
   (async () => {
     const me = await fetchMe();
-    if (!me || cancelled) return;
-
-    let currentUsername = me.username;
-    let currentAvatar = me.avatar || "/default-avatar.png";
-
-    // ---------- VIEW MODE ----------
-    function renderViewMode() {
-      box.innerHTML = "";
-
-      const avatar = document.createElement("img");
-      avatar.src = currentAvatar;
-      avatar.width = 140;
-      avatar.height = 140;
-      avatar.style.borderRadius = "50%";
-      avatar.style.objectFit = "cover";
-      avatar.style.border = "2px solid #ff2ea6";
-
-      const username = document.createElement("h2");
-      username.textContent = currentUsername;
-
-      const joined = document.createElement("p");
-      joined.textContent = `Joined: ${new Date(me.created_at).toLocaleDateString()}`;
-
-      const editBtn = document.createElement("button");
-      editBtn.textContent = "Edit Profile";
-      editBtn.onclick = () => renderEditMode();
-
-      box.append(avatar, username, joined, editBtn);
+    if (!me || cancelled) {
+      box.textContent = "Not logged in.";
+      return;
     }
 
-    // ---------- EDIT MODE ----------
-    function renderEditMode() {
-      box.innerHTML = "";
+    let username = me.username;
+    let avatarSrc = me.avatar || "/default-avatar.png";
 
-      const avatar = document.createElement("img");
-      avatar.src = currentAvatar;
-      avatar.width = 140;
-      avatar.height = 140;
-      avatar.style.borderRadius = "50%";
-      avatar.style.objectFit = "cover";
-      avatar.style.border = "2px solid #ff2ea6";
+    // Clear content
+    box.innerHTML = "";
 
-      // avatar upload
-      const avatarUpload = document.createElement("input");
-      avatarUpload.type = "file";
-      avatarUpload.accept = "image/*";
-      avatarUpload.style.display = "block";
-      avatarUpload.style.marginTop = "1rem";
+    // --- Avatar preview ---
+    const avatar = document.createElement("img");
+    avatar.src = avatarSrc;
+    avatar.width = 140;
+    avatar.height = 140;
+    avatar.style.borderRadius = "50%";
+    avatar.style.objectFit = "cover";
+    avatar.style.border = "2px solid #ff2ea6";
+    avatar.style.display = "block";
+    box.append(avatar);
 
-      avatarUpload.onchange = async () => {
-        const file = avatarUpload.files?.[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = () => {
-          const base64 = reader.result as string;
-          avatar.src = base64;          // preview
-          currentAvatar = base64;       // update pending avatar
-        };
-        reader.readAsDataURL(file);
+    // Avatar upload
+    const avatarInput = document.createElement("input");
+    avatarInput.type = "file";
+    avatarInput.accept = "image/*";
+    avatarInput.style.display = "block";
+    avatarInput.style.marginTop = "1rem";
+    avatarInput.onchange = () => {
+      const file = avatarInput.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        avatarSrc = reader.result as string;
+        avatar.src = avatarSrc;
       };
+      reader.readAsDataURL(file);
+    };
+    box.append(avatarInput);
 
-      // username input
-      const usernameInput = document.createElement("input");
-      usernameInput.type = "text";
-      usernameInput.value = currentUsername;
-      usernameInput.style.display = "block";
-      usernameInput.style.marginTop = "1rem";
+    // Username input
+    const userInput = document.createElement("input");
+    userInput.type = "text";
+    userInput.value = username;
+    userInput.style.display = "block";
+    userInput.style.marginTop = "1rem";
+    box.append(userInput);
 
-      // password change
-      const newPass = document.createElement("input");
-      newPass.type = "password";
-      newPass.placeholder = "New password";
-      newPass.style.display = "block";
-      newPass.style.marginTop = "1rem";
+    // Password inputs
+    const newPass = document.createElement("input");
+    newPass.type = "password";
+    newPass.placeholder = "New password";
+    newPass.style.display = "block";
+    newPass.style.marginTop = "1rem";
 
-      const confirmPass = document.createElement("input");
-      confirmPass.type = "password";
-      confirmPass.placeholder = "Confirm password";
-      confirmPass.style.display = "block";
-      confirmPass.style.marginTop = "1rem";
+    const confirmPass = document.createElement("input");
+    confirmPass.type = "password";
+    confirmPass.placeholder = "Confirm password";
+    confirmPass.style.display = "block";
+    confirmPass.style.marginTop = "1rem";
 
-      // messages
-      const msg = document.createElement("div");
-      msg.style.marginTop = "0.5rem";
+    box.append(newPass, confirmPass);
 
-      // Save button
-      const save = document.createElement("button");
-      save.textContent = "Save";
-      save.style.display = "block";
-      save.style.marginTop = "1rem";
+    const message = document.createElement("div");
+    message.style.marginTop = "0.5rem";
+    box.append(message);
 
-      save.onclick = async () => {
-        msg.textContent = "";
-        save.disabled = true;
+    // Save button
+    const save = document.createElement("button");
+    save.textContent = "Save Changes";
+    save.style.display = "block";
+    save.style.marginTop = "1rem";
 
-        try {
-          // username update
-          const newName = usernameInput.value.trim();
-          if (newName && newName !== currentUsername) {
-            await updateUser({ username: currentUsername, newUsername: newName });
-            currentUsername = newName;
-          }
+    save.onclick = async () => {
+      save.disabled = true;
+      message.textContent = "";
 
-          // avatar update
-          if (currentAvatar !== me.avatar) {
-            await updateUser({
-              username: currentUsername,
-              newAvatar: currentAvatar,
-            });
-          }
-
-          // password update
-          if (newPass.value || confirmPass.value) {
-            if (newPass.value !== confirmPass.value) {
-              msg.textContent = "Passwords do not match.";
-              save.disabled = false;
-              return;
-            }
-
-            if (newPass.value.length < 4) {
-              msg.textContent = "Password too short.";
-              save.disabled = false;
-              return;
-            }
-
-            await updateUser({
-              username: currentUsername,
-              newPassword: newPass.value,
-            });
-          }
-
-          msg.textContent = "Saved!";
-          // Re-render view mode with updated fields
-          renderViewMode();
-
-        } catch (err: any) {
-          msg.textContent = err?.message || "Failed to update profile.";
-        } finally {
-          save.disabled = false;
+      try {
+        // Username update
+        const newName = userInput.value.trim();
+        if (newName && newName !== username) {
+          await updateUser({ username, newUsername: newName });
+          username = newName;
         }
-      };
 
-      // Cancel button
-      const cancel = document.createElement("button");
-      cancel.textContent = "Cancel";
-      cancel.onclick = () => renderViewMode();
-      cancel.style.display = "block";
-      cancel.style.marginTop = "0.5rem";
+        // Avatar update (base64)
+        if (avatarSrc !== me.avatar) {
+          await updateUser({ username, newAvatar: avatarSrc });
+        }
 
-      box.append(
-        avatar,
-        avatarUpload,
-        usernameInput,
-        newPass,
-        confirmPass,
-        save,
-        cancel,
-        msg
-      );
-    }
+        // Password update
+        if (newPass.value || confirmPass.value) {
+          if (newPass.value !== confirmPass.value) {
+            message.textContent = "Passwords do not match.";
+            save.disabled = false;
+            return;
+          }
 
-    // Start in view mode
-    renderViewMode();
+          if (newPass.value.length < 4) {
+            message.textContent = "Password too short.";
+            save.disabled = false;
+            return;
+          }
+
+          await updateUser({ username, newPassword: newPass.value });
+        }
+
+        message.textContent = "Saved!";
+        newPass.value = "";
+        confirmPass.value = "";
+
+      } catch (err: any) {
+        message.textContent = err?.message || "Update failed.";
+      } finally {
+        save.disabled = false;
+      }
+    };
+
+    box.append(save);
   })();
 
-  // cleanup
+  // Cleanup
   return () => {
     cancelled = true;
-    backBtn.onclick = null;
+    back.onclick = null;
   };
 }
