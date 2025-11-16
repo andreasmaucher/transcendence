@@ -1,6 +1,8 @@
 // src/views/auth/ui.ts
 import { loginUser, registerUser, fetchMe } from "../../api/http";
 import { navigate } from "../../router/router";
+import { updateTopBar } from "../topbar/ui";
+
 
 type Mode = "login" | "register";
 
@@ -123,6 +125,7 @@ export function renderAuth(container: HTMLElement) {
 
       const me = await fetchMe();
       if (me) {
+        await updateTopBar();
         navigate("#/menu");
         return;
       }

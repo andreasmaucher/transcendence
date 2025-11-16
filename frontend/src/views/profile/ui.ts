@@ -1,6 +1,7 @@
 // src/views/profile/ui.ts
 import { fetchMe, updateUser } from "../../api/http";
 import { navigate } from "../../router/router";
+import { updateTopBar } from "../topbar/ui";
 
 export function renderProfile(container: HTMLElement) {
   container.innerHTML = "";
@@ -109,7 +110,7 @@ export function renderProfile(container: HTMLElement) {
           username = newName;
         }
 
-        // Avatar update (base64)
+        // Avatar update 
         if (avatarSrc !== me.avatar) {
           await updateUser({ username, newAvatar: avatarSrc });
         }
@@ -131,6 +132,7 @@ export function renderProfile(container: HTMLElement) {
           await updateUser({ username, newPassword: newPass.value });
         }
 
+        await updateTopBar();
         message.textContent = "Saved!";
         newPass.value = "";
         confirmPass.value = "";
