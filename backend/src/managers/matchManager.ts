@@ -1,10 +1,16 @@
 import type { SingleGame, Tournament } from "../types/game.js";
 import { createInitialMatchState } from "../game/state.js";
-import { addPlayerMatchDB, createMatchDB, endMatchDB, startMatchDB } from "../database/matches/setters.js";
-import { getSingleGame } from "./singleGameManager.js";
+import {
+	addPlayerMatchDB,
+	createMatchDB,
+	endMatchDB,
+	removeMatchDB,
+	startMatchDB,
+} from "../database/matches/setters.js";
+import { getSingleGame, quitSingleGame } from "./singleGameManager.js";
 import { tournaments } from "../config/structures.js";
 import { isRoundOver, isTournamentOver } from "./tournamentManagerHelpers.js";
-import { endTournament, goToNextRound } from "./tournamentManager.js";
+import { endTournament, goToNextRound, quitTournament } from "./tournamentManager.js";
 import { Match, TournamentMatchInfo, TournamentMatchType } from "../types/match.js";
 
 // Set the starting state of the tournament match info
@@ -87,7 +93,7 @@ export function startMatch(match: Match) {
 // End match
 export function endMatch(match: Match) {
 	match.state.isRunning = false;
-	endMatchDB(match.id, match.state.winner); // Update database
+	endMatchDB(match); // Update database
 	// Stops here if it's a single game
 	if (!match.tournament) return;
 	const tournament = tournaments.get(match.tournament.id);
@@ -111,4 +117,26 @@ export function addPlayerToMatch(match: Match, playerId: string) {
 // Check if match is full
 export function checkMatchFull(match: Match) {
 	return match.players.left && match.players.right;
+}
+
+export function quitMatch(match: Match, playerId: string) {
+	removeMatchDB(match.id);
+	if (match.singleGameId) quitSingleGame(match.singleGameId);
+	else if (match.tournament) quitTournament(match.tournament.id, playerId);
+}
+
+export function handlePlayerDisconnect(match: Match, playerId: string) {
+	for (const client of match.clients) {
+		// Send a message BEFORE closing
+		client.send(
+			JSON.stringify({
+				type: "player-left",
+				player: playerId,
+			})
+		);
+
+		client.close(1000, "A player quit");
+	}
+
+	quitMatch(match, playerId);
 }

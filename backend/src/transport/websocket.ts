@@ -4,7 +4,7 @@ import { buildStatePayload } from "./broadcaster.js";
 import { parseCookies, verifySessionToken } from "../auth/session.js";
 import { getOrCreateSingleGame } from "../managers/singleGameManager.js";
 import { getOrCreateTournament, addPlayerToTournament } from "../managers/tournamentManager.js";
-import { addPlayerToMatch, checkMatchFull, startMatch } from "../managers/matchManager.js";
+import { addPlayerToMatch, checkMatchFull, handlePlayerDisconnect, startMatch } from "../managers/matchManager.js";
 import { resetMatchState } from "../game/state.js";
 import { Match, PaddleSide } from "../types/match.js";
 import { addUserOnline, removeUserOnline } from "../user/online.js";
@@ -89,8 +89,11 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				}
 			});
 
-			socket.on("close", () => match.clients.delete(socket));
-			socket.on("error", (err: any) => console.error(`[ws error] match=${match.id}`, err));
+			socket.on("close", () => {
+				match.clients.delete(socket);
+				handlePlayerDisconnect(match, socket.username);
+			});
+			socket.on("error", (err: any) => console.error(`[WS error] match=${match.id}`, err));
 		}
 	);
 
@@ -150,13 +153,16 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 					resetMatchState(match);
 				}
 			});
-			socket.on("close", () => match.clients.delete(socket));
+			socket.on("close", () => {
+				match.clients.delete(socket);
+				handlePlayerDisconnect(match, socket.username);
+			});
 			socket.on("error", (err: any) => console.error(`[ws error] match=${match.id}`, err));
 		}
 	);
 
 	// Register/connect to a tournament
-	fastify.get<{ Params: { id: string } }>(
+	fastify.get<{ Params: { id: string }; Querystring: { name?: string; size?: number } }>(
 		"/api/tournament/:id/ws",
 		{ websocket: true },
 		(socket: any, request: any) => {
@@ -164,6 +170,8 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			if (!payload) return;
 
 			const tournamentId = request.params.id;
+			const tournamentName = request.query.name;
+			const tournamentSize = request.query.size;
 			if (!tournamentId) {
 				socket.close(1011, "Tournament id missing");
 				return;
@@ -174,8 +182,8 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			else console.log(`[WS] Websocket for Tournament: ${tournamentId} and User: ${payload.username} connected`);
 			socket.username = payload.username;
 
-			const tournament = getOrCreateTournament(tournamentId);
-			const match = addPlayerToTournament(tournament, socket.username);
+			const tournament = getOrCreateTournament(tournamentId, tournamentName, tournamentSize);
+			const match = addPlayerToTournament(tournament, socket.username, socket);
 			if (match) {
 				match.clients.add(socket);
 
@@ -205,7 +213,10 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 					}
 				});
 
-				socket.on("close", () => match.clients.delete(socket));
+				socket.on("close", () => {
+					match.clients.delete(socket);
+					handlePlayerDisconnect(match, socket.username);
+				});
 				socket.on("error", (err: any) => console.error(`[ws error] match=${match.id}`, err));
 			} else {
 				console.log(`[WS] Tournament ${tournament.id} is already full`);

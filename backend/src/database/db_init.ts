@@ -35,6 +35,7 @@ db.exec(`
 	CREATE TABLE IF NOT EXISTS tournaments (
 		internal_id INTEGER PRIMARY KEY AUTOINCREMENT,
 		id TEXT UNIQUE NOT NULL,
+		name TEXT NOT NULL,
 		size INTEGER,
 		winner TEXT,
 		started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -56,6 +57,7 @@ db.exec(`
 		winner TEXT,
 		started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		ended_at DATETIME,
+		notes TEXT,
 		FOREIGN KEY (tournament_id) REFERENCES tournaments (id) ON DELETE CASCADE,
 		FOREIGN KEY (player_left) REFERENCES users (username),
 		FOREIGN KEY (player_right) REFERENCES users (username)

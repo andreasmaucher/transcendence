@@ -88,3 +88,7 @@ export function getOpenSingleGames(): SingleGame[] {
 	}
 	return openSingleGames;
 }
+
+export function quitSingleGame(id: string) {
+	singleGames.delete(id);
+}

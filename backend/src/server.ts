@@ -86,8 +86,10 @@ setInterval(() => {
 	// Single games loop
 	forEachSingleGame((singleGame) => {
 		const match = singleGame.match;
-		stepMatch(match, dt || 1 / UPDATE_FPS);
-		broadcast(match);
+		if (match.state.isRunning) {
+			stepMatch(match, dt || 1 / UPDATE_FPS);
+			broadcast(match);
+		}
 	});
 	// Tournaments loop
 	forEachTournament((tournament) => {
@@ -97,8 +99,10 @@ setInterval(() => {
 		if (!matches || matches.length === 0) return;
 
 		for (const match of matches) {
-			stepMatch(match, dt || 1 / UPDATE_FPS);
-			broadcast(match);
+			if (match.state.isRunning) {
+				stepMatch(match, dt || 1 / UPDATE_FPS);
+				broadcast(match);
+			}
 		}
 	});
 }, 1000 / UPDATE_FPS);

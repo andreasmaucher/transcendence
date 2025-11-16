@@ -1,14 +1,14 @@
 import { PaddleSide } from "../../types/match.js";
 import db from "../db_init.js";
 
-export function createTournamentDB(id: string, size: number): void {
+export function createTournamentDB(id: string, name: string, size: number): void {
 	const stmt = db.prepare(`
-		INSERT INTO tournaments (id, size)
-		VALUES (?, ?)
+		INSERT INTO tournaments (id, name, size)
+		VALUES (?, ?, ?)
 	`);
-	const result = stmt.run(id, size);
+	const result = stmt.run(id, name, size);
 	if (result.changes === 0) throw new Error(`[DB] Failed to create tournament ${id}`); // If DB run fails, throws error
-	else console.log(`[DB] Created new tournament ${id} with size ${size}`);
+	else console.log(`[DB] Created new tournament ${id} named ${name} with size ${size}`);
 }
 
 export function startTournamentDB(id: string): void {
