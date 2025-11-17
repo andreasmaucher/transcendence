@@ -2,6 +2,7 @@
 import { fetchMe, logout } from "../../api/http";
 import { navigate } from "../../router/router";
 import { setLanguage, getLanguage } from "../../i18n";
+import { t } from "../../i18n";
 
 
 let initialized = false;
@@ -119,7 +120,7 @@ function clearUserBox(userBox: HTMLDivElement) {
 }
 
 function renderLoggedOut(userBox: HTMLDivElement) {
-  userBox.textContent = "Login";
+  userBox.textContent = t("topbar.login");
   userBox.onclick = () => navigate("#/login");
 }
 
@@ -165,14 +166,14 @@ submenu.style.alignItems = "center";
   username.style.color = "#fff";
 
   const profileBtn = document.createElement("button");
-  profileBtn.textContent = "Edit Profile";
+  profileBtn.textContent = t("topbar.editProfile");
   profileBtn.onclick = () => {
     navigate("#/profile");
     submenu.style.display = "none";
   };
 
   const logoutBtn = document.createElement("button");
-  logoutBtn.textContent = "Logout";
+  logoutBtn.textContent = t("topbar.logout");
   logoutBtn.onclick = async () => {
     await logout({ username: me.username });
     clearUserBox(userBox);
