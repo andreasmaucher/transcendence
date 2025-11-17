@@ -29,7 +29,6 @@ export function getOrCreateSingleGame(id: string, userId: string, mode: string):
 			singleGame.match = createMatch({
 				id: matchId,
 				mode: mode,
-				userId: userId,
 				singleGame: singleGame,
 			});
 			if (mode == "remote") {
@@ -89,6 +88,6 @@ export function getOpenSingleGames(): SingleGame[] {
 	return openSingleGames;
 }
 
-export function quitSingleGame(id: string) {
+export function forfeitSingleGame(id: string) {
 	singleGames.delete(id);
 }

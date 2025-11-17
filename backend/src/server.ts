@@ -4,7 +4,7 @@ import Fastify, { FastifyInstance } from "fastify";
 import fastifyWebsocket from "@fastify/websocket";
 import { GAME_CONSTANTS } from "./config/constants.js";
 import { stepMatch } from "./game/engine.js";
-import { broadcast } from "./transport/broadcaster.js";
+import { broadcast, buildPayload } from "./transport/broadcaster.js";
 import { registerWebsocketRoute } from "./transport/websocket.js";
 import matchRoutes from "./routes/match.js";
 import tournamentRoutes from "./routes/tournament.js";
@@ -88,20 +88,24 @@ setInterval(() => {
 		const match = singleGame.match;
 		if (match.state.isRunning) {
 			stepMatch(match, dt || 1 / UPDATE_FPS);
-			broadcast(match);
+			//broadcast(match);
+			broadcast(buildPayload("state", match.state), match);
 		}
 	});
 	// Tournaments loop
 	forEachTournament((tournament) => {
-		const currentRound = tournament.state.round;
-		const matches = tournament.matches.get(currentRound);
+		if (tournament.state.isRunning) {
+			const currentRound = tournament.state.round;
+			const matches = tournament.matches.get(currentRound);
 
-		if (!matches || matches.length === 0) return;
+			if (!matches || matches.length === 0) return;
 
-		for (const match of matches) {
-			if (match.state.isRunning) {
-				stepMatch(match, dt || 1 / UPDATE_FPS);
-				broadcast(match);
+			for (const match of matches) {
+				if (match.state.isRunning) {
+					stepMatch(match, dt || 1 / UPDATE_FPS);
+					//broadcast(match);
+					broadcast(buildPayload("state", match.state), match);
+				}
 			}
 		}
 	});

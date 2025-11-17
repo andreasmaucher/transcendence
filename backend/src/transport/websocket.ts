@@ -1,10 +1,10 @@
 import { RawData } from "ws";
 import type { FastifyInstance } from "fastify";
-import { buildStatePayload } from "./broadcaster.js";
+import { buildPayload } from "./broadcaster.js";
 import { parseCookies, verifySessionToken } from "../auth/session.js";
 import { getOrCreateSingleGame } from "../managers/singleGameManager.js";
 import { getOrCreateTournament, addPlayerToTournament } from "../managers/tournamentManager.js";
-import { addPlayerToMatch, checkMatchFull, handlePlayerDisconnect, startMatch } from "../managers/matchManager.js";
+import { addPlayerToMatch, checkMatchFull, forfeitMatch, startMatch } from "../managers/matchManager.js";
 import { resetMatchState } from "../game/state.js";
 import { Match, PaddleSide } from "../types/match.js";
 import { addUserOnline, removeUserOnline } from "../user/online.js";
@@ -71,7 +71,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			match.clients.add(socket);
 			startMatch(match);
 
-			socket.send(JSON.stringify(buildStatePayload(match)));
+			socket.send(buildPayload("state", match.state));
 
 			socket.on("message", (raw: RawData) => {
 				let msg;
@@ -91,7 +91,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 
 			socket.on("close", () => {
 				match.clients.delete(socket);
-				handlePlayerDisconnect(match, socket.username);
+				forfeitMatch(match, socket.username);
 			});
 			socket.on("error", (err: any) => console.error(`[WS error] match=${match.id}`, err));
 		}
@@ -129,14 +129,13 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			match.clients.add(socket);
 
 			socket.send(
-				JSON.stringify({
-					type: "match-assigned",
+				buildPayload("match-assigned", {
 					matchId: match.id,
 					playerSide: match.players.left === payload.username ? "left" : "right",
 				})
 			);
 
-			socket.send(JSON.stringify(buildStatePayload(match)));
+			socket.send(buildPayload("state", match.state));
 
 			socket.on("message", (raw: RawData) => {
 				let msg;
@@ -155,7 +154,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			});
 			socket.on("close", () => {
 				match.clients.delete(socket);
-				handlePlayerDisconnect(match, socket.username);
+				forfeitMatch(match, socket.username);
 			});
 			socket.on("error", (err: any) => console.error(`[ws error] match=${match.id}`, err));
 		}
@@ -188,14 +187,13 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				match.clients.add(socket);
 
 				socket.send(
-					JSON.stringify({
-						type: "match-assigned",
+					buildPayload("match-assigned", {
 						matchId: match.id,
 						playerSide: match.players.left === payload.username ? "left" : "right",
 					})
 				);
 
-				socket.send(JSON.stringify(buildStatePayload(match)));
+				socket.send(buildPayload("state", match.state));
 
 				socket.on("message", (raw: RawData) => {
 					let msg;
@@ -215,7 +213,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 
 				socket.on("close", () => {
 					match.clients.delete(socket);
-					handlePlayerDisconnect(match, socket.username);
+					forfeitMatch(match, socket.username);
 				});
 				socket.on("error", (err: any) => console.error(`[ws error] match=${match.id}`, err));
 			} else {

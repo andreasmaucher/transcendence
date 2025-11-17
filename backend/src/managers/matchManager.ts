@@ -4,14 +4,15 @@ import {
 	addPlayerMatchDB,
 	createMatchDB,
 	endMatchDB,
-	removeMatchDB,
+	forfeitMatchDB,
 	startMatchDB,
 } from "../database/matches/setters.js";
-import { getSingleGame, quitSingleGame } from "./singleGameManager.js";
+import { forfeitSingleGame, getSingleGame } from "./singleGameManager.js";
 import { tournaments } from "../config/structures.js";
 import { isRoundOver, isTournamentOver } from "./tournamentManagerHelpers.js";
-import { endTournament, goToNextRound, quitTournament } from "./tournamentManager.js";
+import { endTournament, forfeitTournament, goToNextRound } from "./tournamentManager.js";
 import { Match, TournamentMatchInfo, TournamentMatchType } from "../types/match.js";
+import { broadcast, buildPayload } from "../transport/broadcaster.js";
 
 // Set the starting state of the tournament match info
 export function initTournamentMatchInfo(
@@ -32,7 +33,6 @@ export function initTournamentMatchInfo(
 export function createMatch({
 	id,
 	mode,
-	userId,
 	singleGame,
 	tournament,
 	type,
@@ -40,7 +40,6 @@ export function createMatch({
 }: {
 	id: string;
 	mode: string;
-	userId?: string;
 	singleGame?: SingleGame;
 	tournament?: Tournament;
 	type?: TournamentMatchType;
@@ -90,6 +89,24 @@ export function startMatch(match: Match) {
 	}
 }
 
+export function startGameCountdown(match: Match) {
+	let sec = 3;
+
+	const interval = setInterval(() => {
+		// Broadcast countdown to all players in the match
+		broadcast(buildPayload("countdown", { value: sec }), match);
+
+		if (sec === 0) {
+			clearInterval(interval);
+
+			startMatch(match);
+			broadcast(buildPayload("start", undefined), match);
+		}
+
+		sec--;
+	}, 1000);
+}
+
 // End match
 export function endMatch(match: Match) {
 	match.state.isRunning = false;
@@ -108,7 +125,7 @@ export function addPlayerToMatch(match: Match, playerId: string) {
 		if (!match.players.left) addPlayerMatchDB(match.id, playerId, "left");
 		else if (!match.players.right) addPlayerMatchDB(match.id, playerId, "right");
 		else return; // Temporary error handling, match full
-		if (match.singleGameId && checkMatchFull(match)) startMatch(match);
+		if (match.singleGameId && checkMatchFull(match)) startGameCountdown(match);
 	} catch (error: any) {
 		console.error(error.message);
 	}
@@ -119,24 +136,20 @@ export function checkMatchFull(match: Match) {
 	return match.players.left && match.players.right;
 }
 
-export function quitMatch(match: Match, playerId: string) {
-	removeMatchDB(match.id);
-	if (match.singleGameId) quitSingleGame(match.singleGameId);
-	else if (match.tournament) quitTournament(match.tournament.id, playerId);
-}
+export function forfeitMatch(match: Match, playerId: string) {
+	if (match.singleGameId) {
+		for (const client of match.clients) {
+			// Send a message BEFORE closing
+			client.send(
+				buildPayload("player-left", {
+					matchId: match.id,
+					player: playerId,
+				})
+			);
 
-export function handlePlayerDisconnect(match: Match, playerId: string) {
-	for (const client of match.clients) {
-		// Send a message BEFORE closing
-		client.send(
-			JSON.stringify({
-				type: "player-left",
-				player: playerId,
-			})
-		);
-
-		client.close(1000, "A player quit");
-	}
-
-	quitMatch(match, playerId);
+			client.close(1000, "A player left");
+		}
+		forfeitSingleGame(match.singleGameId);
+		forfeitMatchDB(match.id, playerId);
+	} else if (match.tournament) forfeitTournament(match.tournament.id, playerId);
 }

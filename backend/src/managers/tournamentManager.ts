@@ -4,8 +4,9 @@ import {
 	startTournamentDB,
 	removeTournamentDB,
 	endTournamentDB,
+	forfeitTournamentDB,
 } from "../database/tournaments/setters.js";
-import { addPlayerToMatch, checkMatchFull, startMatch } from "./matchManager.js";
+import { addPlayerToMatch, checkMatchFull, startGameCountdown } from "./matchManager.js";
 import { createInitialTournamentState } from "../game/state.js";
 import { tournaments } from "../config/structures.js";
 import {
@@ -17,6 +18,8 @@ import {
 } from "./tournamentManagerHelpers.js";
 import crypto from "crypto";
 import { Match } from "../types/match.js";
+import { forfeitMatchDB } from "../database/matches/setters.js";
+import { buildPayload } from "../transport/broadcaster.js";
 
 // Get or Create a tournament, called only when creating a socket connection
 export function getOrCreateTournament(id: string, name?: string, size?: number): Tournament {
@@ -79,7 +82,7 @@ export function startTournament(tournament: Tournament) {
 		console.log(`[WS] Tournament ${tournament.id} now full — timer cleared`);
 		const matches = tournament.matches.get(tournament.state.round);
 		if (matches) {
-			for (const match of matches) startMatch(match);
+			for (const match of matches) startGameCountdown(match);
 			startTournamentDB(tournament.id);
 			tournament.state.isRunning = true;
 		}
@@ -131,7 +134,7 @@ export function goToNextRound(tournament: Tournament) {
 	const matches = initTournamentMatches(tournament, tournament.state.size);
 	tournament.matches.set(tournament.state.round, matches);
 	assignPlayersToRound(tournament);
-	for (const match of matches) startMatch(match);
+	for (const match of matches) startGameCountdown(match);
 }
 
 // End tournament on the database
@@ -151,21 +154,26 @@ export function endTournament(tournament: Tournament) {
 	tournament.state.isOver = true;
 }
 
-export function quitTournament(tournamentId: string, playerId: string) {
+export function forfeitTournament(tournamentId: string, playerId: string) {
 	const tournament = getTournament(tournamentId);
 	if (tournament) {
-		for (const client of tournament.clients) {
-			// Send a message BEFORE closing
-			client.send(
-				JSON.stringify({
-					type: "player-left",
-					player: playerId,
-				})
-			);
-
-			client.close(1000, "A player quit");
+		const roundMatches = tournament.matches.get(tournament.state.round);
+		if (roundMatches) {
+			for (const match of roundMatches) {
+				for (const client of tournament.clients) {
+					// Send a message BEFORE closing
+					client.send(
+						buildPayload("player-left", {
+							matchId: match.id,
+							player: playerId,
+						})
+					);
+					client.close(1000, "A player left");
+				}
+				forfeitMatchDB(match.id, playerId);
+			}
 		}
-		removeTournamentDB(tournament.id);
+		forfeitTournamentDB(tournament.id, playerId);
 		tournaments.delete(tournament.id);
 	}
 }

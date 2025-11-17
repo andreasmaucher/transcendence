@@ -45,6 +45,18 @@ export function endTournamentDB(id: string, winner?: PaddleSide): void {
 	else console.log(`[DB] Tournament ${id} ended: ${winner ?? "null"}`);
 }
 
+export function forfeitTournamentDB(id: string, playerId: string) {
+	const stmt = db.prepare(`
+		UPDATE tournaments
+		SET notes = ?, ended_at = CURRENT_TIMESTAMP
+		WHERE id = ?
+	`);
+
+	const result = stmt.run(`Tournament forfeited: player ${playerId} left`, id);
+	if (result.changes === 0) throw new Error(`[DB] Failed to forfeit match ${id}`); // If DB run fails, throws error
+	else console.log(`[DB] Tournament ${id} forfeited: player ${playerId} left`);
+}
+
 export function removeTournamentDB(id: string): void {
 	const stmt = db.prepare("DELETE FROM users WHERE id = ?");
 	stmt.run(id);

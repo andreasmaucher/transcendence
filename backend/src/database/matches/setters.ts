@@ -93,6 +93,18 @@ export function endMatchDB(match: Match): void {
 	else console.log(`[DB] Match ${id} ended: winner is ${winner}`);
 }
 
+export function forfeitMatchDB(id: string, playerId: string) {
+	const stmt = db.prepare(`
+		UPDATE matches
+		SET notes = ?, ended_at = CURRENT_TIMESTAMP
+		WHERE id = ?
+	`);
+
+	const result = stmt.run(`Match forfeited: player ${playerId} left`, id);
+	if (result.changes === 0) throw new Error(`[DB] Failed to forfeit match ${id}`); // If DB run fails, throws error
+	else console.log(`[DB] Match ${id} forfeited: player ${playerId} left`);
+}
+
 // Remove a match from the database
 export function removeMatchDB(id: string): void {
 	const stmt = db.prepare("DELETE FROM matches WHERE id = ?");
