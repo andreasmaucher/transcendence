@@ -14,4 +14,15 @@ export default {
   game: {
     exit: "Exit Game",
   },
+  tournaments: {
+    title: "Tournaments",
+    back: "← Back",
+    loading: "Loading tournaments…",
+    none: "No tournaments yet.",
+    available: (n: number) => `${n} Available Tournaments`,
+    create: "+ Create Tournament",
+    details: "Details",
+    join: "Join",
+    failed: "Failed to load tournaments.",
+  },
 };

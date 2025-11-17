@@ -11,7 +11,7 @@ const translations: Record<Language, any> = {
 
 let currentLanguage: Language = "en";
 
-function getNestedValue(obj: any, path: string): string 
+function getNestedValue(obj: any, path: string): any 
 {
   const parts = path.split(".");
   let current: any = obj;
@@ -25,7 +25,7 @@ function getNestedValue(obj: any, path: string): string
   return current;
 }
 
-export function t(key: string): string 
+export function t(key: string): any 
 {
   return getNestedValue(translations[currentLanguage], key);
 }

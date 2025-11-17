@@ -1,6 +1,7 @@
 // src/views/tournament/ui.ts
 import { navigate } from "../../router/router";
 import { fetchTournamentList, type Tournament } from "../../api/http";
+import { t } from "../../i18n";
 
 export async function renderTournament(container: HTMLElement) {
   container.innerHTML = "";
@@ -19,17 +20,17 @@ export async function renderTournament(container: HTMLElement) {
   root.append(header);
 
   const title = document.createElement("h1");
-  title.textContent = "Tournaments";
+  title.textContent = t("tournaments.title");
   header.append(title);
 
   const backBtn = document.createElement("button");
-  backBtn.textContent = "← Back";
+  backBtn.textContent = t("tournaments.back");
   backBtn.onclick = () => navigate("#/menu");
   header.append(backBtn);
 
   // STATUS LINE
   const status = document.createElement("div");
-  status.textContent = "Loading tournaments…";
+  status.textContent = t("tournaments.loading");
   status.style.marginTop = "1rem";
   root.append(status);
 
@@ -43,7 +44,7 @@ export async function renderTournament(container: HTMLElement) {
 
   // CREATE BUTTON
   const createBtn = document.createElement("button");
-  createBtn.textContent = "+ Create Tournament";
+  createBtn.textContent = t("tournaments.create");
   createBtn.style.marginTop = "2rem";
   createBtn.onclick = () => alert("Tournament creation coming soon!");
   root.append(createBtn);
@@ -54,13 +55,13 @@ export async function renderTournament(container: HTMLElement) {
     if (cancelled) return;
 
     if (!tournaments.length) {
-      status.textContent = "No tournaments yet.";
+      status.textContent = t("tournaments.none");
       return;
     }
 
-    status.textContent = `Available Tournaments (${tournaments.length})`;
+    status.textContent = t("tournaments.available")(tournaments.length);
 
-    tournaments.forEach((t) => {
+    tournaments.forEach((tour: Tournament) => {
       const row = document.createElement("div");
       row.style.display = "flex";
       row.style.justifyContent = "space-between";
@@ -71,7 +72,7 @@ export async function renderTournament(container: HTMLElement) {
       row.style.background = "rgba(0,0,0,0.4)";
 
       const left = document.createElement("div");
-      left.textContent = t.name || `Tournament #${t.id}`;
+      left.textContent = tour.name || `Tournament #${tour.id}`;
       row.append(left);
 
       const right = document.createElement("div");
@@ -79,13 +80,13 @@ export async function renderTournament(container: HTMLElement) {
       right.style.gap = "0.5rem";
 
       const detailsBtn = document.createElement("button");
-      detailsBtn.textContent = "Details";
+      detailsBtn.textContent = t("tournaments.details");
       detailsBtn.onclick = () => {
-        alert(`Tournament details coming soon.\nID: ${t.id}`);
+        alert(`Tournament details coming soon.\nID: ${tour.id}`);
       };
 
       const joinBtn = document.createElement("button");
-      joinBtn.textContent = "Join";
+      joinBtn.textContent = t("tournaments.join");
       joinBtn.onclick = () => {
         alert("Joining tournaments not implemented yet.");
       };
@@ -97,7 +98,7 @@ export async function renderTournament(container: HTMLElement) {
     });
   } catch (err) {
     if (!cancelled) {
-      status.textContent = "Failed to load tournaments.";
+      status.textContent = t("tournaments.failed");
     }
   }
 
