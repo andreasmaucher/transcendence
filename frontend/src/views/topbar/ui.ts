@@ -1,6 +1,8 @@
 // src/views/topbar/ui.ts
 import { fetchMe, logout } from "../../api/http";
 import { navigate } from "../../router/router";
+import { setLanguage, getLanguage } from "../../i18n";
+
 
 let initialized = false;
 
@@ -58,7 +60,7 @@ export async function updateTopBar() {
 
 function setupLanguageUI(langSwitcher: HTMLDivElement) {
   const currentLangBtn = document.createElement("button");
-  currentLangBtn.textContent = "EN";
+  currentLangBtn.textContent = getLanguage().toUpperCase();
   langSwitcher.append(currentLangBtn);
 
   const submenu = document.createElement("div");
@@ -83,11 +85,13 @@ function setupLanguageUI(langSwitcher: HTMLDivElement) {
   function addLang(code: "en" | "de" | "fr", label: string) {
     const btn = document.createElement("button");
     btn.textContent = label;
-    btn.onclick = () => {
-      updateTopBar();
-      navigate(location.hash);
-      submenu.style.display = "none";
-    };
+  btn.onclick = () => {
+    setLanguage(code);
+    currentLangBtn.textContent = code.toUpperCase();
+    updateTopBar();
+    navigate(location.hash);
+    submenu.style.display = "none";
+  };
     submenu.append(btn);
   }
 
