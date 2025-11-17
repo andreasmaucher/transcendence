@@ -1,6 +1,8 @@
 // src/views/profile/ui.ts
 import { fetchMe, updateUser } from "../../api/http";
 import { navigate } from "../../router/router";
+import { updateTopBar } from "../topbar/ui";
+import { t } from "../../i18n";
 
 export function renderProfile(container: HTMLElement) {
   container.innerHTML = "";
@@ -8,24 +10,24 @@ export function renderProfile(container: HTMLElement) {
 
   // Title
   const title = document.createElement("h1");
-  title.textContent = "Edit Profile";
+  title.textContent = t("profile.title");
   container.append(title);
 
   // Back button
   const back = document.createElement("button");
-  back.textContent = "← Back to Menu";
+  back.textContent = t("profile.backToMenu");
   back.onclick = () => navigate("#/menu");
   container.append(back);
 
   // Main content box
   const box = document.createElement("div");
-  box.textContent = "Loading…";
+  box.textContent = t("profile.loading");
   container.append(box);
 
   (async () => {
     const me = await fetchMe();
     if (!me || cancelled) {
-      box.textContent = "Not logged in.";
+      box.textContent = t("profile.notLoggedIn");
       return;
     }
 
@@ -75,13 +77,13 @@ export function renderProfile(container: HTMLElement) {
     // Password inputs
     const newPass = document.createElement("input");
     newPass.type = "password";
-    newPass.placeholder = "New password";
+    newPass.placeholder = t("profile.newPassword");
     newPass.style.display = "block";
     newPass.style.marginTop = "1rem";
 
     const confirmPass = document.createElement("input");
     confirmPass.type = "password";
-    confirmPass.placeholder = "Confirm password";
+    confirmPass.placeholder = t("profile.confirmPassword");
     confirmPass.style.display = "block";
     confirmPass.style.marginTop = "1rem";
 
@@ -93,7 +95,7 @@ export function renderProfile(container: HTMLElement) {
 
     // Save button
     const save = document.createElement("button");
-    save.textContent = "Save Changes";
+    save.textContent = t("profile.saveChanges");
     save.style.display = "block";
     save.style.marginTop = "1rem";
 
@@ -109,7 +111,7 @@ export function renderProfile(container: HTMLElement) {
           username = newName;
         }
 
-        // Avatar update (base64)
+        // Avatar update 
         if (avatarSrc !== me.avatar) {
           await updateUser({ username, newAvatar: avatarSrc });
         }
@@ -117,13 +119,13 @@ export function renderProfile(container: HTMLElement) {
         // Password update
         if (newPass.value || confirmPass.value) {
           if (newPass.value !== confirmPass.value) {
-            message.textContent = "Passwords do not match.";
+            message.textContent = t("profile.passwordsNoMatch");
             save.disabled = false;
             return;
           }
 
           if (newPass.value.length < 4) {
-            message.textContent = "Password too short.";
+            message.textContent = t("profile.passwordTooShort");
             save.disabled = false;
             return;
           }
@@ -131,12 +133,13 @@ export function renderProfile(container: HTMLElement) {
           await updateUser({ username, newPassword: newPass.value });
         }
 
-        message.textContent = "Saved!";
+        await updateTopBar();
+        message.textContent = t("profile.saved");
         newPass.value = "";
         confirmPass.value = "";
 
       } catch (err: any) {
-        message.textContent = err?.message || "Update failed.";
+        message.textContent = err?.message || t("profile.updateFailed");
       } finally {
         save.disabled = false;
       }

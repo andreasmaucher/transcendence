@@ -1,10 +1,11 @@
 // src/views/game/ui.ts
 import { type GameConstants } from "../../constants";
-import { fetchMe } from "../../api/http";
 import { navigate } from "../../router/router";
 import { fetchGameConstants } from "../../api/http";
 import { WS_PROTOCOL, WS_HOST, WS_PORT, ROOM_ID } from "../../config/endpoints";
 import { draw } from "../../rendering/canvas";
+import { t } from "../../i18n";
+
 import {
   applyBackendState,
   type BackendStateMessage,
@@ -19,9 +20,6 @@ import {
 
 let GAME_CONSTANTS: GameConstants | null = null;
 
-// -------------------------------
-// Existing logic (unchanged)
-// -------------------------------
 function createInitialState(): State {
   if (!GAME_CONSTANTS) throw new Error("Game constants not loaded");
   const centerY =
@@ -115,7 +113,6 @@ function connectToBackend(state: State): () => void {
 
   ws.addEventListener("error", () => ws.close());
 
-  // <-- return cleanup function
   return () => ws.close();
 }
 
@@ -137,129 +134,49 @@ function startGameLoop(canvas: HTMLCanvasElement, state: State): () => void {
   };
 }
 
-// -------------------------------
-// SPA ENTRY POINT (Game View)
-// -------------------------------
 export async function renderGame(container: HTMLElement) {
   container.innerHTML = "";
   let cancelled = false;
   const hash = location.hash;
   const mode = hash.includes("mode=online") ? "online" : "local";
   console.log("GAME MODE =", mode);
-  
-  // UI WRAPPER
+
   const wrapper = document.createElement("div");
   wrapper.style.position = "relative";
   wrapper.style.width = "fit-content";
   wrapper.style.margin = "0 auto";
   container.append(wrapper);
 
-  // Floating UI (top-right)
-  const ui = document.createElement("div");
-  ui.style.position = "absolute";
-  ui.style.top = "-150px";
-  ui.style.right = "10px";
-  ui.style.display = "flex";
-  ui.style.flexDirection = "column";
-  ui.style.gap = "8px";
-  ui.style.zIndex = "9999";
-  wrapper.append(ui);
-
-
-// USER INFO (avatar + name)
-const userBox = document.createElement("div");
-userBox.style.display = "flex";
-userBox.style.alignItems = "center";
-userBox.style.gap = "8px";
-userBox.style.background = "rgba(0,0,0,0.5)";
-userBox.style.padding = "4px 8px";
-userBox.style.borderRadius = "6px";
-userBox.style.color = "#fff";
-ui.append(userBox);
-
-(async () => {
-  const me = await fetchMe();
-  if (!me) return;
-
-  const avatar = document.createElement("img");
-  avatar.src = me.avatar || "/default-avatar.png";
-  avatar.width = 32;
-  avatar.height = 32;
-  avatar.style.borderRadius = "50%";
-  avatar.style.objectFit = "cover";
-
-  const name = document.createElement("span");
-  name.textContent = me.username;
-
-  userBox.append(avatar, name);
-})();
-
-  //
-  // EXIT BUTTON
-  //
   const exitBtn = document.createElement("button");
-  exitBtn.textContent = "Exit Game";
+  exitBtn.textContent = t("game.exit");
   exitBtn.style.padding = "4px 8px";
   exitBtn.style.fontSize = "14px";
   exitBtn.style.cursor = "pointer";
+  exitBtn.style.position = "fixed";
+  exitBtn.style.top = "900px";
+  exitBtn.style.right = "20px";
+  exitBtn.style.zIndex = "9999";
   exitBtn.onclick = () => navigate("#/menu");
-  ui.append(exitBtn);
+  wrapper.append(exitBtn);
 
-  //
-  // MUTE BUTTON
-  //
-//   let muted = false;
-//   const audio = new Audio("/assets/game-music.mp3");
-//   audio.loop = true;
-//   audio.volume = 0.4;
-//   audio.play().catch(() => { /* autoplay block ignored */ });
-
-//   const muteBtn = document.createElement("button");
-//   muteBtn.textContent = "Mute";
-//   muteBtn.style.padding = "4px 8px";
-//   muteBtn.style.fontSize = "14px";
-//   muteBtn.style.cursor = "pointer";
-
-//   muteBtn.onclick = () => {
-//     muted = !muted;
-//     audio.muted = muted;
-//     muteBtn.textContent = muted ? "Unmute" : "Mute";
-//   };
-
-//   ui.append(muteBtn);
-
-  //
-  // 1) Fetch game constants
-  //
   GAME_CONSTANTS = await fetchGameConstants();
   if (cancelled) return;
 
-  //
-  // 2) Create canvas
-  //
   const canvas = document.createElement("canvas");
   canvas.width = GAME_CONSTANTS.fieldWidth;
   canvas.height = GAME_CONSTANTS.fieldHeight;
   wrapper.append(canvas);
 
-  //
-  // 3) Start game
-  //
   const state = createInitialState();
   const cleanupWS = connectToBackend(state);
   setupInputs();
 
   const cleanupLoop = startGameLoop(canvas, state);
 
-  //
-  // Return cleanup for router
-  //
   return () => {
     cancelled = true;
     cleanupLoop();
     cleanupWS();
     setActiveSocket(null);
- //   audio.pause();
-//    audio.src = "";
   };
 }
