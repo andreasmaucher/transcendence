@@ -56,4 +56,12 @@ export default {
     saved: "Gespeichert!",
     updateFailed: "Speichern fehlgeschlagen.",
   },
+
+  gameOver: {
+  leftWins: "Linker Spieler gewinnt!",
+  rightWins: "Rechter Spieler gewinnt!",
+  refresh: "Match beendet",
+  replay: "Match wiederholen",
+},
+
 };

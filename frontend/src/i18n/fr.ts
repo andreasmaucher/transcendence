@@ -56,4 +56,12 @@ export default {
     saved: "Enregistré !",
     updateFailed: "Échec de mise à jour.",
   },
+  
+    gameOver: {
+    leftWins: "Le joueur gauche gagne !",
+    rightWins: "Le joueur droit gagne !",
+    refresh: "Match terminé",
+    replay: "Rejouer le match",
+    },
+
 };

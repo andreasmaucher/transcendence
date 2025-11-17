@@ -56,4 +56,12 @@ export default {
     saved: "Saved!",
     updateFailed: "Update failed.",
   },
+
+    gameOver: {
+    leftWins: "Left Player Wins!",
+    rightWins: "Right Player Wins!",
+    refresh: "Match Over",
+    replay: "Replay Match",
+    },
+
 };
