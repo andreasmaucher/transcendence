@@ -1,5 +1,6 @@
 // src/views/menu/ui.ts
 import { navigate } from "../../router/router";
+import { t } from "../../i18n";
 
 export function renderMenu(container: HTMLElement) {
   container.innerHTML = "";
@@ -10,7 +11,7 @@ export function renderMenu(container: HTMLElement) {
 
   // Title
   const title = document.createElement("h1");
-  title.textContent = "PONG";
+  title.textContent = t("menu.title");
   title.style.textAlign = "center";
   title.style.width = "100%";
   root.append(title);
@@ -22,10 +23,10 @@ export function renderMenu(container: HTMLElement) {
   root.append(btns);
 
   const playBtn = document.createElement("button");
-  playBtn.textContent = "Play Game";
+  playBtn.textContent = t("menu.playGame");
 
   const tournamentBtn = document.createElement("button");
-  tournamentBtn.textContent = "Tournaments";
+  tournamentBtn.textContent = t("menu.tournaments");
 
   btns.append(playBtn, tournamentBtn);
 
@@ -65,11 +66,11 @@ export function renderMenu(container: HTMLElement) {
     box.style.gap = "6px";
 
     const localBtn = document.createElement("button");
-    localBtn.textContent = "Local Match";
+    localBtn.textContent = t("menu.localMatch");
     localBtn.onclick = () => navigate("#/game?mode=local");
 
     const onlineBtn = document.createElement("button");
-    onlineBtn.textContent = "Online Match";
+    onlineBtn.textContent = t("menu.onlineMatch");
     onlineBtn.onclick = () => navigate("#/game?mode=online");
 
     box.append(localBtn, onlineBtn);

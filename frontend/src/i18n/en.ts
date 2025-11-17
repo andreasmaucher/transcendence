@@ -4,4 +4,11 @@ export default {
     editProfile: "Edit Profile",
     logout: "Logout",
   },
+  menu: {
+    title: "PONG",
+    playGame: "Play Game",
+    tournaments: "Tournaments",
+    localMatch: "Local Match",
+    onlineMatch: "Online Match",
+  },
 };
