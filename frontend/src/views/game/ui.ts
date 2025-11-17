@@ -4,6 +4,8 @@ import { navigate } from "../../router/router";
 import { fetchGameConstants } from "../../api/http";
 import { WS_PROTOCOL, WS_HOST, WS_PORT, ROOM_ID } from "../../config/endpoints";
 import { draw } from "../../rendering/canvas";
+import { t } from "../../i18n";
+
 import {
   applyBackendState,
   type BackendStateMessage,
@@ -146,7 +148,7 @@ export async function renderGame(container: HTMLElement) {
   container.append(wrapper);
 
   const exitBtn = document.createElement("button");
-  exitBtn.textContent = "Exit Game";
+  exitBtn.textContent = t("game.exit");
   exitBtn.style.padding = "4px 8px";
   exitBtn.style.fontSize = "14px";
   exitBtn.style.cursor = "pointer";

@@ -11,4 +11,7 @@ export default {
     localMatch: "Lokales Spiel",
     onlineMatch: "Online Spiel",
   },
+  game: {
+    exit: "Spiel Beenden",
+  },
 };
