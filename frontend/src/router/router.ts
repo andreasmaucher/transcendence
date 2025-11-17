@@ -1,46 +1,41 @@
 // src/router/router.ts
 import { fetchMe } from "../api/http";
 
-export type View = (container: HTMLElement) => void | (() => void);
-type Routes = Record<string, View>;
+export type View = (container: HTMLElement) => void | (() => void) | Promise<void | (() => void)>;
+export type Routes = Record<string, View>;
 
 let routes: Routes = {};
-let containerEl: HTMLElement;
-let activeCleanup: (() => void) | null = null;
+let root: HTMLElement;
+let cleanup: (() => void) | null = null;
 
-let renderLock = false;
-let lastNavigateAt = 0;
-const NAV_THROTTLE_MS = 200;
+let isRendering = false;
+let lastNav = 0;
+const NAV_DELAY = 200;
 
-//public api
+// public api
 
 export function registerRoutes(map: Routes) {
   routes = map;
 }
 
 export function startRouter(container: HTMLElement) {
-  containerEl = container;
-
-  window.addEventListener(
-    "hashchange",
-    () => void renderCurrent(),
-    { passive: true }
-  );
+  root = container;
+  window.addEventListener("hashchange", () => void render(), { passive: true });
 
   if (!location.hash) {
     location.hash = "#/login";
   }
 
-  void renderCurrent();
+  void render();
 }
 
 export function navigate(hash: string) {
   const now = Date.now();
-  if (now - lastNavigateAt < NAV_THROTTLE_MS) return;
-  lastNavigateAt = now;
+  if (now - lastNav < NAV_DELAY) return;
+  lastNav = now;
 
   if (location.hash === hash) {
-    void renderCurrent();
+    void render();
   } else {
     location.hash = hash;
   }
@@ -48,47 +43,52 @@ export function navigate(hash: string) {
 
 // helpers
 
-async function requireSessionOrRedirect(): Promise<boolean> {
+async function isAuthenticated() {
   try {
-    const me = await fetchMe();
-    if (me) return true;
+    return Boolean(await fetchMe());
   } catch {
-    // ignored
+    return false;
   }
-
-  location.hash = "#/login";
-  return false;
 }
 
-// render
+// main render
 
-async function renderCurrent() {
-  if (renderLock) return;
-  renderLock = true;
+async function render() {
+  if (isRendering) return;
+  isRendering = true;
 
   try {
-    const hash = location.hash || "#/login";
-    const view = routes[hash] ?? routes["#/login"];
-    if (!view) return;
+    // FIX: remove ?query from hash
+    const fullHash = location.hash || "#/login";
+    const hash = fullHash.split("?")[0];
 
-      if (hash !== "#/login") {
-      const ok = await requireSessionOrRedirect();
-      if (!ok) return;
+    let view = routes[hash];
+
+    if (!view) {
+      const authenticated = await isAuthenticated();
+      navigate(authenticated ? "#/menu" : "#/login");
+      return;
     }
 
-    if (activeCleanup) {
-      activeCleanup();
-      activeCleanup = null;
+    if (hash !== "#/login") {
+      const ok = await isAuthenticated();
+      if (!ok) {
+        navigate("#/login");
+        return;
+      }
     }
 
-    containerEl.replaceChildren();
-    const cleanup = view(containerEl);
-
-    if (typeof cleanup === "function") {
-      activeCleanup = cleanup;
+    if (cleanup) {
+      cleanup();
+      cleanup = null;
     }
+
+    root.replaceChildren();
+    const maybeCleanup = await view(root);  // <--- also important
+
+    if (typeof maybeCleanup === "function") cleanup = maybeCleanup;
 
   } finally {
-    renderLock = false;
+    isRendering = false;
   }
 }

@@ -1,38 +1,15 @@
 // src/views/auth/ui.ts
-//
-
-
 import { loginUser, registerUser, fetchMe } from "../../api/http";
 import { navigate } from "../../router/router";
 
 type Mode = "login" | "register";
 
-interface AuthState {
-  mode: Mode;
-  loading: boolean;
-  message: string | null;
-  fieldErrors: {
-    username: string | null;
-    password: string | null;
-  };
-}
-
-const initialState: AuthState = {
-  mode: "login",
-  loading: false,
-  message: null,
-  fieldErrors: {
-    username: null,
-    password: null,
-  },
-};
-
 export function renderAuth(container: HTMLElement) {
-  container.replaceChildren();
+  container.innerHTML = "";
 
-  const state: AuthState = { ...initialState };
+  let mode: Mode = "login";
 
-  /// DOM
+  // Root
   const root = document.createElement("div");
   root.className = "auth-screen";
 
@@ -42,25 +19,26 @@ export function renderAuth(container: HTMLElement) {
 
   // Title
   const title = document.createElement("h2");
-  title.className = "auth-title";
   title.textContent = "Welcome";
+  title.className = "auth-title";
   card.appendChild(title);
 
-  // Mode tabs
+  // Tabs
   const tabs = document.createElement("div");
   tabs.className = "auth-tabs";
   tabs.innerHTML = `
-    <button id="auth-tab-login" class="auth-tab">Login</button>
-    <button id="auth-tab-register" class="auth-tab">Register</button>
+    <button id="auth-login" class="auth-tab">Login</button>
+    <button id="auth-register" class="auth-tab">Register</button>
   `;
   card.appendChild(tabs);
 
-  const loginTab = tabs.querySelector("#auth-tab-login") as HTMLButtonElement;
-  const registerTab = tabs.querySelector("#auth-tab-register") as HTMLButtonElement;
+  const loginTab = tabs.querySelector("#auth-login") as HTMLButtonElement;
+  const registerTab = tabs.querySelector("#auth-register") as HTMLButtonElement;
 
-  const messageBox = document.createElement("div");
-  messageBox.className = "auth-message";
-  card.appendChild(messageBox);
+  // Message
+  const message = document.createElement("div");
+  message.className = "auth-message";
+  card.appendChild(message);
 
   // Form
   const form = document.createElement("form");
@@ -68,126 +46,95 @@ export function renderAuth(container: HTMLElement) {
   form.innerHTML = `
     <label class="auth-label">
       Username
-      <input id="auth-input-username" class="auth-input" type="text" autocomplete="username"/>
-      <div id="auth-error-username" class="auth-field-error"></div>
+      <input id="auth-user" class="auth-input" type="text" autocomplete="username"/>
+      <div id="auth-user-err" class="auth-field-error"></div>
     </label>
 
     <label class="auth-label">
       Password
-      <input id="auth-input-password" class="auth-input" type="password" autocomplete="current-password"/>
-      <div id="auth-error-password" class="auth-field-error"></div>
+      <input id="auth-pass" class="auth-input" type="password" autocomplete="current-password"/>
+      <div id="auth-pass-err" class="auth-field-error"></div>
     </label>
 
     <button id="auth-submit" class="auth-submit" type="submit">Login</button>
   `;
   card.appendChild(form);
 
-  const inputUsername = form.querySelector("#auth-input-username") as HTMLInputElement;
-  const inputPassword = form.querySelector("#auth-input-password") as HTMLInputElement;
-  const errorUsername = form.querySelector("#auth-error-username") as HTMLDivElement;
-  const errorPassword = form.querySelector("#auth-error-password") as HTMLDivElement;
-  const submitBtn = form.querySelector("#auth-submit") as HTMLButtonElement;
+  const inputUser = form.querySelector("#auth-user") as HTMLInputElement;
+  const inputPass = form.querySelector("#auth-pass") as HTMLInputElement;
+
+  const errUser = form.querySelector("#auth-user-err") as HTMLDivElement;
+  const errPass = form.querySelector("#auth-pass-err") as HTMLDivElement;
+  const submit = form.querySelector("#auth-submit") as HTMLButtonElement;
 
   container.appendChild(root);
 
-  /// helepers
+  // ---- Helpers ----
 
-  function setMode(mode: Mode) {
-    state.mode = mode;
-    state.message = null;
-    state.fieldErrors = { username: null, password: null };
+  function switchMode(m: Mode) {
+    mode = m;
+    message.textContent = "";
+    errUser.textContent = "";
+    errPass.textContent = "";
+    submit.textContent = m === "login" ? "Login" : "Register";
 
-    loginTab.classList.toggle("active", mode === "login");
-    registerTab.classList.toggle("active", mode === "register");
-
-    submitBtn.textContent = mode === "login" ? "Login" : "Register";
-    messageBox.textContent = "";
-
-    errorUsername.textContent = "";
-    errorPassword.textContent = "";
+    loginTab.classList.toggle("active", m === "login");
+    registerTab.classList.toggle("active", m === "register");
   }
 
-  function setLoading(loading: boolean) {
-    state.loading = loading;
-    submitBtn.disabled = loading;
-    submitBtn.classList.toggle("loading", loading);
+  function showError(msg: string) {
+    message.textContent = msg;
   }
 
-  function setMessage(msg: string | null) {
-    state.message = msg;
-    messageBox.textContent = msg ?? "";
-    messageBox.classList.toggle("visible", !!msg);
+  function validate() {
+    const errors: { user?: string; pass?: string } = {};
+
+    if (!inputUser.value.trim()) errors.user = "Username required";
+    if (inputPass.value.length < 4) errors.pass = "Password too short";
+
+    errUser.textContent = errors.user || "";
+    errPass.textContent = errors.pass || "";
+
+    return Object.keys(errors).length === 0;
   }
 
-  function setFieldErrors(errs: { username?: string | null; password?: string | null }) {
-    state.fieldErrors.username = errs.username ?? null;
-    state.fieldErrors.password = errs.password ?? null;
+  // ---- Events ----
 
-    errorUsername.textContent = state.fieldErrors.username ?? "";
-    errorPassword.textContent = state.fieldErrors.password ?? "";
-  }
+  loginTab.onclick = () => switchMode("login");
+  registerTab.onclick = () => switchMode("register");
 
-  /// validae
-
-  function validate(username: string, password: string) {
-    const errors: { username?: string; password?: string } = {};
-
-    if (!username || username.trim().length < 3) {
-      errors.username = "Username must be at least 3 chars.";
-    }
-
-    if (!password || password.length < 4) {
-      errors.password = "Password must be at least 4 chars.";
-    }
-
-    return errors;
-  }
-
-  // handle evnts
-  loginTab.addEventListener("click", () => setMode("login"));
-  registerTab.addEventListener("click", () => setMode("register"));
-
-  form.addEventListener("submit", async (e) => {
+  form.onsubmit = async (e) => {
     e.preventDefault();
-    if (state.loading) return;
 
-    const username = inputUsername.value.trim();
-    const password = inputPassword.value;
-
-    // Validate
-    const errs = validate(username, password);
-    if (Object.keys(errs).length > 0) {
-      setFieldErrors(errs);
-      setMessage("Please fix the errors.");
+    if (!validate()) {
+      showError("Please fix the errors.");
       return;
     }
 
-    setFieldErrors({});
-    setMessage(null);
-    setLoading(true);
+    submit.disabled = true;
+    showError("");
 
     try {
-      if (state.mode === "login") {
-        await loginUser({ username, password });
+      if (mode === "login") {
+        await loginUser({ username: inputUser.value, password: inputPass.value });
       } else {
-        await registerUser({ username, password });
+        await registerUser({ username: inputUser.value, password: inputPass.value });
       }
 
       const me = await fetchMe();
-      if (!me) {
-        setMessage("Authentication failed.");
+      if (me) {
+        navigate("#/menu");
         return;
       }
 
-      navigate("#/menu");
-
+      showError("Authentication failed.");
     } catch (err: any) {
-      setMessage(err?.message || "Authentication failed.");
+      showError(err?.message || "Error");
     } finally {
-      setLoading(false);
+      submit.disabled = false;
     }
-  });
+  };
 
-  // Initial mode
-  setMode("login");
+  // Start with login tab active
+  switchMode("login");
 }

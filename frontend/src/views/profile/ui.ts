@@ -1,73 +1,153 @@
+// src/views/profile/ui.ts
+import { fetchMe, updateUser } from "../../api/http";
 import { navigate } from "../../router/router";
-import { fetchMe } from "../../api/http";
 
 export function renderProfile(container: HTMLElement) {
-  container.replaceChildren();
-
+  container.innerHTML = "";
   let cancelled = false;
 
+  // Title
   const title = document.createElement("h1");
-  title.textContent = "Profile";
+  title.textContent = "Edit Profile";
+  container.append(title);
 
-  const info = document.createElement("div");
-  info.textContent = "Loading profile...";
-  container.append(title, info);
+  // Back button
+  const back = document.createElement("button");
+  back.textContent = "← Back to Menu";
+  back.onclick = () => navigate("#/menu");
+  container.append(back);
 
-  const backBtn = document.createElement("button");
-  backBtn.textContent = "← Back to Menu";
-  const onBack = () => navigate("#/menu");
-  backBtn.addEventListener("click", onBack);
-  container.append(backBtn);
+  // Main content box
+  const box = document.createElement("div");
+  box.textContent = "Loading…";
+  container.append(box);
 
   (async () => {
-    try {
-      const me = await fetchMe();
-      if (cancelled) return;
-
-      if (!me) {
-        info.textContent = "You are not logged in.";
-        return;
-      }
-
-      const wrapper = document.createElement("div");
-      wrapper.style.marginTop = "1rem";
-      wrapper.style.display = "flex";
-      wrapper.style.flexDirection = "column";
-      wrapper.style.alignItems = "center";
-      wrapper.style.gap = "0.5rem";
-
-      const avatar = document.createElement("img");
-      avatar.alt = "User avatar";
-      avatar.width = 120;
-      avatar.height = 120;
-      avatar.style.borderRadius = "50%";
-      avatar.style.objectFit = "cover";
-      avatar.style.border = "2px solid #ff2ea6";
-      avatar.src =
-        me.avatar && me.avatar.startsWith("http")
-          ? me.avatar
-          : `${me.avatar ?? ""}` || "/default-avatar.png";
-
-      const username = document.createElement("h2");
-      username.textContent = me.username;
-
-      const userId = document.createElement("p");
-      userId.textContent = `ID: ${me.id}`;
-
-      const joined = document.createElement("p");
-      joined.textContent = `Joined: ${new Date(me.created_at).toLocaleString()}`;
-
-      wrapper.append(avatar, username, userId, joined);
-      info.replaceChildren(wrapper);
-
-    } catch (e) {
-      if (!cancelled) info.textContent = "Failed to load profile data.";
+    const me = await fetchMe();
+    if (!me || cancelled) {
+      box.textContent = "Not logged in.";
+      return;
     }
+
+    let username = me.username;
+    let avatarSrc = me.avatar || "/default-avatar.png";
+
+    // Clear content
+    box.innerHTML = "";
+
+    // --- Avatar preview ---
+    const avatar = document.createElement("img");
+    avatar.src = avatarSrc;
+    avatar.width = 140;
+    avatar.height = 140;
+    avatar.style.borderRadius = "50%";
+    avatar.style.objectFit = "cover";
+    avatar.style.border = "2px solid #ff2ea6";
+    avatar.style.display = "block";
+    box.append(avatar);
+
+    // Avatar upload
+    const avatarInput = document.createElement("input");
+    avatarInput.type = "file";
+    avatarInput.accept = "image/*";
+    avatarInput.style.display = "block";
+    avatarInput.style.marginTop = "1rem";
+    avatarInput.onchange = () => {
+      const file = avatarInput.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        avatarSrc = reader.result as string;
+        avatar.src = avatarSrc;
+      };
+      reader.readAsDataURL(file);
+    };
+    box.append(avatarInput);
+
+    // Username input
+    const userInput = document.createElement("input");
+    userInput.type = "text";
+    userInput.value = username;
+    userInput.style.display = "block";
+    userInput.style.marginTop = "1rem";
+    box.append(userInput);
+
+    // Password inputs
+    const newPass = document.createElement("input");
+    newPass.type = "password";
+    newPass.placeholder = "New password";
+    newPass.style.display = "block";
+    newPass.style.marginTop = "1rem";
+
+    const confirmPass = document.createElement("input");
+    confirmPass.type = "password";
+    confirmPass.placeholder = "Confirm password";
+    confirmPass.style.display = "block";
+    confirmPass.style.marginTop = "1rem";
+
+    box.append(newPass, confirmPass);
+
+    const message = document.createElement("div");
+    message.style.marginTop = "0.5rem";
+    box.append(message);
+
+    // Save button
+    const save = document.createElement("button");
+    save.textContent = "Save Changes";
+    save.style.display = "block";
+    save.style.marginTop = "1rem";
+
+    save.onclick = async () => {
+      save.disabled = true;
+      message.textContent = "";
+
+      try {
+        // Username update
+        const newName = userInput.value.trim();
+        if (newName && newName !== username) {
+          await updateUser({ username, newUsername: newName });
+          username = newName;
+        }
+
+        // Avatar update (base64)
+        if (avatarSrc !== me.avatar) {
+          await updateUser({ username, newAvatar: avatarSrc });
+        }
+
+        // Password update
+        if (newPass.value || confirmPass.value) {
+          if (newPass.value !== confirmPass.value) {
+            message.textContent = "Passwords do not match.";
+            save.disabled = false;
+            return;
+          }
+
+          if (newPass.value.length < 4) {
+            message.textContent = "Password too short.";
+            save.disabled = false;
+            return;
+          }
+
+          await updateUser({ username, newPassword: newPass.value });
+        }
+
+        message.textContent = "Saved!";
+        newPass.value = "";
+        confirmPass.value = "";
+
+      } catch (err: any) {
+        message.textContent = err?.message || "Update failed.";
+      } finally {
+        save.disabled = false;
+      }
+    };
+
+    box.append(save);
   })();
 
-  // CLEANUP
+  // Cleanup
   return () => {
     cancelled = true;
-    backBtn.removeEventListener("click", onBack);
+    back.onclick = null;
   };
 }

@@ -75,3 +75,65 @@ export async function loginUser(params: {
 export async function logout(): Promise<void> {
   await postJSON(`${API_BASE}/api/user/logout`, {});
 }
+
+export async function updateUser(params: {
+	username: string;
+	newUsername?: string;
+	newPassword?: string;
+	newAvatar?: string;
+}): Promise<void> {
+	const res = await fetch(`${API_BASE}/api/user/update`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		credentials: "include",
+		body: JSON.stringify(params),
+	});
+
+	const text = await res.text();
+	let message = "update failed";
+
+	try {
+		const body = JSON.parse(text);
+		if (!res.ok || body?.success === false) {
+			message = body?.message || message;
+			throw new Error(message);
+		}
+	} catch (err) {
+		if (!res.ok) {
+			throw new Error(message);
+		}
+	}
+}
+
+
+// tournament
+
+export type Tournament = {
+  id: number;
+  name: string;
+  status: string;
+};
+
+
+
+////////// HARDCODED ##### TEMPORARY
+export async function fetchTournamentList(): Promise<Tournament[]> {
+  const res = await fetch(`${API_BASE}/api/tournament/list`, {
+    credentials: "include",
+  });
+
+  if (res.status === 404) {
+    // hardcoded tournoments *******************************
+    return [
+      { id: 1, name: "42 League", status: "open" },
+      { id: 2, name: "Berlin", status: "open" },
+    ];
+  }
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch tournament list");
+  }
+
+  const body = await res.json();
+  return (body.data as Tournament[]) ?? [];
+}
