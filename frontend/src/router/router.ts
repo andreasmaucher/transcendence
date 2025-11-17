@@ -64,19 +64,30 @@ async function render() {
 
     let view = routes[hash];
 
-    if (!view) {
-      const authenticated = await isAuthenticated();
-      navigate(authenticated ? "#/menu" : "#/login");
+  if (!view) {
+    const authenticated = await isAuthenticated();
+    navigate(authenticated ? "#/menu" : "#/login");
+    return;
+  }
+
+  // NEW: redirect away from login if logged in
+  if (hash === "#/login") {
+    const authenticated = await isAuthenticated();
+    if (authenticated) {
+      navigate("#/menu");
       return;
     }
+  }
 
-    if (hash !== "#/login") {
-      const ok = await isAuthenticated();
-      if (!ok) {
-        navigate("#/login");
-        return;
-      }
+  // existing rule: protect all other routes
+  if (hash !== "#/login") {
+    const ok = await isAuthenticated();
+    if (!ok) {
+      navigate("#/login");
+      return;
     }
+  }
+
 
     if (cleanup) {
       cleanup();
