@@ -43,7 +43,6 @@ export function getLanguage(): Language {
   return currentLanguage;
 }
 
-// Load initial language (from localStorage or browser settings)
 (function init() {
   const stored = localStorage.getItem("language") as Language | null;
   if (stored && translations[stored]) {
