@@ -25,4 +25,17 @@ export default {
     join: "Join",
     failed: "Failed to load tournaments.",
   },
+  auth: {
+    welcome: "Welcome",
+    login: "Login",
+    register: "Register",
+    username: "Username",
+    password: "Password",
+
+    errUsernameRequired: "Username required",
+    errPasswordShort: "Password too short",
+    errFixForm: "Please fix the errors.",
+    errAuthFailed: "Authentication failed.",
+    errGeneric: "Error",
+  },
 };

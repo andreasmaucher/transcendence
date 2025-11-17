@@ -25,4 +25,17 @@ export default {
     join: "Rejoindre",
     failed: "Impossible de charger les tournois.",
   },
+  auth: {
+    welcome: "Bienvenue",
+    login: "Connexion",
+    register: "Inscription",
+    username: "Nom d'utilisateur",
+    password: "Mot de passe",
+
+    errUsernameRequired: "Nom d'utilisateur requis",
+    errPasswordShort: "Mot de passe trop court",
+    errFixForm: "Veuillez corriger les erreurs.",
+    errAuthFailed: "Échec de l'authentification.",
+    errGeneric: "Erreur",
+  },
 };

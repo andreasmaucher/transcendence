@@ -25,4 +25,17 @@ export default {
     join: "Beitreten",
     failed: "Turniere konnten nicht geladen werden.",
   },
+  auth: {
+    welcome: "Willkommen",
+    login: "Anmelden",
+    register: "Registrieren",
+    username: "Benutzername",
+    password: "Passwort",
+
+    errUsernameRequired: "Benutzername erforderlich",
+    errPasswordShort: "Passwort zu kurz",
+    errFixForm: "Bitte beheben Sie die Fehler.",
+    errAuthFailed: "Authentifizierung fehlgeschlagen.",
+    errGeneric: "Fehler",
+  },
 };
