@@ -1,5 +1,4 @@
 // USER RELATED TYPES
-
 import type WebSocket from "ws";
 
 // The User structure stored in the usersOnline map
@@ -11,6 +10,7 @@ export type User = {
 	socket: WebSocket;
 	isAlive: boolean;
 	game?: WebSocket | undefined;
+	blockedUsers?: Set<string>;
 	//friends: User[];
 	//stats: string | null;
 	created_at?: string;

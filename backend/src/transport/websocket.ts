@@ -1,6 +1,7 @@
 import { RawData } from "ws";
 import type { FastifyInstance } from "fastify";
-import { buildStatePayload } from "./broadcaster.js";
+import crypto from "crypto";
+import { buildStatePayload, chatBroadcast } from "./broadcaster.js";
 import { parseCookies, verifySessionToken } from "../auth/session.js";
 import { getOrCreateSingleGame } from "../managers/singleGameManager.js";
 import { getOrCreateTournament, addPlayerToTournament } from "../managers/tournamentManager.js";
@@ -8,6 +9,7 @@ import { addPlayerToMatch, checkMatchFull } from "../managers/matchManager.js";
 import { resetMatchState } from "../game/state.js";
 import { Match, PaddleSide } from "../types/match.js";
 import { addUserOnline, removeUserOnline } from "../user/online.js";
+import { ChatInboundMessage } from "../chat/types.js";
 
 function authenticateWebSocket(request: any, socket: any) {
 	const cookies = parseCookies(request.headers.cookie);
@@ -23,30 +25,229 @@ function authenticateWebSocket(request: any, socket: any) {
 }
 
 export function registerWebsocketRoute(fastify: FastifyInstance) {
-	// Register user socket
-	fastify.get("/api/user/ws", { websocket: true }, (request: any, socket: any) => {
-		const payload = authenticateWebSocket(request, socket);
-		if (!payload) return;
+    // Register user socket
+    fastify.get("/api/user/ws", { websocket: true }, (request: any, socket: any) => {
+        const payload = authenticateWebSocket(request, socket);
+        if (!payload) return;
+        console.log(`[WS] Websocket for User: ${payload.username} registered`);
+        socket.username = payload.username;
+        const user = addUserOnline(payload.username, socket);
+        if (!user) {
+            socket.close(1011, "User not in database");
+            return;
+        }
+        // Client responds to ping with pong automatically
+        socket.on("pong", () => {
+            user.isAlive = true;
+        });
+		// listener for #message gets the rawData
+        socket.on("message", (message: RawData) => {
+			// translate binary into string
+            const text = message.toString();
+			// creates a payload which is either in the format of the given list (ChatInboundMessage) or set to null
+            let payload: ChatInboundMessage | null = null;
 
-		console.log(`[WS] Websocket for User: ${payload.username} registered`);
+			// parses text into JSON and cast it as an ChatINboundMessage
+            try {
+                payload = JSON.parse(text) as ChatInboundMessage;
+            } catch {
+                payload = null;
+            }
 
-		socket.username = payload.username;
-		const user = addUserOnline(payload.username, socket);
-		if (!user) {
-			socket.close(1011, "User not in database");
-			return;
-		}
+			const sentAt = Date.now();
+			const id = crypto.randomUUID();
 
-		// Client responds to ping with pong automatically
-		socket.on("pong", () => {
-			user.isAlive = true;
-		});
+			// Checks if payload exists, is an object and has a type which is a string; If it's not a defined type, the text will be printed into the chat;
+            if (!payload || typeof payload !== "object" || typeof payload.type !== "string") {
+                if (!text.trim()) return;
+                chatBroadcast(
+                    {
+                        type: "broadcast",
+                        id,
+                        sentAt,
+                        from: socket.username,
+                        body: text,
+                    },
+                    socket
+                );
+                return;
+            }
 
-		socket.on("close", () => {
-			removeUserOnline(payload.username);
-		});
-	});
+            switch (payload.type) {
+                case "direct": {
+                    if (!isNonEmptyString(payload.to) || !isNonEmptyString(payload.body)) {
+                        console.error(`[WS] Invalid direct message payload from ${socket.username}`);
+                        return;
+                    }
+                    chatBroadcast(
+                        {
+                            type: "direct",
+                            id,
+                            sentAt,
+                            from: socket.username,
+                            to: payload.to.trim(),
+                            body: payload.body.trim(),
+                        },
+                        socket
+                    );
+                    break;
+                }
+                case "broadcast": {
+                    if (!isNonEmptyString(payload.body)) {
+                        console.error(`[WS] Empty broadcast from ${socket.username} ignored`);
+                        return;
+                    }
+                    chatBroadcast(
+                        {
+                            type: "broadcast",
+                            id,
+                            sentAt,
+                            from: socket.username,
+                            body: payload.body.trim(),
+                        },
+                        socket
+                    );
+                    break;
+                }
+				case "invite": {
+					if (!isNonEmptyString(payload.to) || !isNonEmptyString(payload.gameId)) {
+						console.error(`[WS] Invalid invite payload from ${socket.username}`);
+						return;
+					}
+					const inviteMessage =
+						typeof payload.message === "string" && payload.message.trim().length
+							? payload.message.trim()
+							: undefined;
+					chatBroadcast(
+						{
+							type: "invite",
+							id,
+							sentAt,
+							from: socket.username,
+							to: payload.to.trim(),
+							gameId: payload.gameId.trim(),
+							message: inviteMessage,
+						},
+						socket
+					);
+					break;
+				}
+                case "profile-link": {
+                    if (!isNonEmptyString(payload.to) || !isNonEmptyString(payload.targetProfile)) {
+                        console.error(`[WS] Invalid profile-link payload from ${socket.username}`);
+                        return;
+                    }
+                    chatBroadcast(
+                        {
+                            type: "profile-link",
+                            id,
+                            sentAt,
+                            from: socket.username,
+                            to: payload.to.trim(),
+                            targetProfile: payload.targetProfile.trim(),
+                        },
+                        socket
+                    );
+                    break;
+                }
+				case "block": {
+                    if (!isNonEmptyString(payload.username)) {
+                        console.error(`[WS] Invalid block payload from ${socket.username}`);
+                        return;
+                    }
+					if (payload.username === socket.username) {
+						console.error("Block event: cannot block yourself");
+						return;
+               		}
+					if (!user.blockedUsers) {
+                    	user.blockedUsers = new Set<string>();
+                	}
+                    chatBroadcast(
+                        {
+                            type: "block",
+                            id,
+                            sentAt,
+                            from: socket.username,
+                            to: payload.to.trim(),
+                            username: payload.username.trim(),
+                        },
+                        socket
+                    );
+					try {
+						user.blockedUsers.add(username);
+                		console.log(`${socket.username} blocked ${username}`);
+					} catch (error) {
+                		console.error(`WebSocket BLOCK error for ${socket.username} on socket ${socket}:`, error);
+            		}
+                    break;
+                }
+                default: {
+                    console.warn(`[WS] Unsupported chat payload type ${(payload as any).type}`);
+                }
+            }
+        });
 
+        socket.on("block", (username: string) => {
+            try {
+                // Initialize block list if it doesn't exist yet
+                if (!user.blockedUsers) {
+                    user.blockedUsers = new Set<string>();
+                }
+                // Validate input: username must be a non-empty string
+                if (!isNonEmptyString(username)) {
+                    console.error("Block event: username missing");
+                    return;
+                }
+                // Do not allow blocking yourself
+                if (username === socket.username) {
+                    console.error("Block event: cannot block yourself");
+                    return;
+                }
+                // Add the username to the block list
+                user.blockedUsers.add(username);
+                console.log(`${socket.username} blocked ${username}`);
+            } catch (error) {
+                console.error(`WebSocket BLOCK error for ${socket.username} on socket ${socket}:`, error);
+            }
+        });
+
+        socket.on("unblock", (username: string) => {
+            try {
+                // Make sure the user even has a block list
+                if (!user.blockedUsers) {
+                    return;
+                }
+                // Ensure input is valid
+                if (!isNonEmptyString(username)) {
+                    console.error("Unblock event: invalid username");
+                    return;
+                }
+                // Only unblock if the username is actually blocked
+                if (user.blockedUsers.has(username)) {
+                    user.blockedUsers.delete(username);
+                    console.log(`${socket.username} unblocked ${username}`);
+                }
+            } catch (error) {
+                console.error(`WebSocket UNBLOCK error for ${socket.username}:`, error);
+            }
+        });
+
+        socket.on('error', (error: any) => {
+            console.error(`WebSocket error for ${socket.username} on socket ${socket}:`, error);
+        });
+
+        socket.on("close", () => {
+            chatBroadcast({
+                type: "broadcast",
+                id: crypto.randomUUID(),
+                sentAt: Date.now(),
+                from: "system",
+                body: `User ${socket.username} left`,
+            });
+            removeUserOnline(socket.username);
+        });     
+    });
+	
 	// Register/connect to a local single game
 	fastify.get<{ Params: { id: string } }>(
 		"/api/local-single-game/:id/ws",
@@ -213,4 +414,8 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			}
 		}
 	);
+}
+
+function isNonEmptyString(value: unknown): value is string {
+	return typeof value === "string" && value.trim().length > 0;
 }

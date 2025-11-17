@@ -16,6 +16,7 @@ import { PaddleSide } from "./types/match.js";
 import { usersOnline } from "./config/structures.js";
 import { removeUserOnline } from "./user/online.js";
 import singleGameRoutes from "./routes/singleGame.js";
+import type WebSocket from "ws";
 
 const FIELD_WIDTH = GAME_CONSTANTS.FIELD_WIDTH;
 const FIELD_HEIGHT = GAME_CONSTANTS.FIELD_HEIGHT;
@@ -108,7 +109,7 @@ setInterval(() => {
 setInterval(() => {
 	// Loop through all the online users
 	for (const [username, user] of usersOnline.entries()) {
-		const socket = user.socket;
+		const socket = user.socket as WebSocket;
 
 		// If socket is already not alive terminates it
 		if (user.isAlive === false) {
