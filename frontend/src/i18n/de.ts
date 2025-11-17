@@ -1,54 +1,59 @@
 export default {
   topbar: {
-    login: "Anmelden",
-    editProfile: "Profil bearbeiten",
-    logout: "Abmelden",
+    login: "Login",
+    editProfile: "Profil Bearbeiten",
+    logout: "Logout",
   },
+
   menu: {
     title: "PONG",
     playGame: "Spiel Starten",
     tournaments: "Turniere",
-    localMatch: "Lokales Spiel",
-    onlineMatch: "Online Spiel",
+    localMatch: "Lokales Match",
+    onlineMatch: "Online Match",
   },
+
   game: {
-    exit: "Spiel Beenden",
+    exit: "Match Verlassen",
   },
+
   tournaments: {
     title: "Turniere",
     back: "← Zurück",
     loading: "Lade Turniere…",
-    none: "Noch keine Turniere.",
-    available: (n: number) => `${n} Verfügbare Turniere`,
+    none: "Keine Turniere verfügbar.",
+    available: (n: number) => `${n} Turniere Bereit`,
     create: "+ Turnier Erstellen",
     details: "Details",
     join: "Beitreten",
-    failed: "Turniere konnten nicht geladen werden.",
+    failed: "Fehler beim Laden.",
   },
+
   auth: {
-    welcome: "Willkommen",
-    login: "Anmelden",
+    welcome: "Willkommen Herausforderer",
+    login: "Login",
     register: "Registrieren",
     username: "Benutzername",
     password: "Passwort",
 
     errUsernameRequired: "Benutzername erforderlich",
     errPasswordShort: "Passwort zu kurz",
-    errFixForm: "Bitte beheben Sie die Fehler.",
+    errFixForm: "Bitte Fehler korrigieren.",
     errAuthFailed: "Authentifizierung fehlgeschlagen.",
     errGeneric: "Fehler",
   },
+
   profile: {
-    title: "Profil bearbeiten",
+    title: "Profil Bearbeiten",
     backToMenu: "← Zurück zum Menü",
-    loading: "Lade…",
-    notLoggedIn: "Nicht angemeldet.",
+    loading: "Laden…",
+    notLoggedIn: "Nicht eingeloggt.",
     newPassword: "Neues Passwort",
     confirmPassword: "Passwort bestätigen",
-    saveChanges: "Änderungen speichern",
+    saveChanges: "Speichern",
     passwordsNoMatch: "Passwörter stimmen nicht überein.",
     passwordTooShort: "Passwort zu kurz.",
     saved: "Gespeichert!",
-    updateFailed: "Aktualisierung fehlgeschlagen.",
-    },
+    updateFailed: "Speichern fehlgeschlagen.",
+  },
 };

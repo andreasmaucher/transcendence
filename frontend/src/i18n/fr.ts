@@ -1,55 +1,59 @@
 export default {
   topbar: {
     login: "Connexion",
-    editProfile: "Modifier le profil",
+    editProfile: "Modifier Profil",
     logout: "Déconnexion",
   },
+
   menu: {
     title: "PONG",
-    playGame: "Jouer",
+    playGame: "Lancer le Jeu",
     tournaments: "Tournois",
     localMatch: "Match Local",
     onlineMatch: "Match en Ligne",
   },
+
   game: {
-    exit: "Quitter la Partie",
+    exit: "Quitter le Match",
   },
+
   tournaments: {
     title: "Tournois",
     back: "← Retour",
-    loading: "Chargement des tournois…",
-    none: "Aucun tournoi pour le moment.",
-    available: (n: number) => `${n} Tournois Disponibles`,
+    loading: "Chargement…",
+    none: "Aucun tournoi.",
+    available: (n: number) => `${n} Tournois Prêts`,
     create: "+ Créer un Tournoi",
     details: "Détails",
     join: "Rejoindre",
-    failed: "Impossible de charger les tournois.",
+    failed: "Erreur de chargement.",
   },
+
   auth: {
-    welcome: "Bienvenue",
+    welcome: "Bienvenue Challenger",
     login: "Connexion",
     register: "Inscription",
     username: "Nom d'utilisateur",
     password: "Mot de passe",
 
-    errUsernameRequired: "Nom d'utilisateur requis",
+    errUsernameRequired: "Nom requis",
     errPasswordShort: "Mot de passe trop court",
-    errFixForm: "Veuillez corriger les erreurs.",
-    errAuthFailed: "Échec de l'authentification.",
+    errFixForm: "Corrigez les erreurs.",
+    errAuthFailed: "Échec de connexion.",
     errGeneric: "Erreur",
   },
+
   profile: {
-    title: "Modifier le profil",
-    backToMenu: "← Retour au menu",
+    title: "Modifier Profil",
+    backToMenu: "← Retour Menu",
     loading: "Chargement…",
     notLoggedIn: "Non connecté.",
     newPassword: "Nouveau mot de passe",
-    confirmPassword: "Confirmer le mot de passe",
-    saveChanges: "Enregistrer les modifications",
-    passwordsNoMatch: "Les mots de passe ne correspondent pas.",
+    confirmPassword: "Confirmer mot de passe",
+    saveChanges: "Enregistrer",
+    passwordsNoMatch: "Les mots ne correspondent pas.",
     passwordTooShort: "Mot de passe trop court.",
     saved: "Enregistré !",
-    updateFailed: "Échec de la mise à jour.",
-    },
-
+    updateFailed: "Échec de mise à jour.",
+  },
 };

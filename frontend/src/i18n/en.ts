@@ -4,29 +4,33 @@ export default {
     editProfile: "Edit Profile",
     logout: "Logout",
   },
+
   menu: {
     title: "PONG",
-    playGame: "Play Game",
+    playGame: "Start Game",
     tournaments: "Tournaments",
     localMatch: "Local Match",
     onlineMatch: "Online Match",
   },
+
   game: {
-    exit: "Exit Game",
+    exit: "Exit Match",
   },
+
   tournaments: {
     title: "Tournaments",
     back: "← Back",
     loading: "Loading tournaments…",
     none: "No tournaments yet.",
-    available: (n: number) => `${n} Available Tournaments`,
+    available: (n: number) => `${n} Tournaments Ready`,
     create: "+ Create Tournament",
     details: "Details",
     join: "Join",
     failed: "Failed to load tournaments.",
   },
+
   auth: {
-    welcome: "Welcome",
+    welcome: "Welcome Challenger",
     login: "Login",
     register: "Register",
     username: "Username",
@@ -38,18 +42,18 @@ export default {
     errAuthFailed: "Authentication failed.",
     errGeneric: "Error",
   },
+
   profile: {
     title: "Edit Profile",
     backToMenu: "← Back to Menu",
     loading: "Loading…",
     notLoggedIn: "Not logged in.",
-    newPassword: "New password",
-    confirmPassword: "Confirm password",
+    newPassword: "New Password",
+    confirmPassword: "Confirm Password",
     saveChanges: "Save Changes",
     passwordsNoMatch: "Passwords do not match.",
     passwordTooShort: "Password too short.",
     saved: "Saved!",
     updateFailed: "Update failed.",
-    },
-
+  },
 };
