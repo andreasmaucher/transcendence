@@ -10,6 +10,7 @@ import matchRoutes from "./routes/match.js";
 import tournamentRoutes from "./routes/tournament.js";
 import userRoutes from "./routes/user.js";
 import testRoutes from "./routes/test.js";
+import oauthRoutes from "./routes/oauth.js";
 import { getTournament } from "./managers/tournamentManagerHelpers.js";
 import { forEachSingleGame } from "./managers/singleGameManager.js";
 import { PaddleSide } from "./types/match.js";
@@ -83,6 +84,7 @@ await fastify.register(singleGameRoutes);
 await fastify.register(tournamentRoutes);
 await fastify.register(matchRoutes);
 await fastify.register(testRoutes);
+await fastify.register(oauthRoutes);
 
 registerWebsocketRoute(fastify);
 
