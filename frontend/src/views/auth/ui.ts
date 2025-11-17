@@ -82,7 +82,7 @@ export function renderAuth(container: HTMLElement) {
   };
   // adds the button to the card
   card.appendChild(ghBtn);
-  // makes sure the root element is added to the container
+  // mounts the whole auth screen (root, that already contains card) into the page
   container.appendChild(root);
 
   // ---- Helpers ----
