@@ -38,4 +38,18 @@ export default {
     errAuthFailed: "Authentication failed.",
     errGeneric: "Error",
   },
+  profile: {
+    title: "Edit Profile",
+    backToMenu: "← Back to Menu",
+    loading: "Loading…",
+    notLoggedIn: "Not logged in.",
+    newPassword: "New password",
+    confirmPassword: "Confirm password",
+    saveChanges: "Save Changes",
+    passwordsNoMatch: "Passwords do not match.",
+    passwordTooShort: "Password too short.",
+    saved: "Saved!",
+    updateFailed: "Update failed.",
+    },
+
 };

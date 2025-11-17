@@ -38,4 +38,17 @@ export default {
     errAuthFailed: "Authentifizierung fehlgeschlagen.",
     errGeneric: "Fehler",
   },
+  profile: {
+    title: "Profil bearbeiten",
+    backToMenu: "← Zurück zum Menü",
+    loading: "Lade…",
+    notLoggedIn: "Nicht angemeldet.",
+    newPassword: "Neues Passwort",
+    confirmPassword: "Passwort bestätigen",
+    saveChanges: "Änderungen speichern",
+    passwordsNoMatch: "Passwörter stimmen nicht überein.",
+    passwordTooShort: "Passwort zu kurz.",
+    saved: "Gespeichert!",
+    updateFailed: "Aktualisierung fehlgeschlagen.",
+    },
 };

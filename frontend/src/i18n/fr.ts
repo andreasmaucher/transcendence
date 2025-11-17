@@ -38,4 +38,18 @@ export default {
     errAuthFailed: "Échec de l'authentification.",
     errGeneric: "Erreur",
   },
+  profile: {
+    title: "Modifier le profil",
+    backToMenu: "← Retour au menu",
+    loading: "Chargement…",
+    notLoggedIn: "Non connecté.",
+    newPassword: "Nouveau mot de passe",
+    confirmPassword: "Confirmer le mot de passe",
+    saveChanges: "Enregistrer les modifications",
+    passwordsNoMatch: "Les mots de passe ne correspondent pas.",
+    passwordTooShort: "Mot de passe trop court.",
+    saved: "Enregistré !",
+    updateFailed: "Échec de la mise à jour.",
+    },
+
 };
