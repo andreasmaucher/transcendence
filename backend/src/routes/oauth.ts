@@ -24,8 +24,6 @@ const GITHUB_REDIRECT_URI = process.env.GITHUB_REDIRECT_URI; // exact callback U
 // 7. Backend verifies the state cookie and exchanges the code for an access token
 // 8. Backend creates a session and redirects to the frontend
 // 9. Browser sends request to backend to finish OAuth flow
-// - cookie name: oauth_state (random value for this login attempt)
-// - HttpOnly: prevents client-side JS from reading the cookie (mitigates XSS)
 // - SameSite=Lax: allows the cookie on the OAuth redirect back, blocks most CSRF
 // - Max-Age=600: expires in 10 minutes
 // - Path=/ : cookie is valid for the whole site
@@ -40,12 +38,23 @@ function setStateCookie(reply: FastifyReply, state: string) {
 	reply.header("Set-Cookie", cookie);
 }
 
-// reads a cookie from the request header
+// breaks the cookie header into individual key=value pairs
 function readCookie(header: string | undefined, name: string): string | undefined {
-	if (!header) return undefined;
-	for (const part of header.split(";")) {
-		const [k, v] = part.split("=").map((s) => s.trim());
-		if (k === name) return v;
+	if (!header)
+		return undefined; // OAuth attempt will be rejected and the user must try again
+	const pairs = header.split(";"); // browser sends cookie header e.g.: "sid=abc123; oauth_state=XYZ789"
+	// loop over each cookie key=value string in the pairs array
+	for (const pair of pairs) {
+		const trimmed = pair.trim();
+		if (!trimmed) continue; // if the chunk is empty after trimming, skip it
+
+		const equal_index = trimmed.indexOf("="); // find the index of the equal sign
+		if (equal_index === -1) continue; // if no equal sign is found, skip it
+
+		const key = trimmed.slice(0, equal_index); // key (left of the equal sign)
+		const value = trimmed.slice(equal_index + 1); // value (right of the equal sign)
+
+		if (key === name) return value;
 	}
 	return undefined;
 }
