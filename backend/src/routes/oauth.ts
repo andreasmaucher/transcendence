@@ -1,8 +1,4 @@
-// USER_MANAGEMENT
-// Minimal GitHub OAuth 2.0 flow (web application flow)
-// - /api/auth/github/start: redirects to GitHub with a CSRF state
-// - /api/auth/github/callback: exchanges code for token, fetches profile,
-//   creates/loads the user, sets the session cookie, then redirects to frontend.
+// enables remote authentication with GitHub
 
 import type { FastifyInstance, FastifyReply } from "fastify";
 import crypto from "node:crypto";
@@ -10,11 +6,11 @@ import db from "../database/db_init.js";
 import { createSessionToken, makeSessionCookie } from "../auth/session.js";
 import { getUsernameDB } from "../database/users/getters.js";
 
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
-const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || "";
-const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || "";
-const GITHUB_REDIRECT_URI =
-	process.env.GITHUB_REDIRECT_URI || "http://localhost:4000/api/auth/github/callback";
+// OAuth config from .env
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN;
+const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
+const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
+const GITHUB_REDIRECT_URI = process.env.GITHUB_REDIRECT_URI; // exact callback URL registered in the GitHub app
 
 function setStateCookie(reply: FastifyReply, state: string) {
 	reply.header(
@@ -36,7 +32,7 @@ export default async function oauthRoutes(fastify: FastifyInstance) {
 	// START: Redirect user-agent to GitHub authorization page
 	fastify.get("/api/auth/github/start", async (_req, reply) => {
 		// Basic env validation (keeps code simple and explicit)
-		if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
+		if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET || !GITHUB_REDIRECT_URI) {
 			return reply
 				.code(500)
 				.send({ success: false, message: "GitHub OAuth not configured" });
@@ -138,6 +134,9 @@ export default async function oauthRoutes(fastify: FastifyInstance) {
 		const { token, maxAgeSec } = createSessionToken(username, 60);
 		const secure = process.env.NODE_ENV === "production"; // only set Secure over HTTPS
 		reply.header("Set-Cookie", makeSessionCookie(token, { secure, maxAgeSec }));
+		if (!FRONTEND_ORIGIN) {
+			return reply.code(500).send({ success: false, message: "FRONTEND_ORIGIN not configured" });
+		}
 		reply.redirect(`${FRONTEND_ORIGIN}/#/menu`);
 	});
 }
