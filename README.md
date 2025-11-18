@@ -107,61 +107,69 @@ All backend endpoints return JSON format. All POST request expect the data to be
 
 ## WEBSOCKETS
 
-| Method | Path                         | Description                                   | Params                                     | Return                                   |
-| ------ | ---------------------------- | --------------------------------------------- | ------------------------------------------ | ---------------------------------------- |
-| `WS`   | `/api/user/ws`               | WS req, registers web socket                  | None                                       | User socket                              |
-| ------ | ---------------------------- | --------------------------------------------- | ------------------------------------------ | ---------------------------------------- |
-| `WS`   | `/api/local-single-game/:id/ws`| WS req, registers web socket                | Id (local single game id)                  | Local single game socket                 |
-| `WS`   | `/api/single-game/:id/ws`    | WS req, registers web socket                  | Id (remote single game id)                 | Remote single game socket                |
-| ------ | ---------------------------- | --------------------------------------------- | ------------------------------------------ | ---------------------------------------- |
-| `WS`   | `/api/tournament/:id/ws`     | WS req, registers web socket                  | Id (tournament)                            | Tournament socket                        |
+| Method | Path                             | Description                            | Params                      | Return                        |
+|--------|----------------------------------|----------------------------------------|-----------------------------|-------------------------------|
+| `WS`   | `/api/user/ws`                   | WS req, registers web socket           | None                        | User socket                   |
+|--------|----------------------------------|----------------------------------------|-----------------------------|-------------------------------|
+| `WS`   | `/api/local-single-game/:id/ws`  | WS req, registers web socket           | Id (local single game id)   | Local single game socket      |
+| `WS`   | `/api/single-game/:id/ws`        | WS req, registers web socket           | Id (remote single game id)  | Remote single game socket     |
+|--------|----------------------------------|----------------------------------------|-----------------------------|-------------------------------|
+| `WS`   | `/api/tournament/:id/ws`         | WS req, registers web socket           | Id (tournament)             | Tournament socket             |
 
 ## USER
 
-| Method | Path                         | Description                                   | Params                                     | Return                                   |
-| ------ | ---------------------------- | --------------------------------------------- | ------------------------------------------ | ---------------------------------------- |
-| `GET`  | `/api/users/all`             | GET req                                       | None                                       | All users in database                    |
-| ------ | ---------------------------- | --------------------------------------------- | ------------------------------------------ | ---------------------------------------- |
-| `GET`  | `/api/user/:username`        | GET req with username as param                | Username                                   | The user (if it exists)                  |
-| `POST` | `/api/user/check`            | POST req, checks if username already exists   | Username                                   | True: exists, false: doesn't             |
-| `POST` | `/api/user/register`         | POST req, registers new user                  | Username, password, avatar?                | Success: true or false                   |
-| `POST` | `/api/user/login`            | POST req, checks user credentials (login)     | Username, password                         | Success: true or false                   |
-| `POST` | `/api/user/logout`           | POST req, logs user out                       | Username                                   | Success: true or false                   |
-| `POST` | `/api/user/update`           | POST req, updates user information, one by one| Username, newUsername?, newPassword?, newAvatar?| Success: true or false              |
-| `POST` | `/api/user/add-friend`       | POST req, adds other user as friend           | Username, friend                           | Success: true or false                   |
-| `POST` | `/api/user/remove-friend`    | POST req, removes other user as friend        | Username, friend                           | Success: true or false                   |
-| `GET`  | `/api/user/me`               | GET req                                       | None, but session cookie                   | Current logged-in user                   |
+| Method | Path                             | Description                            | Params                      | Return                        |
+|--------|----------------------------------|----------------------------------------|-----------------------------|-------------------------------|
+| `GET`  | `/api/users/all`                 | GET req                                | None                        | All users in database         |
+| `GET`  | `/api/users/online`              | GET req                                | None                        | All online users              |
+|--------|----------------------------------|----------------------------------------|-----------------------------|-------------------------------|
+| `GET`  | `/api/user/:username`            | GET req with username as param         | Username                    | The user (if it exists)       |
+| `GET`  | `/api/user/online/:username`     | Checks if username is online           | Username                    | True or false                 |
+| `GET`  | `/api/user/me`                   | Returns logged-in user                 | None (session cookie)       | Current logged-in user        |
+
+
+## USER MANAGEMENT
+
+| Method | Path                             | Description                            | Params                      | Return                        |
+|--------|----------------------------------|----------------------------------------|-----------------------------|-------------------------------|
+| `GET`  | `/api/user/check/:username`      | Checks if username already exists      | Username                    | True or false                 |
+| `POST` | `/api/user/register`             | Registers new user                     | Username, password, avatar? | True or false                 |
+| `POST` | `/api/user/login`                | Checks user credentials                | Username, password          | True or false                 |
+| `POST` | `/api/user/logout`               | Logs user out                          | Username                    | True or false                 |
+| `POST` | `/api/user/update`               | Updates user information               | Username, newUsername?, newP | True or false                |
+| `POST` | `/api/user/add-friend`           | Adds other user as friend              | Username, friend            | True or false                 |
+| `POST` | `/api/user/remove-friend`        | Removes other user as friend           | Username, friend            | True or false                 |
 
 ## SINGLE GAME
 
-| Method | Path                         | Description                                   | Params                                     | Return                                   |
-| ------ | ---------------------------- | --------------------------------------------- | ------------------------------------------ | ---------------------------------------- |
-| `GET`  | `/api/single-games/open`     | GET req                                       | None                                    | All open (waiting for players) single games |
+| Method | Path                             | Description                            | Params                      | Return                        |
+|--------|----------------------------------|----------------------------------------|-----------------------------|-------------------------------|
+| `GET`  | `/api/single-games/open`         | GET req                                | None                        | All open single games         |
 
 ## TOURNAMENT
 
-| Method | Path                         | Description                                   | Params                                  | Return                                      |
-| ------ | ---------------------------- | --------------------------------------------- | --------------------------------------- | ------------------------------------------- |
-| `GET`  | `/api/tournaments/all`       | GET req                                       | None                                    | All tournaments in database                 |
-| `GET`  | `/api/tournaments/open`      | GET req                                       | None                                    | All open (waiting for players) tournaments  |
-| ------ | ---------------------------- | --------------------------------------------- | --------------------------------------- | ------------------------------------------- |
-| `GET`  | `/api/tournament/:id`        | GET req                                       | Id (tournament)                         | The tournament (if it exists)               |
+| Method | Path                             | Description                            | Params                      | Return                        |
+|--------|----------------------------------|----------------------------------------|-----------------------------|-------------------------------|
+| `GET`  | `/api/tournaments/all`           | GET req                                | None                        | All tournaments in database   |
+| `GET`  | `/api/tournaments/open`          | GET req                                | None                        | All open tournaments          |
+|--------|----------------------------------|----------------------------------------|-----------------------------|-------------------------------|
+| `GET`  | `/api/tournament/:id`            | GET req                                | Id (tournament)             | The tournament (if exists)    |
 
 ## MATCH
 
-| Method | Path                         | Description                                   | Params                                  | Return                                      |
-| ------ | ---------------------------- | --------------------------------------------- | --------------------------------------- | ------------------------------------------- |
-| `GET`  | `/api/matches/all`           | GET req                                       | None                                    | All matches in database                     |
-| ------ | ---------------------------- | --------------------------------------------- | --------------------------------------- | ------------------------------------------- |
-| `GET`  | `/api/match/:id`             | GET req                                       | Id (match)                              | The match (if it exists)                    |
+| Method | Path                             | Description                            | Params                      | Return                        |
+|--------|----------------------------------|----------------------------------------|-----------------------------|-------------------------------|
+| `GET`  | `/api/matches/all`               | GET req                                | None                        | All matches in database       |
+|--------|----------------------------------|----------------------------------------|-----------------------------|-------------------------------|
+| `GET`  | `/api/match/:id`                 | GET req                                | Id (match)                  | The match (if exists)         |
 
 ## TEST
 
-| Method | Path                          | Description                                  | Params                                  | Return                                      |
-| ------ | ----------------------------- | -------------------------------------------- | --------------------------------------- | ------------------------------------------- |
-| `GET`  | `/api/test/print-users`       | GET req, prints data in backend logs         | None                                    | All users in database                       |
-| `GET`  | `/api/test/print-matches`     | GET req, prints data in backend logs         | None                                    | All matches in database                     |
-| `GET`  | `/api/test/print-tournaments` | GET req, prints data in backend logs         | None                                    | All tournaments in database                 |
+| Method | Path                             | Description                            | Params                      | Return                        |
+|--------|----------------------------------|----------------------------------------|-----------------------------|-------------------------------|
+| `GET`  | `/api/test/print-users`          | Prints data in backend logs            | None                        | All users in database         |
+| `GET`  | `/api/test/print-matches`        | Prints data in backend logs            | None                        | All matches in database       |
+| `GET`  | `/api/test/print-tournaments`    | Prints data in backend logs            | None                        | All tournaments in database   |
 
 WebSocket commands from the frontend:
 

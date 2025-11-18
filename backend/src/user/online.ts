@@ -1,5 +1,5 @@
 import { usersOnline } from "../config/structures.js";
-import { getJsonUserByUsernameDB } from "../database/users/getters.js";
+import { getUserByUsernameDB } from "../database/users/getters.js";
 import { User } from "../types/user.js";
 import type WebSocket from "ws";
 
@@ -11,7 +11,7 @@ export function isUserOnline(username: string): boolean {
 
 // Add user to the usersOnline map structure (if not already there)
 export function addUserOnline(username: string, socket: WebSocket): User | undefined {
-	const userDB = getJsonUserByUsernameDB(username);
+	const userDB = getUserByUsernameDB(username);
 	if (userDB && !isUserOnline(userDB.username)) {
 		const user = {
 			username: userDB.username,
@@ -33,12 +33,10 @@ export function updateUserOnline({
 	username,
 	newUsername,
 	newAvatar,
-	newPing,
 }: {
 	username: string;
 	newUsername?: string;
 	newAvatar?: string;
-	newPing?: string;
 }) {
 	if (isUserOnline(username)) {
 		const user = usersOnline.get(username);
@@ -62,4 +60,9 @@ export function removeUserOnline(username: string) {
 export function getUserOnline(username: string): User | undefined {
 	if (isUserOnline(username)) return usersOnline.get(username);
 	else return undefined;
+}
+
+export function getAllOnlineUsers(): User[] {
+	const allOnlineUsers = Array.from(usersOnline.values());
+	return allOnlineUsers;
 }

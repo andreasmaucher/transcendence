@@ -1,6 +1,6 @@
 // creates a fresh game with everything in starting position
 import { GAME_CONSTANTS } from "../config/constants.js";
-import { broadcast } from "../transport/broadcaster.js";
+import { broadcast, buildPayload } from "../transport/broadcaster.js";
 import type { TournamentState } from "../types/game.js";
 import { Match, MatchState } from "../types/match.js";
 
@@ -76,7 +76,8 @@ export function resetMatchState(match: Match) {
 	};
 	match.inputs = { left: 0, right: 0 };
 	console.log(`[game] match=${match.id} reset`);
-	broadcast(match);
+	//broadcast(match);
+	broadcast(buildPayload("state", match.state), match);
 }
 
 export function clamp(value: number, min: number, max: number): number {

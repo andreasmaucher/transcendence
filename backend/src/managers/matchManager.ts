@@ -1,12 +1,18 @@
 import type { SingleGame, Tournament } from "../types/game.js";
 import { createInitialMatchState } from "../game/state.js";
-import { addPlayerMatchDB, createMatchDB, endMatchDB, startMatchDB } from "../database/matches/setters.js";
-import { getSingleGame } from "./singleGameManager.js";
-import { endTournamentDB } from "../database/tournaments/setters.js";
+import {
+	addPlayerMatchDB,
+	createMatchDB,
+	endMatchDB,
+	forfeitMatchDB,
+	startMatchDB,
+} from "../database/matches/setters.js";
+import { forfeitSingleGame, getSingleGame } from "./singleGameManager.js";
 import { tournaments } from "../config/structures.js";
-import { isTournamentOver } from "./tournamentManagerHelpers.js";
-import { endTournament } from "./tournamentManager.js";
+import { isRoundOver, isTournamentOver } from "./tournamentManagerHelpers.js";
+import { endTournament, forfeitTournament, goToNextRound } from "./tournamentManager.js";
 import { Match, TournamentMatchInfo, TournamentMatchType } from "../types/match.js";
+import { broadcast, buildPayload } from "../transport/broadcaster.js";
 
 // Set the starting state of the tournament match info
 export function initTournamentMatchInfo(
@@ -27,7 +33,6 @@ export function initTournamentMatchInfo(
 export function createMatch({
 	id,
 	mode,
-	userId,
 	singleGame,
 	tournament,
 	type,
@@ -35,7 +40,6 @@ export function createMatch({
 }: {
 	id: string;
 	mode: string;
-	userId?: string;
 	singleGame?: SingleGame;
 	tournament?: Tournament;
 	type?: TournamentMatchType;
@@ -48,6 +52,7 @@ export function createMatch({
 		state: createInitialMatchState(),
 		inputs: { left: 0, right: 0 },
 		players: { left: undefined, right: undefined },
+		mode: mode,
 		clients: new Set(),
 	} as Match;
 
@@ -55,14 +60,7 @@ export function createMatch({
 		match.tournament = initTournamentMatchInfo(tournament, type, placementRange);
 
 	try {
-		// Add new match to database (without starting it)
-		createMatchDB(match);
-		// Start it only if it's a local session
-		if (mode == "local" && userId) {
-			addPlayerMatchDB(match.id, userId, "left");
-			startMatchDB(id);
-			match.state.isRunning = true;
-		}
+		createMatchDB(match); // Add new match to database (without starting it)
 	} catch (error: any) {
 		console.error(error.message);
 	}
@@ -72,8 +70,10 @@ export function createMatch({
 // Start match
 export function startMatch(match: Match) {
 	try {
-		if (match.singleGameId) {
-			// If it's single game, handle the timeout cleanup here
+		if (match.singleGameId && match.mode == "local") {
+			startMatchDB(match.id);
+		} else if (match.singleGameId && match.mode == "remote") {
+			// If it's a remote single game, handle the timeout cleanup here
 			let singleGame = getSingleGame(match.singleGameId);
 			if (singleGame && singleGame.expirationTimer) {
 				clearTimeout(singleGame.expirationTimer);
@@ -89,13 +89,34 @@ export function startMatch(match: Match) {
 	}
 }
 
+export function startGameCountdown(match: Match) {
+	let sec = 3;
+
+	const interval = setInterval(() => {
+		// Broadcast countdown to all players in the match
+		broadcast(buildPayload("countdown", { value: sec }), match);
+
+		if (sec === 0) {
+			clearInterval(interval);
+
+			startMatch(match);
+			broadcast(buildPayload("start", undefined), match);
+		}
+
+		sec--;
+	}, 1000);
+}
+
 // End match
 export function endMatch(match: Match) {
 	match.state.isRunning = false;
-	endMatchDB(match.id, match.state.winner); // Update database
+	endMatchDB(match); // Update database
+	// Stops here if it's a single game
 	if (!match.tournament) return;
 	const tournament = tournaments.get(match.tournament.id);
-	if (tournament && isTournamentOver(tournament)) endTournament(tournament);
+	if (!tournament) return;
+	if (isTournamentOver(tournament)) endTournament(tournament);
+	else if (isRoundOver(tournament)) goToNextRound(tournament);
 }
 
 // Add player to open match
@@ -103,8 +124,8 @@ export function addPlayerToMatch(match: Match, playerId: string) {
 	try {
 		if (!match.players.left) addPlayerMatchDB(match.id, playerId, "left");
 		else if (!match.players.right) addPlayerMatchDB(match.id, playerId, "right");
-		else return; // Temporary error handling
-		if (match.singleGameId && checkMatchFull(match)) startMatch(match);
+		else return; // Temporary error handling, match full
+		if (match.singleGameId && checkMatchFull(match)) startGameCountdown(match);
 	} catch (error: any) {
 		console.error(error.message);
 	}
@@ -113,4 +134,23 @@ export function addPlayerToMatch(match: Match, playerId: string) {
 // Check if match is full
 export function checkMatchFull(match: Match) {
 	return match.players.left && match.players.right;
+}
+
+export function forfeitMatch(match: Match, playerId: string) {
+	if (match.singleGameId) {
+		match.state.isRunning = false;
+		for (const client of match.clients) {
+			// Send a message BEFORE closing
+			client.send(
+				buildPayload("player-left", {
+					matchId: match.id,
+					player: playerId,
+				})
+			);
+
+			client.close(1000, "A player left");
+		}
+		forfeitSingleGame(match.singleGameId);
+		forfeitMatchDB(match.id, playerId);
+	} else if (match.tournament) forfeitTournament(match.tournament.id, playerId);
 }

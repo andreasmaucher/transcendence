@@ -1,21 +1,15 @@
 import type { WebSocket } from "ws";
 import { Match } from "../types/match.js";
+import { Payload, PayloadDataTypes, PayloadTypes } from "../types/payload.js";
 
-// Create state payload for socket
-export function buildStatePayload(match: Match) {
-	const { state } = match;
-	return {
-		type: "state" as const,
-		...state,
-	};
+// Create and stringify the Payload for the WebSocket
+export function buildPayload(type: PayloadTypes, data: PayloadDataTypes): string {
+	const payload = { type, data } as Payload;
+	return JSON.stringify(payload);
 }
 
-export function broadcast(match: Match): void {
-	const { state } = match;
-	// Skip broadcasting only when the match hasn't started yet; still send the final game-over snapshot.
-	if (!state.isRunning && !state.isOver) return;
-	if (!match.clients.size) return;
-	const payload = JSON.stringify(buildStatePayload(match));
+// Send the payload to all the clients in the match
+export function broadcast(payload: string, match: Match): void {
 	//console.log("[DEBUG BACKEND → CLIENT]", payload);
 	for (const socket of Array.from(match.clients)) {
 		const ws = socket as WebSocket;

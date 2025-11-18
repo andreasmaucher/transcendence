@@ -95,16 +95,25 @@ export function isFinalRound(tournament: Tournament) {
 	return tournament.state.round >= getTotalRounds(tournament);
 }
 
+// Check if round is over
+export function isRoundOver(tournament: Tournament): boolean {
+	const matches = tournament.matches.get(tournament.state.round);
+	if (!matches) return false;
+	for (const match of matches) {
+		if (match.state.isRunning) return false;
+	}
+	return true;
+}
+
 // Check if tournament is over
-export function isTournamentOver(tournament: Tournament) {
+export function isTournamentOver(tournament: Tournament): boolean {
 	if (!isFinalRound(tournament)) return false;
 	const matches = tournament.matches.get(tournament.state.round);
-	if (matches) {
-		for (const match of matches) {
-			if (match.state.isRunning) return false;
-		}
-		return true;
+	if (!matches) return false;
+	for (const match of matches) {
+		if (match.state.isRunning) return false;
 	}
+	return true;
 }
 
 // Check if tournament is full (all matches of first round have players)

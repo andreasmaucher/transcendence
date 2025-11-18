@@ -4,34 +4,40 @@ import {
 	startTournamentDB,
 	removeTournamentDB,
 	endTournamentDB,
+	forfeitTournamentDB,
 } from "../database/tournaments/setters.js";
-import { addPlayerToMatch, checkMatchFull, startMatch } from "./matchManager.js";
+import { addPlayerToMatch, checkMatchFull, startGameCountdown } from "./matchManager.js";
 import { createInitialTournamentState } from "../game/state.js";
 import { tournaments } from "../config/structures.js";
 import {
 	checkTournamentFull,
 	extractMatchLoser,
 	extractMatchWinner,
+	getTournament,
 	initTournamentMatches,
 } from "./tournamentManagerHelpers.js";
 import crypto from "crypto";
 import { Match } from "../types/match.js";
+import { forfeitMatchDB } from "../database/matches/setters.js";
+import { buildPayload } from "../transport/broadcaster.js";
 
 // Get or Create a tournament, called only when creating a socket connection
-export function getOrCreateTournament(id: string): Tournament {
+export function getOrCreateTournament(id: string, name?: string, size?: number): Tournament {
 	let tournament = tournaments.get(id);
 	if (!tournament) {
 		let tournamentId = crypto.randomUUID();
 		tournament = {
 			id: tournamentId,
+			name: name,
 			isRunning: false,
-			state: createInitialTournamentState(4), // Hardcoded size of 4 for now
+			state: createInitialTournamentState(size || 4),
 			matches: new Map<number, Match[]>(),
+			clients: new Set(),
 		} as Tournament;
 
 		try {
 			// Add new tournament to database (without starting it)
-			createTournamentDB(tournament.id, tournament.state.size);
+			createTournamentDB(tournament.id, tournament.name, tournament.state.size);
 			const matches = initTournamentMatches(tournament, tournament.state.size);
 			tournament.matches.set(1, matches);
 			console.log(`[TM] Starting 5-minute timeout for tournament ${tournament.id}`);
@@ -76,7 +82,7 @@ export function startTournament(tournament: Tournament) {
 		console.log(`[WS] Tournament ${tournament.id} now full — timer cleared`);
 		const matches = tournament.matches.get(tournament.state.round);
 		if (matches) {
-			for (const match of matches) startMatch(match);
+			for (const match of matches) startGameCountdown(match);
 			startTournamentDB(tournament.id);
 			tournament.state.isRunning = true;
 		}
@@ -86,13 +92,14 @@ export function startTournament(tournament: Tournament) {
 }
 
 // Add a player to an open tournament
-export function addPlayerToTournament(tournament: Tournament, playerId: string): Match | undefined {
+export function addPlayerToTournament(tournament: Tournament, playerId: string, socket?: any): Match | undefined {
 	try {
 		const matches = tournament.matches.get(tournament.state.round);
 		if (matches) {
 			for (const match of matches) {
 				if (!checkMatchFull(match)) {
 					addPlayerToMatch(match, playerId);
+					if (tournament.state.round == 1) tournament.clients.add(socket);
 					if (checkTournamentFull(tournament)) startTournament(tournament);
 					return match;
 				}
@@ -127,7 +134,7 @@ export function goToNextRound(tournament: Tournament) {
 	const matches = initTournamentMatches(tournament, tournament.state.size);
 	tournament.matches.set(tournament.state.round, matches);
 	assignPlayersToRound(tournament);
-	for (const match of matches) startMatch(match);
+	for (const match of matches) startGameCountdown(match);
 }
 
 // End tournament on the database
@@ -145,4 +152,30 @@ export function endTournament(tournament: Tournament) {
 	endTournamentDB(tournament.id, finalMatch.state.winner);
 	tournament.state.isRunning = false;
 	tournament.state.isOver = true;
+}
+
+export function forfeitTournament(tournamentId: string, playerId: string) {
+	const tournament = getTournament(tournamentId);
+	if (tournament) {
+		tournament.state.isRunning = false;
+		const roundMatches = tournament.matches.get(tournament.state.round);
+		if (roundMatches) {
+			for (const match of roundMatches) {
+				match.state.isRunning = false;
+				for (const client of tournament.clients) {
+					// Send a message BEFORE closing
+					client.send(
+						buildPayload("player-left", {
+							matchId: match.id,
+							player: playerId,
+						})
+					);
+					client.close(1000, "A player left");
+				}
+				forfeitMatchDB(match.id, playerId);
+			}
+		}
+		forfeitTournamentDB(tournament.id, playerId);
+		tournaments.delete(tournament.id);
+	}
 }
