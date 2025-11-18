@@ -106,12 +106,16 @@ export default async function oauthRoutes(fastify: FastifyInstance) {
 				redirect_uri: GITHUB_REDIRECT_URI,
 			}),
 		});
+		// parse the response body as JSON and check if the access token is received
 		const tokenBody = (await tokenRes.json()) as { access_token?: string };
 		if (!tokenBody.access_token) {
 			return reply.code(400).send({ success: false, message: "OAuth token exchange failed, because the code was invalid or expired" });
 		}
 
-		// Fetch the GitHub profile
+		// fetch the GitHub user profile using the access token
+		// - Authorization: Bearer <token> proves who the user is to GitHub
+		// - Accept: asks for GitHub's standard JSON format
+		// - User-Agent: required header for GitHub API requests
 		const profRes = await fetch("https://api.github.com/user", {
 			headers: {
 				Authorization: `Bearer ${tokenBody.access_token}`,
@@ -119,33 +123,41 @@ export default async function oauthRoutes(fastify: FastifyInstance) {
 				"User-Agent": "ft_transcendence",
 			},
 		});
-		const prof = (await profRes.json()) as {
+		// parse the response and pick id, username and avatar url
+		const profile = (await profRes.json()) as {
 			id: number;
 			login: string;
 			avatar_url?: string;
 		};
-		const providerId = String(prof.id);
+		// store the GitHub numeric id for the db
+		const providerId = String(profile.id);
 
-		// Check if we already have this GitHub user
+		// check if the user already exists in the db
 		const existing = db
 			.prepare(
 				`SELECT username FROM users WHERE provider = 'github' AND provider_id = ? LIMIT 1`
 			)
 			.get(providerId) as { username: string } | undefined;
 
-		let username = existing?.username;
+		let username: string | undefined;
+		if (existing) {
+			username = existing.username;
+		} else {
+			username = undefined;
+		}
 
-		// If new, create a separate account (no linking to local accounts)
+		// if the user doesn't exist in the db, create a new user
 		if (!username) {
-			// Start from GitHub login; ensure uniqueness
-			let candidate = prof.login;
+			// generate a unique username
+			let candidate = profile.login;
 			if (getUsernameDB(candidate)) {
 				candidate = `${candidate}_${Math.floor(Math.random() * 10000)}`;
 			}
 
-			// Store a placeholder password (not used for OAuth accounts)
+			// placeholder password (not used for OAuth accounts, because the password is stored in GitHub)
 			const placeholderPassword = crypto.randomBytes(32).toString("hex");
 
+			// insert the new user into the db
 			const result = db
 				.prepare(
 					`
@@ -153,16 +165,16 @@ export default async function oauthRoutes(fastify: FastifyInstance) {
 					VALUES (?, ?, 'github', ?, ?)
 				`
 				)
-				.run(candidate, placeholderPassword, providerId, prof.avatar_url || null);
+				.run(candidate, placeholderPassword, providerId, profile.avatar_url || null);
 			if (result.changes === 0)
 				return reply
 					.code(400)
 					.send({ success: false, message: "Unable to create user" });
-
+			// assign the newly created username
 			username = candidate;
 		}
 
-		// Create session and redirect to frontend
+		// create a session token and set it as a cookie so the backend knows who the user is without talking to GitHub again
 		const { token, maxAgeSec } = createSessionToken(username, 60);
 		const secure = process.env.NODE_ENV === "production"; // only set Secure over HTTPS
 		reply.header("Set-Cookie", makeSessionCookie(token, { secure, maxAgeSec }));
