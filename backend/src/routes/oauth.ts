@@ -60,38 +60,39 @@ function readCookie(header: string | undefined, name: string): string | undefine
 }
 
 export default async function oauthRoutes(fastify: FastifyInstance) {
-	// START: Redirect user-agent to GitHub authorization page
+	// start endpoint that begins the OAuth flow
 	fastify.get("/api/auth/github/start", async (_req, reply) => {
-		// Basic env validation (keeps code simple and explicit)
+		// validate that OAuth variables are set in .env
 		if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET || !GITHUB_REDIRECT_URI) {
 			return reply
 				.code(500)
-				.send({ success: false, message: "GitHub OAuth not configured" });
+				.send({ success: false, message: "GitHub OAuth not configured in .env" });
 		}
-		const state = crypto.randomUUID();
+
+		const state = crypto.randomUUID(); // generates a random state value for each login attempt
 		setStateCookie(reply, state);
 
-		const url = new URL("https://github.com/login/oauth/authorize");
+		// build the authorization URL
+		const url = new URL("https://github.com/login/oauth/authorize"); // official GitHub OAuth authorization endpoint
 		url.searchParams.set("client_id", GITHUB_CLIENT_ID);
 		url.searchParams.set("redirect_uri", GITHUB_REDIRECT_URI);
-		url.searchParams.set("scope", "read:user user:email");
+		url.searchParams.set("scope", "read:user user:email"); // access rights of the OAuth request
 		url.searchParams.set("state", state);
-		reply.redirect(url.toString());
+		reply.redirect(url.toString()); // send a 302 to that URL so the browser is redirected to the GitHub login page
 	});
 
-	// CALLBACK: Exchange code, fetch profile, upsert user, set cookie, redirect
+	// callback endpoint that handles the response from the GitHub login page
 	fastify.get("/api/auth/github/callback", async (req, reply) => {
-		const { code, state } = (req.query ?? {}) as {
-			code?: string;
-			state?: string;
-		};
+		const code = (req.query as any)?.code as string | undefined; // the authorization code that GitHub sends back
+		const state = (req.query as any)?.state as string | undefined; // the state value that was set in the start endpoint
 
+		// read the state cookie the browser sent back
 		const expected = readCookie(req.headers.cookie, "oauth_state");
 		if (!code || !state || !expected || state !== expected) {
 			return reply.code(400).send({ success: false, message: "Invalid OAuth state" });
 		}
 
-		// Exchange the code for an access token
+		// send a POST request to the GitHub token endpoint to exchange the authorization code for an access token
 		const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
 			method: "POST",
 			headers: {
@@ -107,7 +108,7 @@ export default async function oauthRoutes(fastify: FastifyInstance) {
 		});
 		const tokenBody = (await tokenRes.json()) as { access_token?: string };
 		if (!tokenBody.access_token) {
-			return reply.code(400).send({ success: false, message: "OAuth token exchange failed" });
+			return reply.code(400).send({ success: false, message: "OAuth token exchange failed, because the code was invalid or expired" });
 		}
 
 		// Fetch the GitHub profile
