@@ -1,6 +1,7 @@
 // src/views/auth/ui.ts
 import { loginUser, registerUser, fetchMe } from "../../api/http";
 import { navigate } from "../../router/router";
+import { API_BASE } from "../../config/endpoints";
 import { updateTopBar } from "../topbar/ui";
 import { t } from "../../i18n";
 
@@ -69,6 +70,19 @@ export function renderAuth(container: HTMLElement) {
   const errPass = form.querySelector("#auth-pass-err") as HTMLDivElement;
   const submit = form.querySelector("#auth-submit") as HTMLButtonElement;
 
+  // OAuth: Login with GitHub (redirects to backend OAuth start)
+  const ghBtn = document.createElement("button"); // creates a button element for the GitHub login
+  ghBtn.type = "button"; // no form submission, just a button
+  ghBtn.className = "auth-submit"; // same style as the login button
+  ghBtn.textContent = "Login with GitHub";
+  // when the button is clicked, the follwowing code is run:
+  ghBtn.onclick = () => {
+    // Full-page redirect to start the OAuth flow on the backend
+    location.href = `${API_BASE}/api/auth/github/start`;
+  };
+  // adds the button to the card
+  card.appendChild(ghBtn);
+  // mounts the whole auth screen (root, that already contains card) into the page
   container.appendChild(root);
 
   // ---- Helpers ----
