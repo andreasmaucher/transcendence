@@ -12,13 +12,35 @@ const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
 const GITHUB_REDIRECT_URI = process.env.GITHUB_REDIRECT_URI; // exact callback URL registered in the GitHub app
 
+// setting a cookie to make sure the browser that starts the GitHub login is the same browser that finishes it
+// -> prevent CSRF attacks and login hijacking
+// Flow: 
+// 1. User clicks "Login with GitHub" button
+// 2. Browser sends request to backend to start OAuth flow
+// 3. Backend sets a cookie with a random value
+// 4. Browser redirects to GitHub login page
+// 5. User logs in to GitHub
+// 6. GitHub redirects back to the backend with the code and state
+// 7. Backend verifies the state cookie and exchanges the code for an access token
+// 8. Backend creates a session and redirects to the frontend
+// 9. Browser sends request to backend to finish OAuth flow
+// - cookie name: oauth_state (random value for this login attempt)
+// - HttpOnly: prevents client-side JS from reading the cookie (mitigates XSS)
+// - SameSite=Lax: allows the cookie on the OAuth redirect back, blocks most CSRF
+// - Max-Age=600: expires in 10 minutes
+// - Path=/ : cookie is valid for the whole site
 function setStateCookie(reply: FastifyReply, state: string) {
-	reply.header(
-		"Set-Cookie",
-		`oauth_state=${state}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600`
-	);
+	const cookie = [
+		`oauth_state=${state}`,
+		"Path=/",
+		"HttpOnly",
+		"SameSite=Lax",
+		"Max-Age=600",
+	].join("; ");
+	reply.header("Set-Cookie", cookie);
 }
 
+// reads a cookie from the request header
 function readCookie(header: string | undefined, name: string): string | undefined {
 	if (!header) return undefined;
 	for (const part of header.split(";")) {
