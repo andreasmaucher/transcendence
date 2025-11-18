@@ -15,6 +15,7 @@ import { forEachSingleGame } from "./managers/singleGameManager.js";
 import { usersOnline } from "./config/structures.js";
 import { removeUserOnline } from "./user/online.js";
 import singleGameRoutes from "./routes/singleGame.js";
+import userManagementRoutes from "./routes/userManagement.js";
 
 const UPDATE_FPS = GAME_CONSTANTS.UPDATE_FPS;
 
@@ -69,6 +70,7 @@ fastify.get("/api/constants", async () => {
 // });
 
 await fastify.register(userRoutes);
+await fastify.register(userManagementRoutes);
 await fastify.register(singleGameRoutes);
 await fastify.register(tournamentRoutes);
 await fastify.register(matchRoutes);

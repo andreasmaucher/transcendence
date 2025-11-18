@@ -138,6 +138,7 @@ export function checkMatchFull(match: Match) {
 
 export function forfeitMatch(match: Match, playerId: string) {
 	if (match.singleGameId) {
+		match.state.isRunning = false;
 		for (const client of match.clients) {
 			// Send a message BEFORE closing
 			client.send(

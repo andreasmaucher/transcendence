@@ -2,7 +2,7 @@ import type { WebSocket } from "ws";
 import { Match } from "../types/match.js";
 import { Payload, PayloadDataTypes, PayloadTypes } from "../types/payload.js";
 
-// Build and stringify the Payload for the WebSocket
+// Create and stringify the Payload for the WebSocket
 export function buildPayload(type: PayloadTypes, data: PayloadDataTypes): string {
 	const payload = { type, data } as Payload;
 	return JSON.stringify(payload);

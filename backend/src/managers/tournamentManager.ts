@@ -157,9 +157,11 @@ export function endTournament(tournament: Tournament) {
 export function forfeitTournament(tournamentId: string, playerId: string) {
 	const tournament = getTournament(tournamentId);
 	if (tournament) {
+		tournament.state.isRunning = false;
 		const roundMatches = tournament.matches.get(tournament.state.round);
 		if (roundMatches) {
 			for (const match of roundMatches) {
+				match.state.isRunning = false;
 				for (const client of tournament.clients) {
 					// Send a message BEFORE closing
 					client.send(

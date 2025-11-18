@@ -1,4 +1,3 @@
-import { User } from "../../types/user.js";
 import db from "../db_init.js";
 
 // Retrieve all users from the database
@@ -16,7 +15,7 @@ export function getAllUsersDB(): any[] {
 }
 
 // Retrieve the desired user from the database (if present) and return it as json
-export function getJsonUserByUsernameDB(username: string): any {
+export function getUserByUsernameDB(username: string): any {
 	const stmt = db.prepare(`
 		SELECT *
 		FROM users

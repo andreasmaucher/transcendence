@@ -1,26 +1,13 @@
 import { RawData } from "ws";
 import type { FastifyInstance } from "fastify";
 import { buildPayload } from "./broadcaster.js";
-import { parseCookies, verifySessionToken } from "../auth/session.js";
 import { getOrCreateSingleGame } from "../managers/singleGameManager.js";
 import { getOrCreateTournament, addPlayerToTournament } from "../managers/tournamentManager.js";
 import { addPlayerToMatch, checkMatchFull, forfeitMatch, startMatch } from "../managers/matchManager.js";
-import { resetMatchState } from "../game/state.js";
-import { Match, PaddleSide } from "../types/match.js";
+import { Match } from "../types/match.js";
 import { addUserOnline, removeUserOnline } from "../user/online.js";
-
-function authenticateWebSocket(request: any, socket: any) {
-	const cookies = parseCookies(request.headers.cookie);
-	const sid = cookies["sid"];
-	const payload = verifySessionToken(sid);
-	if (!payload) {
-		try {
-			socket.close(4401, "Unauthorized");
-		} catch {}
-		return null;
-	}
-	return payload;
-}
+import { handleSocketMessages } from "./messages.js";
+import { authenticateWebSocket } from "../auth/ws.js";
 
 export function registerWebsocketRoute(fastify: FastifyInstance) {
 	// Register user socket
@@ -73,21 +60,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 
 			socket.send(buildPayload("state", match.state));
 
-			socket.on("message", (raw: RawData) => {
-				let msg;
-				try {
-					msg = JSON.parse(raw.toString());
-				} catch {
-					return;
-				}
-
-				if (msg.type === "input") {
-					const dir = msg.direction === "up" ? -1 : msg.direction === "down" ? 1 : 0;
-					match.inputs[msg.paddle as PaddleSide] = dir;
-				} else if (msg.type === "reset") {
-					resetMatchState(match);
-				}
-			});
+			socket.on("message", (raw: RawData) => handleSocketMessages(raw, match));
 
 			socket.on("close", () => {
 				match.clients.delete(socket);
@@ -137,21 +110,8 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 
 			socket.send(buildPayload("state", match.state));
 
-			socket.on("message", (raw: RawData) => {
-				let msg;
-				try {
-					msg = JSON.parse(raw.toString());
-				} catch {
-					return;
-				}
+			socket.on("message", (raw: RawData) => handleSocketMessages(raw, match));
 
-				if (msg.type === "input") {
-					const dir = msg.direction === "up" ? -1 : msg.direction === "down" ? 1 : 0;
-					match.inputs[msg.paddle as PaddleSide] = dir;
-				} else if (msg.type === "reset") {
-					resetMatchState(match);
-				}
-			});
 			socket.on("close", () => {
 				match.clients.delete(socket);
 				forfeitMatch(match, socket.username);
@@ -195,21 +155,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 
 				socket.send(buildPayload("state", match.state));
 
-				socket.on("message", (raw: RawData) => {
-					let msg;
-					try {
-						msg = JSON.parse(raw.toString());
-					} catch {
-						return;
-					}
-
-					if (msg.type === "input") {
-						const dir = msg.direction === "up" ? -1 : msg.direction === "down" ? 1 : 0;
-						match.inputs[msg.paddle as PaddleSide] = dir;
-					} else if (msg.type === "reset") {
-						resetMatchState(match);
-					}
-				});
+				socket.on("message", (raw: RawData) => handleSocketMessages(raw, match));
 
 				socket.on("close", () => {
 					match.clients.delete(socket);
