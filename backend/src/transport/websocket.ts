@@ -7,11 +7,11 @@ import { addPlayerToMatch, checkMatchFull, forfeitMatch, startMatch } from "../m
 import { Match } from "../types/match.js";
 import { addUserOnline, removeUserOnline } from "../user/online.js";
 import { handleSocketMessages } from "./messages.js";
-import { authenticateWebSocket } from "../auth/ws.js";
+import { authenticateWebSocket } from "../auth/verify.js";
 
 export function registerWebsocketRoute(fastify: FastifyInstance) {
 	// Register user socket
-	fastify.get("/api/user/ws", { websocket: true }, (request: any, socket: any) => {
+	fastify.get("/api/user/ws", { websocket: true }, (socket: any, request: any) => {
 		const payload = authenticateWebSocket(request, socket);
 		if (!payload) return;
 

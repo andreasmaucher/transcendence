@@ -35,7 +35,7 @@ db.exec(`
 	CREATE TABLE IF NOT EXISTS tournaments (
 		internal_id INTEGER PRIMARY KEY AUTOINCREMENT,
 		id TEXT UNIQUE NOT NULL,
-		name TEXT NOT NULL,
+		name TEXT UNIQUE NOT NULL,
 		size INTEGER,
 		winner TEXT,
 		started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -67,11 +67,13 @@ db.exec(`
 
 	CREATE TABLE IF NOT EXISTS messages (
     	internal_id INTEGER PRIMARY KEY AUTOINCREMENT,
+		id TEXT UNIQUE NOT NULL,
     	sender TEXT NOT NULL,
     	receiver TEXT,
     	type TEXT NOT NULL,
    		content TEXT,
-    	created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		game_id TEXT,
+    	sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     
     	FOREIGN KEY (sender) REFERENCES users(username),
     	FOREIGN KEY (receiver) REFERENCES users(username)
