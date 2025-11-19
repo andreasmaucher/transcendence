@@ -97,7 +97,7 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 				break; */
 
 			default:
-				// ignore unknown payloads to keep client resilient
+				console.warn("[WS] Unknown payload:", payload);
 				break;
 		}
 	});
@@ -182,6 +182,7 @@ export function connectToSingleGameWS(state: MatchState): () => void {
 			}
 
 			default:
+				console.warn("[WS] Unknown payload:", payload);
 				break;
 		}
 	});
@@ -260,6 +261,7 @@ export function connectToTournamentWS(state: MatchState): () => void {
 			}
 
 			default:
+				console.warn("[WS] Unknown payload:", payload);
 				break;
 		}
 	});
