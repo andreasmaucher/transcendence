@@ -16,6 +16,7 @@ import { forEachSingleGame } from "./managers/singleGameManager.js";
 import { usersOnline } from "./config/structures.js";
 import { removeUserOnline } from "./user/online.js";
 import singleGameRoutes from "./routes/singleGame.js";
+import type WebSocket from "ws";
 import userManagementRoutes from "./routes/userManagement.js";
 
 const UPDATE_FPS = GAME_CONSTANTS.UPDATE_FPS;

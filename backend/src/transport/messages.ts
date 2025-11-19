@@ -10,7 +10,6 @@ export function handleSocketMessages(raw: RawData, match: Match) {
 	} catch {
 		return;
 	}
-
 	if (msg.type === "input") {
 		const dir = msg.direction === "up" ? -1 : msg.direction === "down" ? 1 : 0;
 		match.inputs[msg.paddle as PaddleSide] = dir;

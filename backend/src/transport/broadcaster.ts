@@ -1,8 +1,14 @@
-import type WebSocket from "ws";
+import type { WebSocket } from "ws";
 import { Match } from "../types/match.js";
 import { removeUserOnline } from "../user/online.js";
 import { usersOnline } from "../config/structures.js";
-import { ChatEvent, InviteChatMessage, DirectChatMessage, ProfileLinkMessage, BroadcastChatMessage } from "../chat/types.js";
+import {
+	ChatEvent,
+	InviteChatMessage,
+	DirectChatMessage,
+	ProfileLinkMessage,
+	BroadcastChatMessage,
+} from "../chat/types.js";
 import { User } from "../types/user.js";
 
 // Create state payload for socket
