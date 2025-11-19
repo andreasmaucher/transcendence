@@ -4,20 +4,12 @@ import { applyBackendState } from "../game/state";
 import { MatchState } from "../types/game";
 import { Payload } from "../types/ws_message";
 
-// --- UI HANDLER REGISTRY (optional hooks the view can register) ---
-// These functions are called when the backend notifies about lifecycle events.
-// Defaults are no-ops so nothing breaks if the UI hasn't registered handlers yet.
+// no-op functions to avoid errors as long as the UI has not registered handlers by calling registerGameUiHandlers
 let waitingForPlayers: () => void = () => {};
 let countdownToGame: (n: number, side?: "left" | "right") => void = () => {};
 let startGame: () => void = () => {};
 
-// Call this once from the game view to register UI reactions.
-// Example:
-// registerGameUiHandlers({
-//   waitingForPlayers: () => showWaitingOverlay(),
-//   countdownToGame: (n, side) => showCountdownOverlay(n, side),
-//   startGame: () => hideOverlay(),
-// });
+// function that registers the UI handlers (replaces the no-op functions above with the actual handlers)
 export function registerGameUiHandlers(handlers: {
 	waitingForPlayers?: () => void;
 	countdownToGame?: (n: number, side?: "left" | "right") => void;
@@ -79,15 +71,15 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 			}
 
 			case "countdown": {
-				// backend sends countdown value (e.g., 3,2,1) and optionally the player's side
+				// extract the countdown value
 				const n = (payload as any).data?.value as number | undefined;
+				// extract the side of the player
 				const side = (payload as any).data?.side as "left" | "right" | undefined;
 				countdownToGame(n ?? 0, side);
 				break;
 			}
 
 			case "start": {
-				// notify UI to hide overlays and let gameplay proceed
 				startGame();
 				break;
 			}
@@ -158,28 +150,26 @@ export function connectToSingleGameWS(state: MatchState): () => void {
 				break;
 			}
 
-			// backend says: not all players connected yet
-			// -> inform the UI (e.g., show a waiting overlay)
 			case "waiting": {
 				waitingForPlayers();
 				break;
 			}
 
-			// backend sends a countdown tick (3,2,1) and may include the player's side
-			// -> pass the number and side to the UI (e.g., show "3" and "you are left/right")
 			case "countdown": {
-				const n = (payload as any).data?.value as number | undefined; // current countdown number
-				const side = (payload as any).data?.side as "left" | "right" | undefined; // player's side if provided
+				const n = (payload as any).data?.value as number | undefined;
+				const side = (payload as any).data?.side as "left" | "right" | undefined;
 				countdownToGame(n ?? 0, side);
 				break;
 			}
 
-			// backend says: start gameplay
-			// -> UI should hide overlays; normal state frames will keep arriving
 			case "start": {
 				startGame();
 				break;
 			}
+
+			/* 	case "chat":
+				addChatMessage(payload.data.from, payload.data.message);
+				break; */
 
 			default:
 				console.warn("[WS] Unknown payload:", payload);
@@ -259,6 +249,9 @@ export function connectToTournamentWS(state: MatchState): () => void {
 				startGame();
 				break;
 			}
+			/* 	case "chat":
+				addChatMessage(payload.data.from, payload.data.message);
+				break; */
 
 			default:
 				console.warn("[WS] Unknown payload:", payload);
