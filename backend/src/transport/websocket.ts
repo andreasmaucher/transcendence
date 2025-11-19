@@ -63,12 +63,15 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			const sentAt = Date.now();
 			const id = crypto.randomUUID(); // Move to frontend
 
-			switch (payload.type) {
+			console.log("Message received: ", payload.content);
+
+			/* switch (payload.type) {
 				case "direct": {
 					if (!isNonEmptyString(payload.receiver) || !isNonEmptyString(payload.content)) {
 						console.error(`[WS] Invalid direct message payload from ${socket.username}`);
 						return;
 					}
+					console.log("Message received: ", payload.content);
 					chatBroadcast(
 						{
 							type: payload.type,
@@ -200,9 +203,8 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				}
 				default: {
 					console.warn(`[WS] Unsupported chat payload type ${(payload as any).type}`);
-				}
-			}
-		});
+				}*/
+		}); 
 
 		socket.on('error', (error: any) => {
 			console.error(`WebSocket error for ${socket.username} on socket ${socket}:`, error);
