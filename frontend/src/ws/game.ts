@@ -7,25 +7,25 @@ import { Payload } from "../types/ws_message";
 // --- UI HANDLER REGISTRY (optional hooks the view can register) ---
 // These functions are called when the backend notifies about lifecycle events.
 // Defaults are no-ops so nothing breaks if the UI hasn't registered handlers yet.
-let onWaiting: () => void = () => {};
-let onCountdown: (n: number, side?: "left" | "right") => void = () => {};
-let onStart: () => void = () => {};
+let waitingForPlayers: () => void = () => {};
+let countdownToGame: (n: number, side?: "left" | "right") => void = () => {};
+let startGame: () => void = () => {};
 
 // Call this once from the game view to register UI reactions.
 // Example:
 // registerGameUiHandlers({
-//   onWaiting: () => showWaitingOverlay(),
-//   onCountdown: (n, side) => showCountdownOverlay(n, side),
-//   onStart: () => hideOverlay(),
+//   waitingForPlayers: () => showWaitingOverlay(),
+//   countdownToGame: (n, side) => showCountdownOverlay(n, side),
+//   startGame: () => hideOverlay(),
 // });
 export function registerGameUiHandlers(handlers: {
-	onWaiting?: () => void;
-	onCountdown?: (n: number, side?: "left" | "right") => void;
-	onStart?: () => void;
+	waitingForPlayers?: () => void;
+	countdownToGame?: (n: number, side?: "left" | "right") => void;
+	startGame?: () => void;
 }) {
-	if (handlers.onWaiting) onWaiting = handlers.onWaiting;
-	if (handlers.onCountdown) onCountdown = handlers.onCountdown;
-	if (handlers.onStart) onStart = handlers.onStart;
+	if (handlers.waitingForPlayers) waitingForPlayers = handlers.waitingForPlayers;
+	if (handlers.countdownToGame) countdownToGame = handlers.countdownToGame;
+	if (handlers.startGame) startGame = handlers.startGame;
 }
 
 export function connectToLocalSingleGameWS(state: MatchState): () => void {
@@ -74,7 +74,7 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 
 			case "waiting": {
 				// notify UI that we are waiting for other player(s)
-				onWaiting();
+				waitingForPlayers();
 				break;
 			}
 
@@ -82,15 +82,19 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 				// backend sends countdown value (e.g., 3,2,1) and optionally the player's side
 				const n = (payload as any).data?.value as number | undefined;
 				const side = (payload as any).data?.side as "left" | "right" | undefined;
-				onCountdown(n ?? 0, side);
+				countdownToGame(n ?? 0, side);
 				break;
 			}
 
 			case "start": {
 				// notify UI to hide overlays and let gameplay proceed
-				onStart();
+				startGame();
 				break;
 			}
+
+		/* 	case "chat":
+				addChatMessage(payload.data.from, payload.data.message);
+				break; */
 
 			default:
 				// ignore unknown payloads to keep client resilient
@@ -157,7 +161,7 @@ export function connectToSingleGameWS(state: MatchState): () => void {
 			// backend says: not all players connected yet
 			// -> inform the UI (e.g., show a waiting overlay)
 			case "waiting": {
-				onWaiting();
+				waitingForPlayers();
 				break;
 			}
 
@@ -166,14 +170,14 @@ export function connectToSingleGameWS(state: MatchState): () => void {
 			case "countdown": {
 				const n = (payload as any).data?.value as number | undefined; // current countdown number
 				const side = (payload as any).data?.side as "left" | "right" | undefined; // player's side if provided
-				onCountdown(n ?? 0, side);
+				countdownToGame(n ?? 0, side);
 				break;
 			}
 
 			// backend says: start gameplay
 			// -> UI should hide overlays; normal state frames will keep arriving
 			case "start": {
-				onStart();
+				startGame();
 				break;
 			}
 
@@ -239,19 +243,19 @@ export function connectToTournamentWS(state: MatchState): () => void {
 			}
 
 			case "waiting": {
-				onWaiting();
+				waitingForPlayers();
 				break;
 			}
 
 			case "countdown": {
 				const n = (payload as any).data?.value as number | undefined;
 				const side = (payload as any).data?.side as "left" | "right" | undefined;
-				onCountdown(n ?? 0, side);
+				countdownToGame(n ?? 0, side);
 				break;
 			}
 
 			case "start": {
-				onStart();
+				startGame();
 				break;
 			}
 

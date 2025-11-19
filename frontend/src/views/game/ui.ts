@@ -188,13 +188,13 @@ export async function renderGame(container: HTMLElement) {
 	const state = createInitialState();
 	// register UI handlers for WS events
 	registerGameUiHandlers({
-		onWaiting: () => {
+		waitingForPlayers: () => {
 			// placeholder: show "Waiting..." overlay here
 		},
-		onCountdown: (_n, _side) => {
+		countdownToGame: (_n, _side) => {
 			// placeholder: show "3,2,1"
 		},
-		onStart: () => {
+		startGame: () => {
 			// placeholder: hide overlays here I assume? or just start the game?
 		},
 	});
