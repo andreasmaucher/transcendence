@@ -17,6 +17,7 @@ export type UserDB = {
 export type TournamentDB = {
 	internal_id: number;
 	id: string;
+	name: string;
 	size: number;
 	winner: string | null;
 	started_at: string | null;
@@ -44,9 +45,11 @@ export type MatchDB = {
 
 export type MessageDB = {
 	internal_id: number;
+	id: string;
 	sender: string; // Reference to the user table
 	receiver: string | null; // Reference to the user table
 	type: string;
-	content: string;
-	created_at: string;
+	content?: string;
+	game_id?: string;
+	sent_at: string;
 };
