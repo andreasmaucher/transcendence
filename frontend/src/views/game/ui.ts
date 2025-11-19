@@ -5,7 +5,7 @@ import { fetchGameConstants } from "../../api/http";
 import { draw } from "../../rendering/canvas";
 import { setupInputs, setActiveSocket } from "../../game/input";
 import { MatchState } from "../../types/game";
-import { connectToLocalSingleGameWS } from "../../ws/game";
+import { connectToLocalSingleGameWS, connectToSingleGameWS, registerGameUiHandlers } from "../../ws/game";
 
 let GAME_CONSTANTS: GameConstants | null = null;
 
@@ -177,8 +177,24 @@ export async function renderGame(container: HTMLElement) {
 	// 3) Start game
 	//
 	const state = createInitialState();
-	//const cleanupWS = connectToBackend(state);
-	const cleanupWS = connectToLocalSingleGameWS(state); // for now only local single game option
+	// register UI handlers for WS events
+	registerGameUiHandlers({
+		onWaiting: () => {
+			// placeholder: show "Waiting..." overlay here
+		},
+		onCountdown: (_n, _side) => {
+			// placeholder: show "3,2,1"
+		},
+		onStart: () => {
+			// placeholder: hide overlays here I assume? or just start the game?
+		},
+	});
+
+	// choose the correct WS connector based on mode
+	const cleanupWS =
+		mode === "local"
+			? connectToLocalSingleGameWS(state)
+			: connectToSingleGameWS(state);
 	setupInputs();
 
 	const cleanupLoop = startGameLoop(canvas, state);
