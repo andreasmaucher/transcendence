@@ -1,7 +1,7 @@
 import { RawData } from "ws";
 import type { FastifyInstance } from "fastify";
 import crypto from "crypto";
-import { buildStatePayload, chatBroadcast } from "./broadcaster.js";
+import { buildPayload, buildStatePayload, chatBroadcast } from "./broadcaster.js";
 import { parseCookies, verifySessionToken } from "../auth/session.js";
 import { getOrCreateSingleGame } from "../managers/singleGameManager.js";
 import { getOrCreateTournament, addPlayerToTournament } from "../managers/tournamentManager.js";
@@ -9,6 +9,7 @@ import { addPlayerToMatch, checkMatchFull, forfeitMatch, startMatch } from "../m
 import { Match } from "../types/match.js";
 import { addUserOnline, removeUserOnline } from "../user/online.js";
 import { Message } from "../chat/types.js";
+import { handleSocketMessages } from "./messages.js";
 
 function authenticateWebSocket(request: any, socket: any) {
 	const cookies = parseCookies(request.headers.cookie);
@@ -44,7 +45,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			// translate binary into string
 			const text = message.toString();
 			
-			let payload: unknown;
+			let payload: any;
 
 			// parses text into JSON and cast it as an ChatINboundMessage
 			try {
@@ -210,13 +211,13 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 		});
 
 		socket.on("close", () => {
-			chatBroadcast({
+			/* chatBroadcast({
 				type: "broadcast",
 				id: crypto.randomUUID(),
 				sentAt: Date.now(),
 				from: "system",
 				body: `User ${socket.username} left`,
-			});
+			}); */
 			removeUserOnline(socket.username);
 		});     
 	});

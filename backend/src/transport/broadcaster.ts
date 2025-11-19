@@ -4,12 +4,13 @@ import { removeUserOnline } from "../user/online.js";
 import { usersOnline } from "../config/structures.js";
 import {
 	ChatEvent,
-	InviteChatMessage,
-	DirectChatMessage,
-	ProfileLinkMessage,
-	BroadcastChatMessage,
+	//InviteChatMessage,
+	//DirectChatMessage,
+	//ProfileLinkMessage,
+	//BroadcastChatMessage,
 } from "../chat/types.js";
 import { User } from "../types/user.js";
+import { Payload, PayloadDataTypes, PayloadTypes } from "../types/payload.js";
 
 // Create state payload for socket
 export function buildStatePayload(match: Match) {
@@ -20,13 +21,19 @@ export function buildStatePayload(match: Match) {
 	};
 }
 
+// Create and stringify the Payload for the WebSocket
+export function buildPayload(type: PayloadTypes, data: PayloadDataTypes): string {
+	const payload = { type, data } as Payload;
+	return JSON.stringify(payload);
+}
+
 export function chatBroadcast(event: ChatEvent, sender: WebSocket | null = null) {
 	const payload = JSON.stringify(event);
 
 	usersOnline.forEach((user) => {
 		const ws = user.socket;
 
-		if (!shouldDeliverEvent(event, user, sender)) return;
+		//if (!shouldDeliverEvent(event, user, sender)) return;
 
 		if (ws.readyState === ws.OPEN) {
 			try {
@@ -63,7 +70,7 @@ export function broadcast(match: Match): void {
 	}
 }
 
-function shouldDeliverEvent(event: ChatEvent, user: User, sender: WebSocket | null): boolean {
+/* function shouldDeliverEvent(event: ChatEvent, user: User, sender: WebSocket | null): boolean {
 	if (sender && user.socket === sender) return false;
 
 	if (eventHasSender(event) && user.blockedUsers?.has(event.from)) return false;
@@ -79,10 +86,11 @@ function shouldDeliverEvent(event: ChatEvent, user: User, sender: WebSocket | nu
 		default:
 			return true;
 	}
-}
+} */
 
-function eventHasSender(
+/* function eventHasSender(
 	event: ChatEvent
 ): event is DirectChatMessage | BroadcastChatMessage | InviteChatMessage | ProfileLinkMessage {
 	return event.type !== "tournament";
 }
+ */
