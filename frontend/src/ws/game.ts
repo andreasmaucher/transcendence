@@ -154,24 +154,31 @@ export function connectToSingleGameWS(state: MatchState): () => void {
 				break;
 			}
 
-			/* case "waiting":
-				waitingForPlayers();
+			// backend says: not all players connected yet
+			// -> inform the UI (e.g., show a waiting overlay)
+			case "waiting": {
+				onWaiting();
 				break;
+			}
 
-			case "countdown":
-				countdownToGame(payload.data.value);
+			// backend sends a countdown tick (3,2,1) and may include the player's side
+			// -> pass the number and side to the UI (e.g., show "3" and "you are left/right")
+			case "countdown": {
+				const n = (payload as any).data?.value as number | undefined; // current countdown number
+				const side = (payload as any).data?.side as "left" | "right" | undefined; // player's side if provided
+				onCountdown(n ?? 0, side);
 				break;
+			}
 
-			case "start":
-				startGame();
+			// backend says: start gameplay
+			// -> UI should hide overlays; normal state frames will keep arriving
+			case "start": {
+				onStart();
 				break;
-
-			case "chat":
-				addChatMessage(payload.data.from, payload.data.message);
-				break;
+			}
 
 			default:
-				console.warn("Unknown payload", payload); */
+				break;
 		}
 	});
 
@@ -231,24 +238,25 @@ export function connectToTournamentWS(state: MatchState): () => void {
 				break;
 			}
 
-			/* case "waiting":
-				waitingForPlayers();
+			case "waiting": {
+				onWaiting();
 				break;
+			}
 
-			case "countdown":
-				countdownToGame(payload.data.value);
+			case "countdown": {
+				const n = (payload as any).data?.value as number | undefined;
+				const side = (payload as any).data?.side as "left" | "right" | undefined;
+				onCountdown(n ?? 0, side);
 				break;
+			}
 
-			case "start":
-				startGame();
+			case "start": {
+				onStart();
 				break;
-
-			case "chat":
-				addChatMessage(payload.data.from, payload.data.message);
-				break;
+			}
 
 			default:
-				console.warn("Unknown payload", payload); */
+				break;
 		}
 	});
 
