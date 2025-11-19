@@ -1,18 +1,18 @@
-import { Match, PaddleSide } from "../../types/match.js";
+import { Match } from "../../types/match.js";
 import db from "../db_init.js";
 
 // Create a new match row in the matches table of the database
 export function createMatchDB(match: Match): void {
 	const stmt = db.prepare(`
-		INSERT INTO matches (id, type, round, tournament_id, in_tournament_type, in_tournament_placement_range)
+		INSERT INTO matches (id, mode, round, tournament_id, in_tournament_type, in_tournament_placement_range)
 		VALUES (?, ?, ?, ?, ?, ?)
 	`);
 
 	let result = null;
 	if (match.tournament) {
 		const { id, round, type, placementRange } = match.tournament;
-		result = stmt.run(match.id, match.type, round, id, type, JSON.stringify(placementRange));
-	} else result = stmt.run(match.id, match.type, 0, null, null, null);
+		result = stmt.run(match.id, match.mode, round, id, type, JSON.stringify(placementRange));
+	} else result = stmt.run(match.id, match.mode, 0, null, null, null);
 
 	if (result.changes === 0)
 		throw new Error(`[DB] Failed to create match ${match.id}`); // If DB run fails, throws error
@@ -77,21 +77,37 @@ export function updateMatchDB(id: string, left: number, right: number): void {
 }
 
 // End the match and set the winner
-export function endMatchDB(id: string, winner?: PaddleSide): void {
+export function endMatchDB(match: Match): void {
+	const { id } = match;
+	const { winner } = match.state;
 	const stmt = db.prepare(`
 		UPDATE matches
-		SET winner = ?, ended_at = CURRENT_TIMESTAMP
+		SET winner = ?, notes = ?, ended_at = CURRENT_TIMESTAMP
 		WHERE id = ?
 	`);
 
-	const result = stmt.run(winner, id);
+	const notes = match.mode === "local" && winner === "right" ? "The winner is the guest" : null;
+
+	const result = stmt.run(winner, notes, id);
 	if (result.changes === 0) throw new Error(`[DB] Failed to end match ${id}`); // If DB run fails, throws error
-	else console.log(`[DB] Match ${id} ended: winner is ${winner ?? "null"}`);
+	else console.log(`[DB] Match ${id} ended: winner is ${winner}`);
+}
+
+export function forfeitMatchDB(id: string, playerId: string) {
+	const stmt = db.prepare(`
+		UPDATE matches
+		SET notes = ?, ended_at = CURRENT_TIMESTAMP
+		WHERE id = ?
+	`);
+
+	const result = stmt.run(`Match forfeited: player ${playerId} left`, id);
+	if (result.changes === 0) throw new Error(`[DB] Failed to forfeit match ${id}`); // If DB run fails, throws error
+	else console.log(`[DB] Match ${id} forfeited: player ${playerId} left`);
 }
 
 // Remove a match from the database
 export function removeMatchDB(id: string): void {
-	const stmt = db.prepare("DELETE FROM users WHERE id = ?");
+	const stmt = db.prepare("DELETE FROM matches WHERE id = ?");
 	const result = stmt.run(id);
 	if (result.changes === 0) throw new Error(`[DB] Failed to remove match ${id}`); // If DB run fails, throws error
 	else console.log(`[DB] Match ${id} removed`);

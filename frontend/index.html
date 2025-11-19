@@ -1,13 +1,8 @@
-<!-- Tells the browser to use HTML5 -->
 <!doctype html>
-<!-- Declares the page's primary language, this is e.g. picked up by search engines -->
-<html lang="en">
+<html>
   <head>
-    <!-- Tells the browser what text encoding to use e.g. ä, é, —, €, emojis etc. -->
     <meta charset="UTF-8" />
-    <!-- Browser tab title -->
     <title>Transcendence Pong</title>
-    <!-- Minimal styling settings to make the page look nice and center the game -->
     <style>
       html, body, #app { height: 100%; margin: 0; }
       body { background: #0f172a; color: #e2e8f0; font-family: system-ui, sans-serif; }
@@ -15,9 +10,7 @@
     </style>
   </head>
   <body>
-    <!-- Empty box where the game will be placed -->
     <div id="app"></div>
-    <!-- Vite loads main.ts, compiles TS -> JS and executes it -->
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
