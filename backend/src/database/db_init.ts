@@ -35,16 +35,18 @@ db.exec(`
 	CREATE TABLE IF NOT EXISTS tournaments (
 		internal_id INTEGER PRIMARY KEY AUTOINCREMENT,
 		id TEXT UNIQUE NOT NULL,
+		name TEXT UNIQUE NOT NULL,
 		size INTEGER,
 		winner TEXT,
 		started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		ended_at DATETIME
+		ended_at DATETIME,
+		notes TEXT
 	);
 
 	CREATE TABLE IF NOT EXISTS matches (
 		internal_id INTEGER PRIMARY KEY AUTOINCREMENT,
 		id TEXT UNIQUE NOT NULL,
-		type TEXT,
+		mode TEXT,
 		player_left TEXT,
 		player_right TEXT,
 		tournament_id TEXT,
@@ -56,9 +58,25 @@ db.exec(`
 		winner TEXT,
 		started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		ended_at DATETIME,
+		notes TEXT,
+
 		FOREIGN KEY (tournament_id) REFERENCES tournaments (id) ON DELETE CASCADE,
 		FOREIGN KEY (player_left) REFERENCES users (username),
 		FOREIGN KEY (player_right) REFERENCES users (username)
+	);
+
+	CREATE TABLE IF NOT EXISTS messages (
+    	internal_id INTEGER PRIMARY KEY AUTOINCREMENT,
+		id TEXT UNIQUE NOT NULL,
+    	sender TEXT NOT NULL,
+    	receiver TEXT,
+    	type TEXT NOT NULL,
+   		content TEXT,
+		game_id TEXT,
+    	sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    
+    	FOREIGN KEY (sender) REFERENCES users(username),
+    	FOREIGN KEY (receiver) REFERENCES users(username)
 	);
 `);
 

@@ -1,3 +1,6 @@
+import { MatchState } from "../types/game";
+import { BackendStateMessage } from "../types/ws_message";
+
 // apply the backend state to the local frontend game state
 export function clamp(n: number, min: number, max: number): number {
 	if (n < min) return min;
@@ -5,7 +8,7 @@ export function clamp(n: number, min: number, max: number): number {
 	return n;
 }
 
-type Paddle = { x: number; y: number; w: number; h: number; speed: number };
+/* type Paddle = { x: number; y: number; w: number; h: number; speed: number };
 type Ball = { x: number; y: number; vx: number; vy: number; r: number };
 export type State = {
 	isRunning: boolean;
@@ -34,10 +37,10 @@ export type BackendStateMessage = {
 	winner: "left" | "right" | null;
 	winningScore: number;
 	tick: number;
-};
+}; */
 
 // apply the backend state to the local frontend game state
-export function applyBackendState(state: State, remote: BackendStateMessage): void {
+export function applyBackendState(state: MatchState, remote: BackendStateMessage): void {
 	// update the left paddle's y position
 	state.width = remote.width;
 	state.height = remote.height;

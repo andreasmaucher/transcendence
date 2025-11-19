@@ -36,7 +36,7 @@ export type TournamentMatchInfo = {
 	placementRange: [number, number];
 };
 
-export type MatchType = "local" | "remote";
+export type MatchMode = "local" | "remote";
 
 export type Match = {
 	id: string;
@@ -45,6 +45,6 @@ export type Match = {
 	state: MatchState;
 	inputs: Record<PaddleSide, PaddleInput>;
 	players: { left: string | undefined; right: string | undefined };
-	type: MatchType;
+	mode: MatchMode;
 	clients: Set<WebSocket>;
 };

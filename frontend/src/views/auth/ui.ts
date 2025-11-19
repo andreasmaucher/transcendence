@@ -1,6 +1,9 @@
 // src/views/auth/ui.ts
 import { loginUser, registerUser, fetchMe } from "../../api/http";
 import { navigate } from "../../router/router";
+import { API_BASE } from "../../config/endpoints";
+import { updateTopBar } from "../topbar/ui";
+import { t } from "../../i18n";
 
 type Mode = "login" | "register";
 
@@ -19,7 +22,7 @@ export function renderAuth(container: HTMLElement) {
 
   // Title
   const title = document.createElement("h2");
-  title.textContent = "Welcome";
+  title.textContent = t("auth.welcome");
   title.className = "auth-title";
   card.appendChild(title);
 
@@ -27,8 +30,8 @@ export function renderAuth(container: HTMLElement) {
   const tabs = document.createElement("div");
   tabs.className = "auth-tabs";
   tabs.innerHTML = `
-    <button id="auth-login" class="auth-tab">Login</button>
-    <button id="auth-register" class="auth-tab">Register</button>
+    <button id="auth-login" class="auth-tab">${t("auth.login")}</button>
+    <button id="auth-register" class="auth-tab">${t("auth.register")}</button>
   `;
   card.appendChild(tabs);
 
@@ -45,18 +48,18 @@ export function renderAuth(container: HTMLElement) {
   form.className = "auth-form";
   form.innerHTML = `
     <label class="auth-label">
-      Username
+      ${t("auth.username")}
       <input id="auth-user" class="auth-input" type="text" autocomplete="username"/>
       <div id="auth-user-err" class="auth-field-error"></div>
     </label>
 
     <label class="auth-label">
-      Password
+      ${t("auth.password")}
       <input id="auth-pass" class="auth-input" type="password" autocomplete="current-password"/>
       <div id="auth-pass-err" class="auth-field-error"></div>
     </label>
 
-    <button id="auth-submit" class="auth-submit" type="submit">Login</button>
+    <button id="auth-submit" class="auth-submit" type="submit">${t("auth.login")}</button>
   `;
   card.appendChild(form);
 
@@ -67,6 +70,19 @@ export function renderAuth(container: HTMLElement) {
   const errPass = form.querySelector("#auth-pass-err") as HTMLDivElement;
   const submit = form.querySelector("#auth-submit") as HTMLButtonElement;
 
+  // OAuth: Login with GitHub (redirects to backend OAuth start)
+  const ghBtn = document.createElement("button"); // creates a button element for the GitHub login
+  ghBtn.type = "button"; // no form submission, just a button
+  ghBtn.className = "auth-submit"; // same style as the login button
+  ghBtn.textContent = "Login with GitHub";
+  // when the button is clicked, the follwowing code is run:
+  ghBtn.onclick = () => {
+    // Full-page redirect to start the OAuth flow on the backend
+    location.href = `${API_BASE}/api/auth/github/start`;
+  };
+  // adds the button to the card
+  card.appendChild(ghBtn);
+  // mounts the whole auth screen (root, that already contains card) into the page
   container.appendChild(root);
 
   // ---- Helpers ----
@@ -76,7 +92,7 @@ export function renderAuth(container: HTMLElement) {
     message.textContent = "";
     errUser.textContent = "";
     errPass.textContent = "";
-    submit.textContent = m === "login" ? "Login" : "Register";
+    submit.textContent = m === "login" ? t("auth.login") : t("auth.register");
 
     loginTab.classList.toggle("active", m === "login");
     registerTab.classList.toggle("active", m === "register");
@@ -89,8 +105,8 @@ export function renderAuth(container: HTMLElement) {
   function validate() {
     const errors: { user?: string; pass?: string } = {};
 
-    if (!inputUser.value.trim()) errors.user = "Username required";
-    if (inputPass.value.length < 4) errors.pass = "Password too short";
+    if (!inputUser.value.trim()) errors.user = t("auth.errUsernameRequired");
+    if (inputPass.value.length < 4) errors.pass = t("auth.errPasswordShort");
 
     errUser.textContent = errors.user || "";
     errPass.textContent = errors.pass || "";
@@ -107,7 +123,7 @@ export function renderAuth(container: HTMLElement) {
     e.preventDefault();
 
     if (!validate()) {
-      showError("Please fix the errors.");
+      showError(t("auth.errFixForm"));
       return;
     }
 
@@ -123,13 +139,14 @@ export function renderAuth(container: HTMLElement) {
 
       const me = await fetchMe();
       if (me) {
+        await updateTopBar();
         navigate("#/menu");
         return;
       }
 
-      showError("Authentication failed.");
+      showError(t("auth.errAuthFailed"));
     } catch (err: any) {
-      showError(err?.message || "Error");
+      showError(err?.message || t("auth.errGeneric"));
     } finally {
       submit.disabled = false;
     }

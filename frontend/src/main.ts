@@ -7,7 +7,7 @@ import { renderAuth } from "./views/auth/ui";
 import { renderGame } from "./views/game/ui";
 import { renderProfile } from "./views/profile/ui";
 import { renderTournament } from "./views/tournament/ui";
-
+import { initTopBar } from "./views/topbar/ui";
 
 const app = document.getElementById("app");
 if (!app) {
@@ -15,6 +15,7 @@ if (!app) {
 }
 
 setupInputs();
+initTopBar();
 
 registerRoutes({
   "#/login": renderAuth,

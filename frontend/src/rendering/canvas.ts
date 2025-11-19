@@ -6,6 +6,9 @@ import { ROOM_ID } from "../config/endpoints";
 import { fetchMe } from "../api/http";
 import { State } from "../game/state";
 
+import { t } from "../i18n";
+import { navigate } from "../router/router";
+
 // Draw everything (reads state but does not change it, since there is no game logic here)
 // function takes in a 2D canvas context ctx and the gurrent game State s
 export function draw(ctx: CanvasRenderingContext2D, s: State): void {
@@ -45,9 +48,15 @@ export function draw(ctx: CanvasRenderingContext2D, s: State): void {
 		ctx.fillStyle = "#fbbf24"; // bright yellow for winner text
 		ctx.font = "32px system-ui";
 		ctx.textAlign = "center";
-		const winnerText = s.winner === "left" ? "Left Player Wins!" : "Right Player Wins!";
+
+		// translated winner text
+		const winnerText = s.winner === "left"
+			? t("gameOver.leftWins")
+			: t("gameOver.rightWins");
+
 		ctx.fillText(winnerText, s.width / 2, s.height / 2);
-		ctx.fillText("Refresh to play again", s.width / 2, s.height / 2 + 40);
+		ctx.fillText(t("gameOver.refresh"), s.width / 2, s.height / 2 + 40);
+
 		showSaveMatchPrompt(s, async ({ address, state: gameState }) => {
 			// Build the payload for the smart contract.
 			// NOTE: Contract address/ABI/function are placeholders in config/contract.ts

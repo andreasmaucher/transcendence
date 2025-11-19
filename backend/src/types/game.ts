@@ -18,7 +18,9 @@ export type TournamentState = {
 
 export type Tournament = {
 	id: string;
+	name: string;
 	state: TournamentState;
 	matches: Map<number, Match[]>;
+	clients: Set<WebSocket>;
 	expirationTimer?: NodeJS.Timeout;
 };
