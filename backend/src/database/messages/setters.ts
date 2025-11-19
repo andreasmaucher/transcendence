@@ -4,14 +4,13 @@ import db from "../db_init.js";
 // Create a new message row in the messages table of the database
 export function addMessageDB(message: Message): void {
 	const stmt = db.prepare(`
-		INSERT INTO messages (sender, receiver, type, game_id, content, sent_at)
-		VALUES (?, ?, ?, ?, ?)
-	`);
+        INSERT INTO messages (id, sender, receiver, type, game_id, content, sent_at)
+        VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `);
 
-	const result = stmt.run(message.sender, message.receiver, message.type, message.gameId, message.content);
+	const result = stmt.run(message.id, message.sender, message.receiver, message.type, message.gameId, message.content);
 
 	if (result.changes === 0) throw new Error(`[DB] Failed to add message of type ${message.type} to database`);
-	// If DB run fails, throws error
 	else console.log(`[DB] Added message of type ${message.type} to database`);
 }
 

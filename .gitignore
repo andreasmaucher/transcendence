@@ -34,3 +34,5 @@ Thumbs.db
 .idea/
 
 .vscode
+
+backend/.tmp/

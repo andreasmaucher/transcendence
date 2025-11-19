@@ -1,3 +1,4 @@
+import { sockets } from "../config/constants";
 import { WS_HOST, WS_PORT, WS_PROTOCOL } from "../config/endpoints";
 import { Payload } from "../types/ws_message";
 
@@ -9,6 +10,9 @@ export function connectToUserWS(username: string) {
 	ws.addEventListener("open", () => {
 		console.log("[USER WS] Connected");
 	});
+
+	sockets.user = ws;
+	sockets.username = username;
 
 	ws.addEventListener("message", (event) => {
 		let parsed: Payload;

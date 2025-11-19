@@ -1,15 +1,16 @@
 import { RawData } from "ws";
 import type { FastifyInstance } from "fastify";
 import crypto from "crypto";
-import { buildPayload, buildStatePayload, chatBroadcast } from "./broadcaster.js";
+import { buildPayload } from "./broadcaster.js";
 import { parseCookies, verifySessionToken } from "../auth/session.js";
 import { getOrCreateSingleGame } from "../managers/singleGameManager.js";
 import { getOrCreateTournament, addPlayerToTournament } from "../managers/tournamentManager.js";
 import { addPlayerToMatch, checkMatchFull, forfeitMatch, startMatch } from "../managers/matchManager.js";
 import { Match } from "../types/match.js";
 import { addUserOnline, removeUserOnline } from "../user/online.js";
-import { Message } from "../chat/types.js";
 import { handleSocketMessages } from "./messages.js";
+import { populateMessage } from "../chat/handler.js";
+import { addMessageDB } from "../database/messages/setters.js";
 
 function authenticateWebSocket(request: any, socket: any) {
 	const cookies = parseCookies(request.headers.cookie);
@@ -44,26 +45,26 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 		socket.on("message", (message: RawData) => {
 			// translate binary into string
 			const text = message.toString();
-			
+
 			let payload: any;
 
 			// parses text into JSON and cast it as an ChatINboundMessage
 			try {
-				payload  = JSON.parse(text);
+				payload = JSON.parse(text);
 			} catch {
 				console.error(`[WS] Not able to parse text to JSON`);
 				return;
 			}
 
-			if (!isMessage(payload)) {
+			const parsedMessage = populateMessage(payload);
+
+			/* if (!isMessage(payload)) {
 				console.error(`[WS] Not able to parse JSON to Message`);
 				return;
-			}
+			} */
 
-			const sentAt = Date.now();
-			const id = crypto.randomUUID(); // Move to frontend
-
-			console.log("Message received: ", payload.content);
+			console.log("Message received: ", parsedMessage.content);
+			addMessageDB(parsedMessage);
 
 			/* switch (payload.type) {
 				case "direct": {
@@ -204,9 +205,9 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				default: {
 					console.warn(`[WS] Unsupported chat payload type ${(payload as any).type}`);
 				}*/
-		}); 
+		});
 
-		socket.on('error', (error: any) => {
+		socket.on("error", (error: any) => {
 			console.error(`WebSocket error for ${socket.username} on socket ${socket}:`, error);
 		});
 
@@ -219,9 +220,9 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				body: `User ${socket.username} left`,
 			}); */
 			removeUserOnline(socket.username);
-		});     
+		});
 	});
-	
+
 	// Register/connect to a local single game
 	fastify.get<{ Params: { id: string } }>(
 		"/api/local-single-game/:id/ws",
@@ -356,25 +357,4 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			}
 		}
 	);
-}
-
-function isNonEmptyString(value: unknown): value is string {
-	return typeof value === "string" && value.trim().length > 0;
-}
-
-function isMessage(value: unknown): value is Message {
-  if (!value || typeof value !== "object") 
-		return false;
-  const v = value as Record<string, unknown>;
-  const fields =
-    typeof v.type === "string" &&
-    ["direct","broadcast","invite","tournament","profile-link","block","unblock"].includes(v.type) &&
-    typeof v.id === "string" &&
-    typeof v.sender === "string" &&
-    typeof v.sentAt === "number" &&
-    (v.receiver === undefined || typeof v.receiver === "string") &&
-    (v.content === undefined || typeof v.content === "string") &&
-    (v.gameId === undefined || typeof v.gameId === "string");
-
-  return fields;
 }

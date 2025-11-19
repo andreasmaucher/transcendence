@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { getAllUsersDB } from "../database/users/getters.js";
 import { getAllMatchesDB } from "../database/matches/getters.js";
 import { getAllTournamentsDB } from "../database/tournaments/getters.js";
+import { getAllMessagesDB } from "../database/messages/getters.js";
 
 export default async function testRoutes(fastify: FastifyInstance) {
 	// RETURN all users and PRINT them in backend logs
@@ -37,6 +38,18 @@ export default async function testRoutes(fastify: FastifyInstance) {
 		} catch (error: any) {
 			console.log(error.message);
 			return reply.code(500).send({ success: false, message: "Unable to retrieve tournaments" });
+		}
+	});
+
+	// RETURN all messages and PRINT them in backend logs
+	fastify.get("/api/test/print-messages", async (_request, reply) => {
+		try {
+			const messages = getAllMessagesDB();
+			console.log(messages);
+			return reply.code(200).send({ success: true, data: messages });
+		} catch (error: any) {
+			console.log(error.message);
+			return reply.code(500).send({ success: false, message: "Unable to retrieve messages" });
 		}
 	});
 }

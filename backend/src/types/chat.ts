@@ -1,10 +1,12 @@
 // CHAT RELATED TYPES
 
+export type ChatEvent = "direct" | "broadcast" | "invite" | "tournament" | "profile-link" | "block" | "unblock";
+
 export type Message = {
 	id: string;
 	sender: string;
 	receiver: string | null;
-	type: string;
+	type: ChatEvent;
 	gameId?: string;
 	content?: string;
 	sentAt: string;
