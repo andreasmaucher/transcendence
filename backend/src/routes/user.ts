@@ -1,12 +1,13 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { getAllOnlineUsers, isUserOnline } from "../user/online.js";
 import { getAllUsersDB, getUserByUsernameDB } from "../database/users/getters.js";
-import { clearSessionCookie, parseCookies, verifySessionToken } from "../auth/session.js";
+import { clearSessionCookie } from "../auth/session.js";
+import { authenticateRequest } from "../auth/verify.js";
 
 export default async function userRoutes(fastify: FastifyInstance) {
 	// ROUTES FOR MULTIPLE USERS
 	// GET all users in the database
-	fastify.get("/api/users/all", async (_request, reply) => {
+	fastify.get("/api/users/all", async (_request: FastifyRequest, reply: FastifyReply) => {
 		try {
 			const users = getAllUsersDB();
 			return reply.code(200).send({ success: true, data: users });
@@ -54,20 +55,9 @@ export default async function userRoutes(fastify: FastifyInstance) {
 
 	// RETURN the current logged-in user, based on the session cookie
 	fastify.get("/api/user/me", async (request: FastifyRequest, reply: FastifyReply) => {
-		// Extract cookies from the request header
-		const cookies = parseCookies(request.headers.cookie);
-		const sid = cookies["sid"];
-		if (!sid) {
-			clearSessionCookie(reply);
-			return reply.code(401).send({ success: false, message: "Unauthorized" });
-		}
-
-		// Verify the session token and get the user id
-		const payload = verifySessionToken(sid);
-		if (!payload) {
-			clearSessionCookie(reply);
-			return reply.code(401).send({ success: false, message: "Unauthorized" });
-		}
+		// Check if cookies are valid
+		const payload = authenticateRequest(request, reply);
+		if (!payload) return reply.code(401).send({ success: false, message: "Unauthorized" });
 
 		// Look up the user by username in the database
 		try {

@@ -9,10 +9,11 @@ import {
 	addFriendDB,
 	removeFriendDB,
 } from "../database/users/setters.js";
-import { createSessionToken, makeSessionCookie } from "../auth/session.js";
+import { clearSessionCookie, createSessionToken, makeSessionCookie } from "../auth/session.js";
 import { uploadAvatar } from "../user/cloudinary.js";
 import { DEFAULT_AVATAR_URL } from "../config/constants.js";
 import { getUserOnline, updateUserOnline } from "../user/online.js";
+import { authenticateRequest } from "../auth/verify.js";
 
 export default async function userManagementRoutes(fastify: FastifyInstance) {
 	// ROUTES FOR ONE USER ONLY
@@ -95,22 +96,22 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 		if (user) user.socket.close(1000, "User logged out");
 
 		// Expire the cookie immediately
-		reply.header("Set-Cookie", "sid=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0");
+		clearSessionCookie(reply);
 		return reply.code(200).send({ success: true });
 	});
 
 	// UPDATE user information
 	fastify.post("/api/user/update", async (request: FastifyRequest, reply: FastifyReply) => {
+		// Check if cookies are valid
+		const payload = authenticateRequest(request, reply);
+		if (!payload) return reply.code(401).send({ success: false, message: "Unauthorized" });
+
 		// Read posted update data
-		const { username, newUsername, newPassword, newAvatar } = request.body as {
-			username: string;
+		const { newUsername, newPassword, newAvatar } = request.body as {
 			newUsername?: string;
 			newPassword?: string;
 			newAvatar?: string;
 		};
-
-		// Basic validation: required fields
-		if (!username) return reply.code(400).send({ success: false, message: "Username is required" });
 
 		const updates = [newUsername, newPassword, newAvatar].filter((v) => v !== undefined);
 
@@ -120,9 +121,9 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 			try {
 				if (getUsernameDB(newUsername))
 					return reply.code(409).send({ success: false, message: "Username already in use" });
-				updateUsernameDB(username, newUsername);
+				updateUsernameDB(payload.username, newUsername);
 				updateUserOnline({
-					username: username,
+					username: payload.username,
 					newUsername: newUsername,
 				});
 				return reply.code(200).send({ success: true, message: "Username updated successfully" });
@@ -133,7 +134,7 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 		} else if (newPassword) {
 			try {
 				const hashedPassword = await hashPassword(newPassword);
-				updatePasswordDB(username, hashedPassword);
+				updatePasswordDB(payload.username, hashedPassword);
 				return reply.code(200).send({ success: true, message: "Password updated successfully" });
 			} catch (error: any) {
 				console.log(error.message);
@@ -142,9 +143,9 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 		} else if (newAvatar) {
 			try {
 				const avatarUrl = await uploadAvatar(newAvatar);
-				updateAvatarDB(username, avatarUrl);
+				updateAvatarDB(payload.username, avatarUrl);
 				updateUserOnline({
-					username: username,
+					username: payload.username,
 					newAvatar: newAvatar,
 				});
 				return reply.code(200).send({ success: true, message: "Avatar updated successfully" });
@@ -159,17 +160,17 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 
 	// ADD a friend to the user
 	fastify.post("/api/user/add-friend", async (request: FastifyRequest, reply: FastifyReply) => {
+		// Check if cookies are valid
+		const payload = authenticateRequest(request, reply);
+		if (!payload) return reply.code(401).send({ success: false, message: "Unauthorized" });
+
 		// Read posted update data
-		const { username, friend } = request.body as {
-			username: string;
+		const { friend } = request.body as {
 			friend: string;
 		};
 
-		// Basic validation: required fields
-		if (!username) return reply.code(400).send({ success: false, message: "Username is required" });
-
 		try {
-			addFriendDB(username, friend);
+			addFriendDB(payload.username, friend);
 			return reply.code(200).send({ success: true, message: "Friend added successfully" });
 		} catch (error: any) {
 			console.log(error.message);
@@ -179,19 +180,19 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 
 	// REMOVE a friend from the user
 	fastify.post("/api/user/remove-friend", async (request: FastifyRequest, reply: FastifyReply) => {
+		// Check if cookies are valid
+		const payload = authenticateRequest(request, reply);
+		if (!payload) return reply.code(401).send({ success: false, message: "Unauthorized" });
+
 		// Read posted update data
-		const { username, friend } = request.body as {
-			username: string;
+		const { friend } = request.body as {
 			friend: string;
 		};
 
-		// Basic validation: required fields
-		if (!username) return reply.code(400).send({ success: false, message: "Username is required" });
-
 		try {
-			const friends = getUserFriendsDB(username);
+			const friends = getUserFriendsDB(payload.username);
 			if (friends.includes(friend)) {
-				removeFriendDB(username, friend);
+				removeFriendDB(payload.username, friend);
 				return reply.code(200).send({ success: true, message: "Friend added successfully" });
 			} else reply.code(400).send({ success: false, message: "Friend not present in user friends list" });
 		} catch (error: any) {

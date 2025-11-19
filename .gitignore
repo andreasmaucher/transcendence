@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 
+# Database
+*.sqlite
+
 # Build output (Vite)
 dist/
 

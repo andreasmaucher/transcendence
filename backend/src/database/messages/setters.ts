@@ -4,15 +4,23 @@ import db from "../db_init.js";
 // Create a new message row in the messages table of the database
 export function addMessageDB(message: Message): void {
 	const stmt = db.prepare(`
-		INSERT INTO messages (sender, receiver, type, content, created_at)
-		VALUES (?, ?, ?, ?)
+		INSERT INTO messages (sender, receiver, type, game_id, content, sent_at)
+		VALUES (?, ?, ?, ?, ?)
 	`);
 
-	const result = stmt.run(message.sender, message.receiver, message.type, message.content);
+	const result = stmt.run(message.sender, message.receiver, message.type, message.gameId, message.content);
 
 	if (result.changes === 0) throw new Error(`[DB] Failed to add message of type ${message.type} to database`);
 	// If DB run fails, throws error
 	else console.log(`[DB] Added message of type ${message.type} to database`);
+}
+
+export function removeTournamentMessages(tournamentId: string): void {
+	const stmt = db.prepare("DELETE FROM messages WHERE type = 'tournament' AND game_id = ?");
+	const result = stmt.run(tournamentId);
+	if (result.changes === 0)
+		throw new Error(`[DB] Failed to remove tournament ${tournamentId} messages`); // If DB run fails, throws error
+	else console.log(`[DB] Tournament ${tournamentId} messages removed removed`);
 }
 
 // Remove a message from the database
