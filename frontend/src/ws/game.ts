@@ -4,6 +4,30 @@ import { applyBackendState } from "../game/state";
 import { MatchState } from "../types/game";
 import { Payload } from "../types/ws_message";
 
+// --- UI HANDLER REGISTRY (optional hooks the view can register) ---
+// These functions are called when the backend notifies about lifecycle events.
+// Defaults are no-ops so nothing breaks if the UI hasn't registered handlers yet.
+let onWaiting: () => void = () => {};
+let onCountdown: (n: number, side?: "left" | "right") => void = () => {};
+let onStart: () => void = () => {};
+
+// Call this once from the game view to register UI reactions.
+// Example:
+// registerGameUiHandlers({
+//   onWaiting: () => showWaitingOverlay(),
+//   onCountdown: (n, side) => showCountdownOverlay(n, side),
+//   onStart: () => hideOverlay(),
+// });
+export function registerGameUiHandlers(handlers: {
+	onWaiting?: () => void;
+	onCountdown?: (n: number, side?: "left" | "right") => void;
+	onStart?: () => void;
+}) {
+	if (handlers.onWaiting) onWaiting = handlers.onWaiting;
+	if (handlers.onCountdown) onCountdown = handlers.onCountdown;
+	if (handlers.onStart) onStart = handlers.onStart;
+}
+
 export function connectToLocalSingleGameWS(state: MatchState): () => void {
 	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/local-single-game/${ROOM_ID}/ws`;
 
@@ -48,24 +72,29 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 				break;
 			}
 
-			/* case "waiting":
-				waitingForPlayers();
+			case "waiting": {
+				// notify UI that we are waiting for other player(s)
+				onWaiting();
 				break;
+			}
 
-			case "countdown":
-				countdownToGame(payload.data.value);
+			case "countdown": {
+				// backend sends countdown value (e.g., 3,2,1) and optionally the player's side
+				const n = (payload as any).data?.value as number | undefined;
+				const side = (payload as any).data?.side as "left" | "right" | undefined;
+				onCountdown(n ?? 0, side);
 				break;
+			}
 
-			case "start":
-				startGame();
+			case "start": {
+				// notify UI to hide overlays and let gameplay proceed
+				onStart();
 				break;
-
-			case "chat":
-				addChatMessage(payload.data.from, payload.data.message);
-				break;
+			}
 
 			default:
-				console.warn("Unknown payload", payload); */
+				// ignore unknown payloads to keep client resilient
+				break;
 		}
 	});
 
