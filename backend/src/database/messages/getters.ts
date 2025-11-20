@@ -3,7 +3,7 @@ import db from "../db_init.js";
 // Retrieve all messages from the database
 export function getAllMessagesDB(): any[] {
 	const stmt = db.prepare(`
-        SELECT internal_id, id, sender, receiver, type, content, sent_at
+        SELECT *
         FROM messages
         ORDER BY sent_at DESC
     `);
