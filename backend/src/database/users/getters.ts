@@ -29,7 +29,7 @@ export function getUserByUsernameDB(username: string): any {
 }
 
 // Check if the username is already present in the database (if present)
-export function getUsernameDB(username: string): boolean {
+export function isUsernameDB(username: string): boolean {
 	const stmt = db.prepare(`
 		SELECT 1
 		FROM users

@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { getUserByUsernameDB, getUserFriendsDB, getUsernameDB } from "../database/users/getters.js";
+import { getUserByUsernameDB, getUserFriendsDB, isUsernameDB } from "../database/users/getters.js";
 import { verifyPassword, hashPassword } from "../user/password.js";
 import {
 	registerUserDB,
@@ -21,7 +21,7 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 	fastify.get("/api/user/check/:username", async (request: FastifyRequest, reply: FastifyReply) => {
 		const { username } = request.params as { username: string };
 
-		const exists = getUsernameDB(username);
+		const exists = isUsernameDB(username);
 		return reply.code(200).send({ success: true, exists });
 	});
 
@@ -39,7 +39,7 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 			return reply.code(400).send({ success: false, message: "Username and password are required" });
 
 		// Duplicate username check (clear message for users)
-		if (getUsernameDB(username)) return reply.code(409).send({ success: false, message: "Username already taken" });
+		if (isUsernameDB(username)) return reply.code(409).send({ success: false, message: "Username already taken" });
 
 		try {
 			// Store default avatar if not provided
@@ -119,7 +119,7 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 
 		if (newUsername) {
 			try {
-				if (getUsernameDB(newUsername))
+				if (isUsernameDB(newUsername))
 					return reply.code(409).send({ success: false, message: "Username already in use" });
 				updateUsernameDB(payload.username, newUsername);
 				updateUserOnline({
