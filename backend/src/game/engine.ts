@@ -4,7 +4,6 @@ import { clamp, resetBall } from "./state.js";
 import { updateMatchDB } from "../database/matches/setters.js";
 import { endMatch } from "../managers/matchManager.js";
 import { Match } from "../types/match.js";
-import { broadcast, buildPayload } from "../transport/broadcaster.js";
 
 export function isGameOver(match: Match): void {
 	const state = match.state;

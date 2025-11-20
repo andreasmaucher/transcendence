@@ -76,7 +76,6 @@ export function resetMatchState(match: Match) {
 	};
 	match.inputs = { left: 0, right: 0 };
 	console.log(`[game] match=${match.id} reset`);
-	//broadcast(match);
 	broadcast(buildPayload("state", match.state), match);
 }
 

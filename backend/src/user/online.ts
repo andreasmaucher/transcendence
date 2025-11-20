@@ -20,8 +20,8 @@ export function addUserOnline(username: string, socket: WebSocket): User | undef
 			avatar: userDB.avatar,
 			userWS: socket,
 			isAlive: true,
-			friends: JSON.parse(userDB.friends),
-			blocked: JSON.parse(userDB.blocked),
+			//friends: JSON.parse(userDB.friends),
+			//blocked: JSON.parse(userDB.blocked),
 			createdAt: userDB.created_at,
 		};
 

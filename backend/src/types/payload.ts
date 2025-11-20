@@ -1,3 +1,5 @@
+// PAYLOAD RELATED TYPES
+
 import { Message } from "./chat.js";
 import { MatchState } from "./match.js";
 

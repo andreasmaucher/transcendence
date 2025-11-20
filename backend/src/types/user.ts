@@ -11,8 +11,8 @@ export type User = {
 	isAlive: boolean;
 	gameWS?: WebSocket;
 	gameId?: string;
-	blocked: User[];
-	friends: User[];
+	//blocked: User[];
+	//friends: User[];
 	//stats: string | null;
 	createdAt: string;
 };
