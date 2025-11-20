@@ -2,9 +2,9 @@ export type ChatEvent = "direct" | "broadcast" | "invite" | "tournament" | "prof
 
 export type Message = {
 	type: ChatEvent;
-	id: string;
+	id?: string;
 	sender: string;
-	sentAt: string | undefined;
+	sentAt?: string;
 	receiver?: string;
 	content?: string;
 	gameId?: string;

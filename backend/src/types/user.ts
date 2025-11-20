@@ -5,15 +5,16 @@ import type WebSocket from "ws";
 export type User = {
 	username: string;
 	provider: string;
-	provider_id: string;
+	providerId?: string;
 	avatar: string;
-	socket: WebSocket;
+	userWS: WebSocket;
 	isAlive: boolean;
-	game?: WebSocket | undefined;
-	blockedUsers?: Set<string>;
-	//friends: User[];
+	gameWS?: WebSocket;
+	gameId?: string;
+	blocked: User[];
+	friends: User[];
 	//stats: string | null;
-	created_at?: string;
+	createdAt: string;
 };
 
 // This is the data that is put inside the token.

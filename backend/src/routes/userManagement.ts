@@ -93,7 +93,7 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 		};
 		const user = getUserOnline(username);
 		// Close user websocket connection
-		if (user) user.socket.close(1000, "User logged out");
+		if (user) user.userWS.close(1000, "User logged out");
 
 		// Expire the cookie immediately
 		clearSessionCookie(reply);

@@ -13,19 +13,40 @@ export function isUserOnline(username: string): boolean {
 export function addUserOnline(username: string, socket: WebSocket): User | undefined {
 	const userDB = getUserByUsernameDB(username);
 	if (userDB && !isUserOnline(userDB.username)) {
-		const user = {
+		const user: User = {
 			username: userDB.username,
 			provider: userDB.provider,
-			provider_id: userDB.provider_id,
+			providerId: userDB.provider_id,
 			avatar: userDB.avatar,
-			socket: socket,
+			userWS: socket,
 			isAlive: true,
-		} as User;
+			friends: JSON.parse(userDB.friends),
+			blocked: JSON.parse(userDB.blocked),
+			createdAt: userDB.created_at,
+		};
 
 		usersOnline.set(user.username, user);
 		console.log(`User ${user.username} is now online`);
 		return user;
 	} else return undefined;
+}
+
+// Add the game socket and the game id to the userOnline structure
+export function addGameToUser(username: string, gameWS: WebSocket, gameId: string) {
+	const user = getUserOnline(username);
+	if (user) {
+		user.gameWS = gameWS;
+		user.gameId = gameId;
+	}
+}
+
+// Remove the game socket and the game id from the userOnline structure
+export function removeGameFromUser(username: string): void {
+	const user = getUserOnline(username);
+	if (user) {
+		user.gameWS = undefined;
+		user.gameId = undefined;
+	}
 }
 
 // Update information (username and avatar) stored in the usersOnline map structure

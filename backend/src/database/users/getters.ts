@@ -3,7 +3,7 @@ import db from "../db_init.js";
 // Retrieve all users from the database
 export function getAllUsersDB(): any[] {
 	const stmt = db.prepare(`
-    SELECT internal_id, username, avatar, provider, provider_id, friends, stats, created_at
+    SELECT *
     FROM users
     ORDER BY internal_id ASC
   `);
@@ -51,4 +51,19 @@ export function getUserFriendsDB(username: string): string[] {
 	const friends: string[] = JSON.parse(result.friends);
 
 	return friends;
+}
+
+//OAUTH
+// Retrieve the username of a GithubUser
+export function getGithubUserByProviderIdDB(providerId: string): string | undefined {
+	const stmt = db.prepare(`
+		SELECT username
+		FROM users
+		WHERE provider = 'github' AND provider_id = ?
+		LIMIT 1
+	`);
+
+	const result: any = stmt.get(providerId);
+
+	return result ? result.username : undefined;
 }

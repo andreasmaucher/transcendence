@@ -1,4 +1,4 @@
-import { FastifyInstance } from "fastify";
+import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { getAllUsersDB } from "../database/users/getters.js";
 import { getAllMatchesDB } from "../database/matches/getters.js";
 import { getAllTournamentsDB } from "../database/tournaments/getters.js";
@@ -6,7 +6,7 @@ import { getAllMessagesDB } from "../database/messages/getters.js";
 
 export default async function testRoutes(fastify: FastifyInstance) {
 	// RETURN all users and PRINT them in backend logs
-	fastify.get("/api/test/print-users", async (_request, reply) => {
+	fastify.get("/api/test/print-users", async (_request: FastifyRequest, reply: FastifyReply) => {
 		try {
 			const users = getAllUsersDB();
 			console.log(users);
@@ -18,7 +18,7 @@ export default async function testRoutes(fastify: FastifyInstance) {
 	});
 
 	// RETURN all matches and PRINT them in backend logs
-	fastify.get("/api/test/print-matches", async (_request, reply) => {
+	fastify.get("/api/test/print-matches", async (_request: FastifyRequest, reply: FastifyReply) => {
 		try {
 			const matches = getAllMatchesDB();
 			console.log(matches);
@@ -30,7 +30,7 @@ export default async function testRoutes(fastify: FastifyInstance) {
 	});
 
 	// RETURN all tournaments and PRINT them in backend logs
-	fastify.get("/api/test/print-tournaments", async (_request, reply) => {
+	fastify.get("/api/test/print-tournaments", async (_request: FastifyRequest, reply: FastifyReply) => {
 		try {
 			const tournaments = getAllTournamentsDB();
 			console.log(tournaments);
@@ -42,7 +42,7 @@ export default async function testRoutes(fastify: FastifyInstance) {
 	});
 
 	// RETURN all messages and PRINT them in backend logs
-	fastify.get("/api/test/print-messages", async (_request, reply) => {
+	fastify.get("/api/test/print-messages", async (_request: FastifyRequest, reply: FastifyReply) => {
 		try {
 			const messages = getAllMessagesDB();
 			console.log(messages);

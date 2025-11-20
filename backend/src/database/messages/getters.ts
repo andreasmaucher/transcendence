@@ -16,11 +16,11 @@ export function getAllGlobalMessagesDB(): any[] {
 	const stmt = db.prepare(`
         SELECT *
         FROM messages
-        WHERE receiver IS NULL
+        WHERE type = ?
         ORDER BY sent_at DESC
     `);
 
-	return stmt.all(); // returns empty array if no messages found
+	return stmt.all("broadcast"); // returns empty array if no messages found
 }
 
 // Retrieve the messages where the user is either the sender (and the receiver is not null) or the receiver

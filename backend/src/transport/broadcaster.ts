@@ -1,39 +1,15 @@
 import type { WebSocket } from "ws";
 import { Match } from "../types/match.js";
-import { removeUserOnline } from "../user/online.js";
-import { usersOnline } from "../config/structures.js";
-import {
-	ChatEvent,
-	//InviteChatMessage,
-	//DirectChatMessage,
-	//ProfileLinkMessage,
-	//BroadcastChatMessage,
-} from "../chat/types.js";
 import { Payload, PayloadDataTypes, PayloadTypes } from "../types/payload.js";
+import { Message } from "../types/chat.js";
+import { usersOnline } from "../config/structures.js";
+import { removeUserOnline } from "../user/online.js";
+import { User } from "../types/user.js";
 
 // Create and stringify the Payload for the WebSocket
 export function buildPayload(type: PayloadTypes, data: PayloadDataTypes): string {
 	const payload = { type, data } as Payload;
 	return JSON.stringify(payload);
-}
-
-export function chatBroadcast(event: ChatEvent, sender: WebSocket | null = null) {
-	const payload = JSON.stringify(event);
-
-	usersOnline.forEach((user) => {
-		const ws = user.socket;
-
-		//if (!shouldDeliverEvent(event, user, sender)) return;
-
-		if (ws.readyState === ws.OPEN) {
-			try {
-				ws.send(payload);
-			} catch (error) {
-				console.error("Broadcast error:", error);
-				removeUserOnline(user.username);
-			}
-		}
-	});
 }
 
 // Send the payload to all the clients in the match
@@ -56,27 +32,29 @@ export function broadcast(payload: string, match: Match): void {
 	}
 }
 
-/* function shouldDeliverEvent(event: ChatEvent, user: User, sender: WebSocket | null): boolean {
-	if (sender && user.socket === sender) return false;
-
-	if (eventHasSender(event) && user.blockedUsers?.has(event.from)) return false;
-
-	switch (event.type) {
-		case "direct":
-		case "invite":
-		case "profile-link":
-			return user.username === event.to;
-		case "tournament":
-			return event.opponents.includes(user.username);
-		case "broadcast":
-		default:
-			return true;
-	}
-} */
-
-/* function eventHasSender(
-	event: ChatEvent
-): event is DirectChatMessage | BroadcastChatMessage | InviteChatMessage | ProfileLinkMessage {
-	return event.type !== "tournament";
+export function shouldSendMessage(message: Message, user: User): boolean {
+	if (message.sender == user.username) return true;
+	else if (message.receiver == user.username) return true;
+	else if (message.type == "broadcast") return true;
+	else if (message.type == "tournament" && user.gameId && user.gameId == message.gameId) return true;
+	else return false;
 }
- */
+
+export function chatBroadcast(message: Message): void {
+	usersOnline.forEach((user) => {
+		const ws = user.userWS;
+
+		if (ws.readyState === ws.OPEN) {
+			if (shouldSendMessage(message, user)) {
+				try {
+					ws.send(buildPayload("chat", message));
+				} catch {
+					try {
+						removeUserOnline(user.username);
+						ws.close();
+					} catch {}
+				}
+			}
+		}
+	});
+}

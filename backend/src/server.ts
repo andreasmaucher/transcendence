@@ -120,7 +120,7 @@ setInterval(() => {
 setInterval(() => {
 	// Loop through all the online users
 	for (const [username, user] of usersOnline.entries()) {
-		const socket = user.socket as WebSocket;
+		const socket: WebSocket = user.userWS;
 
 		// If socket is already not alive terminates it
 		if (user.isAlive === false) {
