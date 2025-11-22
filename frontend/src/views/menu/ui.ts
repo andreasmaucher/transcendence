@@ -71,7 +71,7 @@ export function renderMenu(container: HTMLElement) {
 
     const onlineBtn = document.createElement("button");
     onlineBtn.textContent = t("menu.onlineMatch");
-    onlineBtn.onclick = () => navigate("#/game?mode=online");
+    onlineBtn.onclick = () => navigate("#/online");
 
     box.append(localBtn, onlineBtn);
     showSubmenu(box, playBtn);

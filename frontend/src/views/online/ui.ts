@@ -12,14 +12,18 @@ export function renderOnlineLobby(container: HTMLElement) {
   title.textContent = "Online Games";
   root.append(title);
 
+  const backBtn = document.createElement("button");
+  backBtn.textContent = "Back";
+  backBtn.onclick = () => navigate("#/menu");
+  root.append(backBtn);
+
   const createBtn = document.createElement("button");
   createBtn.textContent = "Create New Game";
   root.append(createBtn);
 
   createBtn.onclick = () => {
-    console.log("TODO: create new online game");
-    const tempId = "new";
-    navigate(`#/game?mode=online&id=${tempId}`);
+    alert("Creating room…");
+    console.log("TODO: create new online game via backend + open WS");
   };
 
   const list = document.createElement("div");
@@ -72,15 +76,13 @@ export function renderOnlineLobby(container: HTMLElement) {
   refreshList(list);
   const interval = setInterval(() => refreshList(list), 2000);
 
-    function setupLobbySocket() {
+  function setupLobbySocket() {
     console.log("Lobby WS: TODO");
-    }
+  }
 
-    setupLobbySocket();
+  setupLobbySocket();
 
   return () => {
     clearInterval(interval);
   };
 }
-
-
