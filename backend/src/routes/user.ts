@@ -61,7 +61,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 
 		// Look up the user by username in the database
 		try {
-			const user = getJsonUserByUsernameDB(payload.username);
+			const user = getUserByUsernameDB(payload.username);
 			// Return only safe fields to the frontend (omit password, provider secrets, etc.)
 			const safeUser = {
 				id: user.internal_id,

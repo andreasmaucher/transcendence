@@ -8,6 +8,7 @@ import { renderGame } from "./views/game/ui";
 import { renderProfile } from "./views/profile/ui";
 import { renderTournament } from "./views/tournament/ui";
 import { initTopBar } from "./views/topbar/ui";
+import { renderOnlineLobby } from "./views/online/ui";
 
 const app = document.getElementById("app");
 if (!app) {
@@ -23,6 +24,7 @@ registerRoutes({
   "#/game": renderGame,
   "#/profile": renderProfile,
   "#/tournament": renderTournament,
+  "#/online": renderOnlineLobby,
 });
 
 startRouter(app);
