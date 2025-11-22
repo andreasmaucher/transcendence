@@ -72,7 +72,15 @@ export function renderOnlineLobby(container: HTMLElement) {
   refreshList(list);
   const interval = setInterval(() => refreshList(list), 2000);
 
+    function setupLobbySocket() {
+    console.log("Lobby WS: TODO");
+    }
+
+    setupLobbySocket();
+
   return () => {
     clearInterval(interval);
   };
 }
+
+
