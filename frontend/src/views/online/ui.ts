@@ -16,6 +16,12 @@ export function renderOnlineLobby(container: HTMLElement) {
   createBtn.textContent = "Create New Game";
   root.append(createBtn);
 
+  createBtn.onclick = () => {
+    console.log("TODO: create new online game");
+    const tempId = "new";
+    navigate(`#/game?mode=online&id=${tempId}`);
+  };
+
   const list = document.createElement("div");
   list.id = "online-game-list";
   root.append(list);
@@ -44,7 +50,20 @@ export function renderOnlineLobby(container: HTMLElement) {
 
       for (const g of games) {
         const row = document.createElement("div");
-        row.textContent = `Game #${g.id} — Creator: ${g.player1}`;
+
+        const label = document.createElement("span");
+        label.textContent = `Game #${g.id}`;
+
+        const owner = document.createElement("span");
+        owner.textContent = `Creator: ${g.player1}`;
+
+        const joinBtn = document.createElement("button");
+        joinBtn.textContent = "Join";
+        joinBtn.onclick = () => {
+          navigate(`#/game?mode=online&id=${g.id}`);
+        };
+
+        row.append(label, owner, joinBtn);
         listEl.append(row);
       }
     });
