@@ -22,6 +22,9 @@ export function addUserOnline(username: string, socket: WebSocket): User | undef
 			isAlive: true,
 		} as User;
 
+		if (usersOnline.has(user.username)) {
+			console.log("USER ALREADY ONLINE → will disconnect previous socket");
+		}
 		usersOnline.set(user.username, user);
 		console.log(`User ${user.username} is now online`);
 		return user;

@@ -1,16 +1,19 @@
 import { RawData } from "ws";
 import type { FastifyInstance } from "fastify";
 import crypto from "crypto";
-import { buildPayload } from "./broadcaster.js";
+import { buildPayload, chatBroadcast } from "./broadcaster.js";
 import { parseCookies, verifySessionToken } from "../auth/session.js";
 import { getOrCreateSingleGame } from "../managers/singleGameManager.js";
 import { getOrCreateTournament, addPlayerToTournament } from "../managers/tournamentManager.js";
 import { addPlayerToMatch, checkMatchFull, forfeitMatch, startMatch } from "../managers/matchManager.js";
 import { Match } from "../types/match.js";
-import { addUserOnline, removeUserOnline } from "../user/online.js";
+import { addUserOnline, getAllOnlineUsers, removeUserOnline } from "../user/online.js";
 import { handleSocketMessages } from "./messages.js";
-import { populateMessage } from "../chat/handler.js";
+import { populateMessage, isNonEmptyString, getOnlineUserList } from "../chat/handler.js";
 import { addMessageDB } from "../database/messages/setters.js";
+import { Message } from "../types/chat.js";
+import { User } from "../types/user.js";
+
 
 function authenticateWebSocket(request: any, socket: any) {
 	const cookies = parseCookies(request.headers.cookie);
@@ -37,10 +40,24 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			socket.close(1011, "User not in database");
 			return;
 		}
+
+		// Send ChatHistory with Timeout
+		setTimeout(() => {
+			socket.send(JSON.stringify(populateMessage({
+				type: "init",
+				sender: socket.username
+			})));
+			chatBroadcast(populateMessage({type: "onlineUser"}));
+	 	}, 20);
+
 		// Client responds to ping with pong automatically
 		socket.on("pong", () => {
 			user.isAlive = true;
 		});
+
+		// Adds the User to the OnlineList
+		chatBroadcast(populateMessage({type: "onlineUser"}));
+
 		// listener for #message gets the rawData
 		socket.on("message", (message: RawData) => {
 			// translate binary into string
@@ -57,60 +74,41 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			}
 
 			const parsedMessage = populateMessage(payload);
-
-			/* if (!isMessage(payload)) {
-				console.error(`[WS] Not able to parse JSON to Message`);
-				return;
-			} */
-
-			console.log("Message received: ", parsedMessage.content);
 			addMessageDB(parsedMessage);
 
-			/* switch (payload.type) {
+			console.log("Message received: ", parsedMessage.content);
+			
+			switch (parsedMessage.type) {
 				case "direct": {
-					if (!isNonEmptyString(payload.receiver) || !isNonEmptyString(payload.content)) {
-						console.error(`[WS] Invalid direct message payload from ${socket.username}`);
+					if (!isNonEmptyString(parsedMessage.receiver) || !isNonEmptyString(parsedMessage.content)) {
+						console.error(`[WS] Invalid direct message from ${socket.username}`);
 						return;
 					}
-					console.log("Message received: ", payload.content);
 					chatBroadcast(
-						{
-							type: payload.type,
-							id: id,
-							sentAt: sentAt,
-							from: payload.sender,
-							to: payload.receiver,
-							body,
-						},
+						parsedMessage,
 						socket
 					);
 					break;
 				}
 				case "broadcast": {
-					if (!isNonEmptyString(payload.content)) {
+					if (!isNonEmptyString(parsedMessage.content)) {
 						console.error(`[WS] Empty broadcast from ${socket.username} ignored`);
 						return;
 					}
 					chatBroadcast(
-						{
-							type,
-							id: id,
-							sentAt: sentAt,
-							sender,
-							content
-						},
+						parsedMessage,
 						socket
 					);
 					break;
-				}
+				}/*
 				case "invite": {
-					if (!isNonEmptyString(payload.receiver) || !isNonEmptyString(payload.gameId)) {
+					if (!isNonEmptyString(parsedMessage.receiver) || !isNonEmptyString(parsedMessage.gameId)) {
 						console.error(`[WS] Invalid invite payload from ${socket.username}`);
 						return;
 					}
 					const inviteMessage =
-						typeof payload.content === "string" && payload.content.trim().length
-							? payload.content.trim()
+						typeof parsedMessage.content === "string" && parsedMessage.content.trim().length
+							? parsedMessage.content.trim()
 							: undefined;
 					chatBroadcast(
 						{
@@ -127,29 +125,29 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 					break;
 				}
 				case "profile-link": {
-					if (!isNonEmptyString(payload.receiver) || !isNonEmptyString(payload.content)) {
+					if (!isNonEmptyString(parsedMessage.receiver) || !isNonEmptyString(parsedMessage.content)) {
 						console.error(`[WS] Invalid profile-link payload from ${socket.username}`);
 						return;
 					}
 					chatBroadcast(
 						{
-							type: payload.type,
+							type: parsedMessage.type,
 							id: id,
 							sentAt: sentAt,
 							from: socket.username,
-							to: payload.receiver.trim(),
-							targetProfile: payload.content.trim(),
+							to: parsedMessage.receiver.trim(),
+							targetProfile: parsedMessage.content.trim(),
 						},
 						socket
 					);
 					break;
 				}
 				case "block": {
-					if (!isNonEmptyString(payload.username)) {
+					if (!isNonEmptyString(parsedMessage.username)) {
 						console.error(`[WS] Invalid block payload from ${socket.username}`);
 						return;
 					}
-					if (payload.username.trim() === socket.username) {
+					if (parsedMessage.username.trim() === socket.username) {
 						console.error("Block event: cannot block yourself");
 						return;
 					}
@@ -158,24 +156,24 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 					}
 					chatBroadcast(
 						{
-							type: payload.type,
+							type: parsedMessage.type,
 							id: id,
 							sentAt: sentAt,
 							from: socket.username,
-							username: payload.username.trim(),
+							username: parsedMessage.username.trim(),
 						},
 						socket
 					);
 					try {
-						user.blockedUsers.add(payload.username);
-						console.log(`${socket.username} blocked ${payload.username}`);
+						user.blockedUsers.add(parsedMessage.username);
+						console.log(`${socket.username} blocked ${parsedMessage.username}`);
 					} catch (error) {
 						console.error(`WebSocket BLOCK error for ${socket.username} on socket ${socket}:`, error);
 					}
 					break;
 				}
 				case "unblock": {
-					if (!isNonEmptyString(payload.username)) {
+					if (!isNonEmptyString(parsedMessage.username)) {
 						console.error(`[WS] Invalid block payload from ${socket.username}`);
 						return;
 					}
@@ -184,27 +182,28 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 					}
 					chatBroadcast(
 						{
-							type: payload.type,
+							type: parsedMessage.type,
 							id: id,
 							sentAt: sentAt,
 							from: socket.username,
-							username: payload.username.trim(),
+							username: parsedMessage.username.trim(),
 						},
 						socket
 					);
 					try {
-						if (user.blockedUsers.has(payload.username)) {
-							user.blockedUsers.delete(payload.username);
-							console.log(`${socket.username} unblocked ${payload.username}`);
+						if (user.blockedUsers.has(parsedMessage.username)) {
+							user.blockedUsers.delete(parsedMessage.username);
+							console.log(`${socket.username} unblocked ${parsedMessage.username}`);
 						}
 					} catch (error) {
 						console.error(`WebSocket UNBLOCK error for ${socket.username} on socket ${socket}:`, error);
 					}
 					break;
-				}
-				default: {
-					console.warn(`[WS] Unsupported chat payload type ${(payload as any).type}`);
 				}*/
+				default: {
+					console.warn(`[WS] Unsupported chat payload type ${(parsedMessage as any).type}`);
+				}
+			}
 		});
 
 		socket.on("error", (error: any) => {
@@ -212,14 +211,8 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 		});
 
 		socket.on("close", () => {
-			/* chatBroadcast({
-				type: "broadcast",
-				id: crypto.randomUUID(),
-				sentAt: Date.now(),
-				from: "system",
-				body: `User ${socket.username} left`,
-			}); */
 			removeUserOnline(socket.username);
+			chatBroadcast(populateMessage({type: "onlineUser"}));
 		});
 	});
 

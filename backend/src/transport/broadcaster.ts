@@ -2,13 +2,7 @@ import type { WebSocket } from "ws";
 import { Match } from "../types/match.js";
 import { removeUserOnline } from "../user/online.js";
 import { usersOnline } from "../config/structures.js";
-import {
-	ChatEvent,
-	//InviteChatMessage,
-	//DirectChatMessage,
-	//ProfileLinkMessage,
-	//BroadcastChatMessage,
-} from "../chat/types.js";
+import { Message } from "../types/chat.js"; // Codex change: broadcast using stored message shape
 import { Payload, PayloadDataTypes, PayloadTypes } from "../types/payload.js";
 
 // Create and stringify the Payload for the WebSocket
@@ -17,13 +11,11 @@ export function buildPayload(type: PayloadTypes, data: PayloadDataTypes): string
 	return JSON.stringify(payload);
 }
 
-export function chatBroadcast(event: ChatEvent, sender: WebSocket | null = null) {
+export function chatBroadcast(event: Message, sender: WebSocket | null = null) {
 	const payload = JSON.stringify(event);
 
 	usersOnline.forEach((user) => {
 		const ws = user.socket;
-
-		//if (!shouldDeliverEvent(event, user, sender)) return;
 
 		if (ws.readyState === ws.OPEN) {
 			try {
@@ -55,28 +47,3 @@ export function broadcast(payload: string, match: Match): void {
 		}
 	}
 }
-
-/* function shouldDeliverEvent(event: ChatEvent, user: User, sender: WebSocket | null): boolean {
-	if (sender && user.socket === sender) return false;
-
-	if (eventHasSender(event) && user.blockedUsers?.has(event.from)) return false;
-
-	switch (event.type) {
-		case "direct":
-		case "invite":
-		case "profile-link":
-			return user.username === event.to;
-		case "tournament":
-			return event.opponents.includes(user.username);
-		case "broadcast":
-		default:
-			return true;
-	}
-} */
-
-/* function eventHasSender(
-	event: ChatEvent
-): event is DirectChatMessage | BroadcastChatMessage | InviteChatMessage | ProfileLinkMessage {
-	return event.type !== "tournament";
-}
- */

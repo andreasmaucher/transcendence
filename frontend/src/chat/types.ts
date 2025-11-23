@@ -1,4 +1,13 @@
-export type ChatEvent = "direct" | "broadcast" | "invite" | "tournament" | "profile-link" | "block" | "unblock";
+export type ChatEvent = "direct" 
+| "broadcast" 
+| "invite" 
+| "tournament" 
+| "profile-link" 
+| "block" 
+| "unblock"
+| "onlineUser"
+| "init"
+| "requestInit";
 
 export type Message = {
 	type: ChatEvent;
@@ -9,4 +18,13 @@ export type Message = {
 	content?: string;
 	gameId?: string;
 	username?: string;
+	onlineUser?: string[];
+	chatHistory?: chatHistory;
+};
+
+export type chatHistory = {
+	user: string;
+	global: Message[];
+	private: Map<string, Message[]>;
+	tournament: Message[];
 };

@@ -1,23 +1,42 @@
 import { Message } from "../types/chat.js";
+import { getAllOnlineUsers } from "../user/online.js";
+import { buildChatHistory } from "./history.js";
 
-export function populateMessage(payload: any) {
+export function populateMessage(
+	payload: Partial<Message>) : Message {
+	const sentAt = new Date().toISOString();
 	const message: Message = {
-		id: payload.id,
-		sender: payload.sender,
-		receiver: payload.receiver,
-		type: payload.type,
-		content: payload.content,
-		gameId: payload.gameId,
-		sentAt: payload.sentAt,
+		id: payload.id ?? crypto.randomUUID(),
+		sender: payload.sender ?? "system",
+		receiver: payload.receiver ?? null,
+		type: payload.type ?? "broadcast",
+		content: payload.content ?? "",
+		gameId: payload.gameId ?? undefined,
+		sentAt: sentAt,
+		onlineUser: payload.type === "onlineUser" ? getOnlineUserList() : undefined,
+		chatHistory: payload.type === "init" && payload.sender ? buildChatHistory(payload.sender) : undefined
 	};
 	return message;
 }
 
-function isNonEmptyString(value: unknown): value is string {
+export function isNonEmptyString(value: unknown): value is string {
 	return typeof value === "string" && value.trim().length > 0;
 }
 
-function isMessage(value: unknown): value is Message {
+export function getOnlineUserList(sender: WebSocket | null = null): string[] {
+	const onlineUsers = getAllOnlineUsers();
+	let onlineUserList: string[] = [];
+
+	onlineUsers.forEach((user) => {
+		//if (!sender || sender.username !== user.username)
+		onlineUserList.push(user.username);
+	});
+	console.log("Online users:", onlineUserList);
+
+	return onlineUserList;
+}
+
+/*function isMessage(value: unknown): value is Message {
 	if (!value || typeof value !== "object") return false;
 	const v = value as Record<string, unknown>;
 	const fields =
@@ -31,4 +50,4 @@ function isMessage(value: unknown): value is Message {
 		(v.gameId === undefined || typeof v.gameId === "string");
 
 	return fields;
-}
+}*/
