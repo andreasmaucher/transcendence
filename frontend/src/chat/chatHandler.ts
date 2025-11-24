@@ -1,5 +1,5 @@
 import { sockets } from "../config/constants";
-import { ChatEvent, chatHistory, Message } from "./types";
+import { ChatEvent, chatHistory, chatType, Message } from "./types";
 
 export function sendMessage(
 	type: ChatEvent, 
@@ -44,8 +44,11 @@ export function setupPrivateChathistory(
 	chatHistory: chatHistory, 
 	username: string
 ) : Message[] {
-	if (!chatHistory.private.has(username))
+	debugPrintGlobalHistory(chatHistory);
+	if (!chatHistory.private.has(username)) {
 		chatHistory.private.set(username, []);
+		console.log("I have no private Chat");
+	}
 	return chatHistory.private.get(username)!;
 }
 
@@ -55,35 +58,83 @@ export function renderOnlineUsers(
 	chatHeader: HTMLElement,
 	activePrivateChat: {current: string | null}, 
 	usersOnline: string[],
-	chatHistory: chatHistory) {
-
+	chatHistory: chatHistory,
+	message: Message
+	) {
 	friendList.innerHTML = "";
 	usersOnline.forEach((username) => {
-		const item = document.createElement("div");
-		item.textContent = username;
-		item.style.padding = "6px 8px";
-		item.style.marginBottom = "6px";
-		item.style.background = "rgba(255,255,255,0.08)";
-		item.style.borderRadius = "4px";
-		item.style.cursor = "pointer";
-		item.classList.add("online-user");
+
+		// create a container
+		const wrapper = document.createElement("div");
+		wrapper.style.display = "flex";
+		wrapper.style.flexDirection = "column";
+		wrapper.style.marginBottom = "10px";
+
+		const userItem = document.createElement("div");
+		userItem.textContent = username;
+		userItem.style.padding = "6px 8px";
+		userItem.style.marginBottom = "6px";
+		userItem.style.background = "rgba(255,255,255,0.08)";
+		userItem.style.borderRadius = "4px";
+		userItem.style.cursor = "pointer";
+		userItem.classList.add("online-user");
 		
-		item.onclick = () => {
+		// Create Friendslist
+		userItem.onclick = () => {
 			if (username === "Global Chat") {
-				activePrivateChat.current = null;
+				activePrivateChat.current = "global";
 				chatHeader.textContent = `Global Chat`;
-				chatMessages.innerHTML = "";
-				const history = chatHistory.global;
-				history.forEach((m) => renderIncomingMessage(m, chatMessages));
 			} else {
 				activePrivateChat.current = username;
 				chatHeader.textContent = `Live_Chat with ${username}`;
-				chatMessages.innerHTML = "";
-				const history = setupPrivateChathistory(chatHistory, username);
-				history.forEach((m) => renderIncomingMessage(m, chatMessages));
 			}
+			chatMessages.innerHTML = "";
+			populateChatWindow(chatHistory, chatMessages, username, activePrivateChat!);
+		};
+
+		// Create Buttons for Friendlist
+		if (username !== "Global Chat") {
+			const btnRow = document.createElement("div");
+			btnRow.style.display = "flex";
+			btnRow.style.gap = "4px";
+
+			// --- Button 1 ---
+			const btn1 = document.createElement("button");
+			btn1.textContent = "A";
+			btn1.style.padding = "2px 6px";
+			btn1.style.fontSize = "10px";
+			btn1.onclick = (e) => {
+				e.stopPropagation();
+				console.log("Button A clicked for", username);
+			};
+
+			// --- Button 2 ---
+			const btn2 = document.createElement("button");
+			btn2.textContent = "B";
+			btn2.style.padding = "2px 6px";
+			btn2.style.fontSize = "10px";
+			btn2.onclick = (e) => {
+				e.stopPropagation();
+				console.log("Button B clicked for", username);
+			};
+
+			// --- Button 3 ---
+			const btn3 = document.createElement("button");
+			btn3.textContent = "C";
+			btn3.style.padding = "2px 6px";
+			btn3.style.fontSize = "10px";
+			btn3.onclick = (e) => {
+				e.stopPropagation();
+				console.log("Button C clicked for", username);
+			};
+
+			btnRow.append(btn1, btn2, btn3);
+			wrapper.append(userItem, btnRow);
+		} else {
+			// No buttons for globalChat
+			wrapper.append(userItem);
 		}
-		friendList.append(item);
+		friendList.append(wrapper);
 	});
 }
 
@@ -100,11 +151,56 @@ export function populateUserOnlineList(msg: Message, username: string | null = n
 	return onlineList;
 }
 
-export function populateChatWindow(chatHistory: chatHistory, chatMessages: HTMLElement) {
-	const globalChat = chatHistory.global;
-	globalChat.forEach((message) => {
+// TODO Problems with fetching the Message[] from private
+export function populateChatWindow(
+	chatHistory: chatHistory, 
+	chatMessages: HTMLElement,
+	username: string,
+	activePrivateChat: {current: string | null}
+) {
+	chatMessages.innerHTML = "";
+
+	let chatHistoryToAdd: Message[] = [];
+	if (activePrivateChat.current === "global" || activePrivateChat.current === null){
+		chatHistoryToAdd = chatHistory.global;
+		console.log("GlobalChatHistory should be loaded!");
+	} else {
+		chatHistoryToAdd = setupPrivateChathistory(chatHistory, username);
+		console.log(`private chatHistory for ${activePrivateChat.current} loaded!`);
+	}
+	// DEBUG
+	chatHistoryToAdd.forEach((msg, idx) => {
+		console.log(
+			`#${idx + 1}: [${msg.sentAt}] ${msg.sender}: ${msg.content}`
+		);
+	})
+	chatHistoryToAdd.forEach((message) => {
 		renderIncomingMessage(message, chatMessages);
 	});
+}
+
+export function appendMessageToHistory(
+	chatHistory: chatHistory,
+	message: Message
+) : void {
+	if (message.type === "broadcast") {
+		chatHistory.global.push(message);
+		return;
+	}
+	if (message.type === "direct") {
+		const otherUser = 
+			message.sender === chatHistory.user ? message.receiver : message.sender;
+		if (!otherUser)
+			return;
+		if (!chatHistory.private.has(otherUser))
+			chatHistory.private.set(otherUser, []);
+		chatHistory.private.get(otherUser)!.push(message);
+		return;
+	}
+	if (message.type === "tournament") {
+		chatHistory.tournament.push(message);
+		return;
+	}
 }
 
 // FOR THE DEBUGGING PART
@@ -135,7 +231,8 @@ export function wireIncomingChat(
 	userOnlineList: string[]
 	): () => void {
 
-	let chatHistory: chatHistory | undefined;
+	let chatHistory: chatHistory;
+	//let lastChatHistoryloaded: {current: string | null } = {current: null}
 
 	const ws = sockets.user;
 	if (!ws) {
@@ -155,19 +252,26 @@ export function wireIncomingChat(
 
 			switch(msg.type) {
 				case "init": {
-					chatHistory = msg.chatHistory;
-					debugPrintGlobalHistory(chatHistory);
+					chatHistory = msg.chatHistory!;
+					chatHistory.private = ensureMap(chatHistory.private);
+					//debugPrintGlobalHistory(chatHistory);
+					console.log("TYPE OF PRIVATE:", chatHistory.private);
+					console.log("IS MAP?", chatHistory.private instanceof Map);
+					console.log("ENTRIES:", chatHistory.private);
+					populateChatWindow(chatHistory!, chatMessages, sockets.username!, activePrivateChat);
 					console.log(`Init chatHistory for ${sockets.username}`)
 					break;
 				}
 				case "broadcast": {
-					if (activePrivateChat.current === null)
+					if (activePrivateChat.current === null || activePrivateChat.current === "global")
 						renderIncomingMessage(msg, chatMessages);
+					appendMessageToHistory(chatHistory, msg);
 					break;
 				}
 				case "direct": {
-					if (activePrivateChat.current === msg.sender)
+					if (activePrivateChat.current === msg.sender || activePrivateChat.current === msg.receiver)
 						renderIncomingMessage(msg, chatMessages);
+					appendMessageToHistory(chatHistory, msg);
 					break;
 				}
 				case "onlineUser": {
@@ -186,7 +290,8 @@ export function wireIncomingChat(
 							global: [],
 							private: new Map(),
 							tournament: []
-						});
+						}, 
+						msg);
 					break;
 				}
 			}
@@ -198,4 +303,16 @@ export function wireIncomingChat(
 	return () => {
 		ws.onmessage = previousHandler ?? null;
 	};
+}
+
+
+// HELPER /////////////////////////////////////////////////////////////////////
+function ensureMap<T>(input: any): Map<string, T> {
+	if (input instanceof Map) return input;
+	if (Array.isArray(input)) {
+		// input = [ [username, Message[]], ... ]
+		return new Map(input as [string, T][]);
+	}
+	// Fallback für Objekt-Form { username: Message[] }
+	return new Map(Object.entries(input || {})) as Map<string, T>;
 }

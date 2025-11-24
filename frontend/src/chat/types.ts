@@ -28,3 +28,6 @@ export type chatHistory = {
 	private: Map<string, Message[]>;
 	tournament: Message[];
 };
+
+export type chatType = "global"
+| "private";
