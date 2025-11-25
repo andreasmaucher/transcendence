@@ -1,7 +1,5 @@
-import { Message } from "../chat/types";
-import { sockets } from "../config/constants";
+import { userData } from "../config/constants";
 import { WS_HOST, WS_PORT, WS_PROTOCOL } from "../config/endpoints";
-import { Payload } from "../types/ws_message";
 
 export function connectToUserWS(username: string) {
 	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/user/ws`;
@@ -12,11 +10,11 @@ export function connectToUserWS(username: string) {
 		console.log("[USER WS] Connected");
 	});
 
-	sockets.user = ws;
-	sockets.username = username;
+	userData.userSock = ws;
+	userData.username = username;
 
 	ws.addEventListener("message", (event) => {
-		let parsed: Message;
+		/* let parsed: any;
 
 		try {
 			parsed = JSON.parse(event.data);
@@ -24,7 +22,7 @@ export function connectToUserWS(username: string) {
 			return;
 		}
 
-		if (!parsed || typeof parsed !== "object") return;
+		if (!parsed || typeof parsed !== "object") return; */
 	});
 
 	ws.addEventListener("close", () => {

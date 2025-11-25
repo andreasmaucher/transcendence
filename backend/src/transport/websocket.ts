@@ -22,15 +22,6 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			return;
 		}
 
-		// Send ChatHistory with Timeout
-		setTimeout(() => {
-			socket.send(JSON.stringify(populateMessage({
-				type: "init",
-				sender: socket.username
-			})));
-			chatBroadcast(populateMessage({type: "onlineUser"}));
-	 	}, 20);
-
 		// Client responds to ping with pong automatically
 		socket.on("pong", () => {
 			user.isAlive = true;
@@ -46,7 +37,6 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 
 		socket.on("close", () => {
 			removeUserOnline(socket.username);
-			chatBroadcast(populateMessage({type: "onlineUser"}));
 		});
 	});
 

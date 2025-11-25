@@ -69,7 +69,7 @@ export function checkIfTournamentMessagesDB(username: string): string | undefine
         ORDER BY sent_at DESC
     `);
 
-	const messages: any = stmt.all("tournament", username); // returns empty array if no messages found
+	const messages: any = stmt.all("tournament", username, username); // returns empty array if no messages found
 	if (messages.length == 0) return undefined;
 	else {
 		let gameId = undefined;
@@ -86,7 +86,7 @@ export function getTournamentMessagesDB(tournamentId: string): any[] {
 	const stmt = db.prepare(`
         SELECT *
         FROM messages
-        WHERE type = ? AND gameId = ?
+        WHERE type = ? AND game_id = ?
         ORDER BY sent_at DESC
     `);
 

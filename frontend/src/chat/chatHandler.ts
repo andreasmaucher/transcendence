@@ -1,23 +1,23 @@
-import { sockets } from "../config/constants";
-import { ChatEvent, chatHistory, chatType, Message } from "./types";
+import { userData } from "../config/constants";
+import { ChatEvent, chatHistory, Message } from "./types";
 
 export function sendMessage(
-	type: ChatEvent, 
-	content: string, 
-	receiver: string | null = null, 
-	gameId: any | null = null) {
-	const messageId = crypto.randomUUID();
+	type: ChatEvent,
+	content: string,
+	receiver: string | null = null,
+	gameId: any | null = null
+) {
 	const message: Message = {
 		id: undefined,
-		sender: sockets.username!,
+		sender: userData.username!,
 		receiver: receiver ?? undefined,
 		type: type,
 		content: content,
 		gameId: gameId ?? undefined,
 		sentAt: undefined,
 	};
-	if (sockets.user?.readyState === WebSocket.OPEN) {
-		sockets.user.send(JSON.stringify(message));
+	if (userData.userSock?.readyState === WebSocket.OPEN) {
+		userData.userSock.send(JSON.stringify(message));
 		console.log(`Message sent ${message.type}`);
 	}
 }
@@ -40,10 +40,7 @@ export function renderIncomingMessage(message: Message, chatMessages: HTMLElemen
 	chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-export function setupPrivateChathistory(
-	chatHistory: chatHistory, 
-	username: string
-) : Message[] {
+export function setupPrivateChathistory(chatHistory: chatHistory, username: string): Message[] {
 	debugPrintGlobalHistory(chatHistory);
 	if (!chatHistory.private.has(username)) {
 		chatHistory.private.set(username, []);
@@ -53,17 +50,16 @@ export function setupPrivateChathistory(
 }
 
 export function renderOnlineUsers(
-	friendList: HTMLElement, 
+	friendList: HTMLElement,
 	chatMessages: HTMLElement,
 	chatHeader: HTMLElement,
-	activePrivateChat: {current: string | null}, 
+	activePrivateChat: { current: string | null },
 	usersOnline: string[],
 	chatHistory: chatHistory,
 	message: Message
-	) {
+) {
 	friendList.innerHTML = "";
 	usersOnline.forEach((username) => {
-
 		// create a container
 		const wrapper = document.createElement("div");
 		wrapper.style.display = "flex";
@@ -78,7 +74,7 @@ export function renderOnlineUsers(
 		userItem.style.borderRadius = "4px";
 		userItem.style.cursor = "pointer";
 		userItem.classList.add("online-user");
-		
+
 		// Create Friendslist
 		userItem.onclick = () => {
 			if (username === "Global Chat") {
@@ -138,30 +134,28 @@ export function renderOnlineUsers(
 	});
 }
 
-export function populateUserOnlineList(msg: Message, username: string | null = null) : string[] {
+export function populateUserOnlineList(msg: Message, username: string | null = null): string[] {
 	let onlineList: string[] = [];
 
-	if (!msg.onlineUser)
-		return [];
+	if (!msg.onlineUser) return [];
 	onlineList.push("Global Chat");
 	msg.onlineUser.forEach((user) => {
-		if (username !== user)
-			onlineList.push(user);
+		if (username !== user) onlineList.push(user);
 	});
 	return onlineList;
 }
 
 // TODO Problems with fetching the Message[] from private
 export function populateChatWindow(
-	chatHistory: chatHistory, 
+	chatHistory: chatHistory,
 	chatMessages: HTMLElement,
 	username: string,
-	activePrivateChat: {current: string | null}
+	activePrivateChat: { current: string | null }
 ) {
 	chatMessages.innerHTML = "";
 
 	let chatHistoryToAdd: Message[] = [];
-	if (activePrivateChat.current === "global" || activePrivateChat.current === null){
+	if (activePrivateChat.current === "global" || activePrivateChat.current === null) {
 		chatHistoryToAdd = chatHistory.global;
 		console.log("GlobalChatHistory should be loaded!");
 	} else {
@@ -170,30 +164,22 @@ export function populateChatWindow(
 	}
 	// DEBUG
 	chatHistoryToAdd.forEach((msg, idx) => {
-		console.log(
-			`#${idx + 1}: [${msg.sentAt}] ${msg.sender}: ${msg.content}`
-		);
-	})
+		console.log(`#${idx + 1}: [${msg.sentAt}] ${msg.sender}: ${msg.content}`);
+	});
 	chatHistoryToAdd.forEach((message) => {
 		renderIncomingMessage(message, chatMessages);
 	});
 }
 
-export function appendMessageToHistory(
-	chatHistory: chatHistory,
-	message: Message
-) : void {
+export function appendMessageToHistory(chatHistory: chatHistory, message: Message): void {
 	if (message.type === "broadcast") {
 		chatHistory.global.push(message);
 		return;
 	}
 	if (message.type === "direct") {
-		const otherUser = 
-			message.sender === chatHistory.user ? message.receiver : message.sender;
-		if (!otherUser)
-			return;
-		if (!chatHistory.private.has(otherUser))
-			chatHistory.private.set(otherUser, []);
+		const otherUser = message.sender === chatHistory.user ? message.receiver : message.sender;
+		if (!otherUser) return;
+		if (!chatHistory.private.has(otherUser)) chatHistory.private.set(otherUser, []);
 		chatHistory.private.get(otherUser)!.push(message);
 		return;
 	}
@@ -217,24 +203,21 @@ export function debugPrintGlobalHistory(chatHistory: chatHistory | undefined) {
 
 	console.log("🌍 Global Chat History:");
 	chatHistory.global.forEach((msg, idx) => {
-		console.log(
-			`#${idx + 1}: [${msg.sentAt}] ${msg.sender}: ${msg.content}`
-		);
+		console.log(`#${idx + 1}: [${msg.sentAt}] ${msg.sender}: ${msg.content}`);
 	});
 }
 
 export function wireIncomingChat(
-	chatMessages: HTMLElement, 
+	chatMessages: HTMLElement,
 	friendList: HTMLElement,
 	chatHeader: HTMLElement,
-	activePrivateChat: {current: string | null},
+	activePrivateChat: { current: string | null },
 	userOnlineList: string[]
-	): () => void {
-
+): () => void {
 	let chatHistory: chatHistory;
 	//let lastChatHistoryloaded: {current: string | null } = {current: null}
 
-	const ws = sockets.user;
+	const ws = userData.userSock;
 	if (!ws) {
 		console.warn("Chat socket not connected");
 		// returns empty function
@@ -246,53 +229,53 @@ export function wireIncomingChat(
 
 	ws.onmessage = (event) => {
 		try {
-			const msg: Message = JSON.parse(event.data);
+			//const msg: Message =
+			const payload = JSON.parse(event.data);
+			if (payload && payload.type == "chat") {
+				const msg: Message = payload.data;
+				console.log("WS EVENT:", msg);
 
-			console.log("WS EVENT:", msg);
+				switch (msg.type) {
+					/* case "init": {
+						chatHistory = msg.chatHistory!;
+						chatHistory.private = ensureMap(chatHistory.private);
+						//debugPrintGlobalHistory(chatHistory);
+						console.log("TYPE OF PRIVATE:", chatHistory.private);
+						console.log("IS MAP?", chatHistory.private instanceof Map);
+						console.log("ENTRIES:", chatHistory.private);
+						populateChatWindow(chatHistory!, chatMessages, sockets.username!, activePrivateChat);
+						console.log(`Init chatHistory for ${sockets.username}`);
+						break;
+					} */
+					case "broadcast": {
+						if (activePrivateChat.current === null || activePrivateChat.current === "global")
+							renderIncomingMessage(msg, chatMessages);
+						appendMessageToHistory(userData.chatHistory!, msg);
+						break;
+					}
+					case "direct": {
+						if (activePrivateChat.current === msg.sender || activePrivateChat.current === msg.receiver)
+							renderIncomingMessage(msg, chatMessages);
+						appendMessageToHistory(userData.chatHistory!, msg);
+						break;
+					}
+					case "onlineUser": {
+						// Update onlineUserList in the frontend
+						userOnlineList.splice(0, userOnlineList.length, ...populateUserOnlineList(msg, userData.username));
+						console.log(`OnlineUserList: ${userOnlineList}`);
 
-			switch(msg.type) {
-				case "init": {
-					chatHistory = msg.chatHistory!;
-					chatHistory.private = ensureMap(chatHistory.private);
-					//debugPrintGlobalHistory(chatHistory);
-					console.log("TYPE OF PRIVATE:", chatHistory.private);
-					console.log("IS MAP?", chatHistory.private instanceof Map);
-					console.log("ENTRIES:", chatHistory.private);
-					populateChatWindow(chatHistory!, chatMessages, sockets.username!, activePrivateChat);
-					console.log(`Init chatHistory for ${sockets.username}`)
-					break;
-				}
-				case "broadcast": {
-					if (activePrivateChat.current === null || activePrivateChat.current === "global")
-						renderIncomingMessage(msg, chatMessages);
-					appendMessageToHistory(chatHistory, msg);
-					break;
-				}
-				case "direct": {
-					if (activePrivateChat.current === msg.sender || activePrivateChat.current === msg.receiver)
-						renderIncomingMessage(msg, chatMessages);
-					appendMessageToHistory(chatHistory, msg);
-					break;
-				}
-				case "onlineUser": {
-					// Update onlineUserList in the frontend
-					userOnlineList.splice(0, userOnlineList.length, ...populateUserOnlineList(msg, sockets.username));
-					console.log(`OnlineUserList: ${userOnlineList}`);
-					
-					// build the chat
-					renderOnlineUsers(friendList, 
-						chatMessages, 
-						chatHeader, 
-						activePrivateChat, 
-						userOnlineList, 
-						chatHistory ?? {
-							user: "",
-							global: [],
-							private: new Map(),
-							tournament: []
-						}, 
-						msg);
-					break;
+						// build the chat
+						renderOnlineUsers(
+							friendList,
+							chatMessages,
+							chatHeader,
+							activePrivateChat,
+							userOnlineList,
+							userData.chatHistory!,
+							msg
+						);
+						break;
+					}
 				}
 			}
 		} catch (err) {
@@ -304,7 +287,6 @@ export function wireIncomingChat(
 		ws.onmessage = previousHandler ?? null;
 	};
 }
-
 
 // HELPER /////////////////////////////////////////////////////////////////////
 function ensureMap<T>(input: any): Map<string, T> {
