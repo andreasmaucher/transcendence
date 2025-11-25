@@ -16,6 +16,8 @@ export default async function singleGameRoutes(fastify: FastifyInstance) {
 			const data = openSingleGames.map((g) => ({
 				id: g.id,
 				mode: g.mode,
+				creator: g.creator,
+				gameNumber: g.gameNumber,
 				match: {
 					id: g.match.id,
 					state: g.match.state,

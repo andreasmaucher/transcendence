@@ -5,6 +5,8 @@ export type SingleGame = {
 	id: string;
 	match: Match;
 	mode: "remote" | "local";
+	creator: string; // username of the player who created the game (only for naming the game)
+	gameNumber: number; // number of games a user has created (only for naming the game)
 	expirationTimer?: NodeJS.Timeout;
 };
 

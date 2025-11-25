@@ -61,18 +61,20 @@ export function renderOnlineLobby(container: HTMLElement) {
         const row = document.createElement("div");
 
         const label = document.createElement("span");
-        label.textContent = `Game #${g.id}`;
+        // display as "alice Game #1"
+        const gameName = g.creator && g.gameNumber 
+          ? `${g.creator} Game #${g.gameNumber}` 
+          : `Game #${g.id}`;
+        label.textContent = gameName;
 
-        const owner = document.createElement("span");
         //! LOGIC owner.textContent = `Creator: ${g.player1}`;
-        owner.textContent = `Creator: ${g.match?.players?.left || "Unknown"}`;
         const joinBtn = document.createElement("button");
         joinBtn.textContent = "Join";
         joinBtn.onclick = () => {
           navigate(`#/game?mode=online&id=${g.id}`);
         };
 
-        row.append(label, owner, joinBtn);
+        row.append(label, joinBtn);
         listEl.append(row);
       }
     });
