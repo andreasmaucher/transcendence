@@ -12,7 +12,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 			const users = getAllUsersDB();
 			return reply.code(200).send({ success: true, data: users });
 		} catch (error: any) {
-			console.log(error.message);
+			console.error("[userRT]", error.message);
 			return reply.code(500).send({ success: false, message: "Unable to retrieve users" });
 		}
 	});
@@ -23,7 +23,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 			const users = getAllOnlineUsers();
 			return reply.code(200).send({ success: true, data: users });
 		} catch (error: any) {
-			console.log(error.message);
+			console.error("[userRT]", error.message);
 			return reply.code(500).send({ success: false, message: "Unable to retrieve users" });
 		}
 	});
@@ -37,7 +37,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 			const user = getUserByUsernameDB(username);
 			return reply.code(200).send({ success: true, data: user });
 		} catch (error: any) {
-			console.log(error.message);
+			console.error("[userRT]", error.message);
 			return reply.code(404).send({ success: false, message: "User not found" });
 		}
 	});
@@ -48,7 +48,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 			const online = isUserOnline(username);
 			return reply.code(200).send({ success: true, online });
 		} catch (error: any) {
-			console.log(error.message);
+			console.error("[userRT]", error.message);
 			return reply.code(500).send({ success: false, message: "Unable to find user" });
 		}
 	});
@@ -71,7 +71,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 			};
 			return reply.code(200).send({ success: true, data: safeUser });
 		} catch (error: any) {
-			console.log(error.message);
+			console.error("[userRT]", error.message);
 			clearSessionCookie(reply);
 			return reply.code(404).send({ success: false, message: "User not found" });
 		}

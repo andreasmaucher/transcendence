@@ -60,7 +60,7 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 
 			return reply.code(200).send({ success: true, message: "Registration successful" });
 		} catch (error: any) {
-			console.log(error.message);
+			console.error("[userRT]", error.message);
 			return reply.code(400).send({ success: false, message: "Unable to register user" });
 		}
 	});
@@ -128,7 +128,7 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 				});
 				return reply.code(200).send({ success: true, message: "Username updated successfully" });
 			} catch (error: any) {
-				console.log(error.message);
+				console.error("[userRT]", error.message);
 				return reply.code(400).send({ success: false, message: "Unable to update username" });
 			}
 		} else if (newPassword) {
@@ -137,7 +137,7 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 				updatePasswordDB(payload.username, hashedPassword);
 				return reply.code(200).send({ success: true, message: "Password updated successfully" });
 			} catch (error: any) {
-				console.log(error.message);
+				console.error("[userRT]", error.message);
 				return reply.code(400).send({ success: false, message: "Unable to update password" });
 			}
 		} else if (newAvatar) {
@@ -150,7 +150,7 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 				});
 				return reply.code(200).send({ success: true, message: "Avatar updated successfully" });
 			} catch (error: any) {
-				console.log(error.message);
+				console.error("[userRT]", error.message);
 				return reply.code(400).send({ success: false, message: "Unable to update avatar" });
 			}
 		} else {
@@ -173,7 +173,7 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 			addFriendDB(payload.username, friend);
 			return reply.code(200).send({ success: true, message: "Friend added successfully" });
 		} catch (error: any) {
-			console.log(error.message);
+			console.error("[userRT]", error.message);
 			return reply.code(400).send({ success: false, message: "Unable to add friend" });
 		}
 	});
@@ -196,7 +196,7 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 				return reply.code(200).send({ success: true, message: "Friend added successfully" });
 			} else reply.code(400).send({ success: false, message: "Friend not present in user friends list" });
 		} catch (error: any) {
-			console.log(error.message);
+			console.error("[userRT]", error.message);
 			return reply.code(400).send({ success: false, message: "Unable to add friend" });
 		}
 	});

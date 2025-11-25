@@ -13,7 +13,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
 			const chatHistory = buildChatHistory(payload.username);
 			return reply.code(200).send({ success: true, data: chatHistory });
 		} catch (error: any) {
-			console.log(error.message);
+			console.error("[chatRT]", error.message);
 			return reply.code(404).send({ success: false, message: "Unable to retrieve chat history" });
 		}
 	});

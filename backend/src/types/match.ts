@@ -40,8 +40,8 @@ export type MatchMode = "local" | "remote";
 
 export type Match = {
 	id: string;
-	tournament: TournamentMatchInfo | undefined;
-	singleGameId: string | undefined;
+	tournament?: TournamentMatchInfo;
+	singleGameId?: string;
 	state: MatchState;
 	inputs: Record<PaddleSide, PaddleInput>;
 	players: { left: string | undefined; right: string | undefined };

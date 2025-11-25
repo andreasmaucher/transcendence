@@ -62,7 +62,7 @@ export function createMatch({
 	try {
 		createMatchDB(match); // Add new match to database (without starting it)
 	} catch (error: any) {
-		console.error(error.message);
+		console.error("[MM]", error.message);
 	}
 	return match;
 }
@@ -70,9 +70,9 @@ export function createMatch({
 // Start match
 export function startMatch(match: Match) {
 	try {
-		if (match.singleGameId && match.mode == "local") {
+		if (match.singleGameId && match.mode === "local") {
 			startMatchDB(match.id);
-		} else if (match.singleGameId && match.mode == "remote") {
+		} else if (match.singleGameId && match.mode === "remote") {
 			// If it's a remote single game, handle the timeout cleanup here
 			let singleGame = getSingleGame(match.singleGameId);
 			if (singleGame && singleGame.expirationTimer) {
@@ -85,7 +85,7 @@ export function startMatch(match: Match) {
 		else return; // Temporary error handling
 		match.state.isRunning = true;
 	} catch (error: any) {
-		console.error(error.message);
+		console.error("[MM]", error.message);
 	}
 }
 
@@ -127,7 +127,7 @@ export function addPlayerToMatch(match: Match, playerId: string) {
 		else return; // Temporary error handling, match full
 		if (match.singleGameId && checkMatchFull(match)) startGameCountdown(match);
 	} catch (error: any) {
-		console.error(error.message);
+		console.error("[MM]", error.message);
 	}
 }
 

@@ -20,8 +20,6 @@ export type ChatMessage = {
 	gameId?: string;
 	content?: string;
 	sentAt: string;
-	onlineUser?: string[];
-	chatHistory?: chatHistory;
 };
 
 export type chatHistory = {

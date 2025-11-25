@@ -216,3 +216,10 @@ cd backend && npm ci && npm run dev
 | `WINNING_SCORE`   | `11`                    | Target score to win         |
 
 Frontend URL parameters `roomId`, `wsHost`, and `wsPort` let you connect to alternate rooms/hosts without recompiling.
+
+#### Acronyms (in error messages)
+
+MM = MatchManager
+SGM = SingleGameManager
+TM = TournamentManager
+RT = Routes

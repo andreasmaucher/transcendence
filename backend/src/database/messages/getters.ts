@@ -70,7 +70,7 @@ export function checkIfTournamentMessagesDB(username: string): string | undefine
     `);
 
 	const messages: any = stmt.all("tournament", username, username); // returns empty array if no messages found
-	if (messages.length == 0) return undefined;
+	if (messages.length === 0) return undefined;
 	else {
 		let gameId = undefined;
 		for (const message of messages) {

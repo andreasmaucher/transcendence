@@ -11,7 +11,7 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 			const tournaments = getAllTournamentsDB();
 			return reply.code(200).send({ success: true, data: tournaments });
 		} catch (error: any) {
-			console.log(error.message);
+			console.error("[tournamentRT]", error.message);
 			return reply.code(500).send({ success: false, message: "Unable to retrieve tournaments" });
 		}
 	});
@@ -19,8 +19,8 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 	// GET all open tournaments
 	fastify.get("/api/tournaments/open", async (_request: FastifyRequest, reply: FastifyReply) => {
 		const openTournaments: Tournament[] = getOpenTournaments();
-		if (openTournaments.length == 0) {
-			console.log("No open tournaments");
+		if (openTournaments.length === 0) {
+			console.error("[tournamentRT] No open tournaments");
 			return reply.code(404).send({ success: false, message: "No open tournaments" });
 		} else {
 			return reply.code(200).send({ success: true, data: openTournaments });
@@ -36,7 +36,7 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 			const tournament = getTournamentByIdDB(id);
 			return reply.code(200).send({ success: true, data: tournament });
 		} catch (error: any) {
-			console.log(error.message);
+			console.error("[tournamentRT]", error.message);
 			return reply.code(404).send({ success: false, message: "Tournament not found" });
 		}
 	});
