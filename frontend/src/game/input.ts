@@ -7,11 +7,20 @@ import { Direction, PaddleSide } from "../types/game";
 // this is why it is necessary to check for null before using the variable
 let activeSocket: WebSocket | null = null;
 
+// track which paddle side a player controls (null = local game where both paddles are controlled in one window)
+let assignedSide: PaddleSide | null = null;
+
 // set the active socket to the given WebSocket
 // if it is null, the active socket is not set and we stop sending input commands to the backend
 // this is triggered in main.ts when the WebSocket connection is established or lost
 export function setActiveSocket(ws: WebSocket | null): void {
 	activeSocket = ws;
+}
+
+// set which paddle side a player controls
+export function setAssignedSide(side: PaddleSide | null): void {
+	assignedSide = side;
+	console.log(`[INPUT] Assigned to control: ${side || "both paddles (local mode)"}`);
 }
 
 // object to keep track of the last sent direction for each paddle
@@ -56,15 +65,16 @@ export function flushInputs(): void {
 export function setupInputs(): void {
 	// when a key is pressed down
 	addEventListener("keydown", (e) => {
-		if (e.key === "w") queueInput("left", "up");
-		if (e.key === "s") queueInput("left", "down");
-		if (e.key === "ArrowUp") queueInput("right", "up");
-		if (e.key === "ArrowDown") queueInput("right", "down");
+		// in local mode allow both paddles and in online mode, only allow the assigned paddle
+		if ((assignedSide === null || assignedSide === "left") && e.key === "w") queueInput("left", "up");
+		if ((assignedSide === null || assignedSide === "left") && e.key === "s") queueInput("left", "down");
+		if ((assignedSide === null || assignedSide === "right") && e.key === "ArrowUp") queueInput("right", "up");
+		if ((assignedSide === null || assignedSide === "right") && e.key === "ArrowDown") queueInput("right", "down");
 	});
 
 	// when a key is released
 	addEventListener("keyup", (e) => {
-		if (e.key === "w" || e.key === "s") queueInput("left", "stop");
-		if (e.key === "ArrowUp" || e.key === "ArrowDown") queueInput("right", "stop");
+		if ((assignedSide === null || assignedSide === "left") && (e.key === "w" || e.key === "s")) queueInput("left", "stop");
+		if ((assignedSide === null || assignedSide === "right") && (e.key === "ArrowUp" || e.key === "ArrowDown")) queueInput("right", "stop");
 	});
 }

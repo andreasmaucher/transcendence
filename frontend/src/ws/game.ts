@@ -1,5 +1,5 @@
 import { ROOM_ID, WS_HOST, WS_PORT, WS_PROTOCOL } from "../config/endpoints";
-import { flushInputs, queueInput, setActiveSocket } from "../game/input";
+import { flushInputs, queueInput, setActiveSocket, setAssignedSide } from "../game/input";
 import { applyBackendState } from "../game/state";
 import { MatchState } from "../types/game";
 import { Payload } from "../types/ws_message";
@@ -25,6 +25,7 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 
 	const ws = new WebSocket(wsUrl);
 	setActiveSocket(ws);
+	setAssignedSide(null); // Local game: control both paddles
 
 	let resetRequested = false;
 
@@ -141,6 +142,7 @@ export function connectToSingleGameWS(state: MatchState, roomId?: string): () =>
 				// Server tells us which side we're playing on
 				const data = (payload as any).data;
 				console.log(`[WS] Assigned to match ${data?.matchId} as ${data?.playerSide}`);
+				setAssignedSide(data?.playerSide || null);
 				break;
 			}
 
@@ -232,6 +234,7 @@ export function connectToTournamentWS(state: MatchState): () => void {
 				// Server tells us which side we're playing on
 				const data = (payload as any).data;
 				console.log(`[WS] Assigned to match ${data?.matchId} as ${data?.playerSide}`);
+				setAssignedSide(data?.playerSide || null);
 				break;
 			}
 

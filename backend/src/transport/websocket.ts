@@ -103,10 +103,13 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			// Add socket to clients BEFORE addPlayerToMatch so it receives countdown messages
 			match.clients.add(socket);
 
+			// determine which side this player will be assigned to
+			const playerSide = !match.players.left ? "left" : "right";
+
 			socket.send(
 				buildPayload("match-assigned", {
 					matchId: match.id,
-					playerSide: match.players.left === payload.username ? "left" : "right",
+					playerSide: playerSide,
 				})
 			);
 
