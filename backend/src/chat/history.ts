@@ -4,10 +4,10 @@ import {
 	getPrivateUserMessagesDB,
 	getTournamentMessagesDB,
 } from "../database/messages/getters.js";
-import { chatHistory, Message } from "../types/chat.js";
+import { chatHistory, ChatMessage } from "../types/chat.js";
 import { convertToMessage, convertToMessageArray } from "./utils.js";
 
-export function populatePrivateConv(username: string, privateConvs: Map<string, Message[]>) {
+export function populatePrivateConv(username: string, privateConvs: Map<string, ChatMessage[]>) {
 	const privateMessages = getPrivateUserMessagesDB(username);
 
 	for (const message of privateMessages) {

@@ -1,18 +1,17 @@
 // src/views/menu/ui.ts
 import { navigate } from "../../router/router";
 import { t } from "../../i18n";
-import { sockets } from "../../config/constants";
 import { sendMessage } from "../../chat/chatHandler";
 import { initChat } from "../../chat/chatView";
 
-export let disposeChat: (() => void) | null = null;
+export let disposeChat: (() => void | Promise<void>) | null = null;
 
 export function teardownChat() {
 	disposeChat?.();
 	disposeChat = null;
 }
 
-export function renderMenu(container: HTMLElement) {
+export async function renderMenu(container: HTMLElement) {
 	container.innerHTML = "";
 
 	const root = document.createElement("div");
@@ -107,7 +106,7 @@ export function renderMenu(container: HTMLElement) {
 		}
 	});
 
-	disposeChat = initChat();
+	disposeChat = await initChat();
 
 	return () => {
 		teardownChat();

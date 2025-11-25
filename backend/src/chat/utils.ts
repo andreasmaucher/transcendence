@@ -1,15 +1,15 @@
-import { Message } from "../types/chat.js";
+import { ChatMessage } from "../types/chat.js";
 
-export function convertToMessageArray(rawMessages: any[]): Message[] {
-	const messages: Message[] = [];
+export function convertToMessageArray(rawMessages: any[]): ChatMessage[] {
+	const messages: ChatMessage[] = [];
 	for (const rawMessage of rawMessages) {
 		messages.push(convertToMessage(rawMessage));
 	}
 	return messages;
 }
 
-export function convertToMessage(rawMessage: any): Message {
-	const message: Message = {
+export function convertToMessage(rawMessage: any): ChatMessage {
+	const message: ChatMessage = {
 		id: rawMessage.id,
 		sender: rawMessage.sender,
 		receiver: rawMessage.receiver,

@@ -166,8 +166,7 @@ export function forfeitTournament(tournamentId: string, playerId: string) {
 					// Send a message BEFORE closing
 					client.send(
 						buildPayload("player-left", {
-							matchId: match.id,
-							player: playerId,
+							username: playerId,
 						})
 					);
 					client.close(1000, "A player left");

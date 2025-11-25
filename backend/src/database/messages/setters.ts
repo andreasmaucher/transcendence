@@ -1,8 +1,8 @@
-import { Message } from "../../types/chat.js";
+import { ChatMessage } from "../../types/chat.js";
 import db from "../db_init.js";
 
 // Create a new message row in the messages table of the database
-export function addMessageDB(msg: Message): void {
+export function addMessageDB(msg: ChatMessage): void {
 	const stmt = db.prepare(`
         INSERT INTO messages (id, sender, receiver, type, game_id, content, sent_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
