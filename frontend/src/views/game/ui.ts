@@ -188,7 +188,7 @@ export async function renderGame(container: HTMLElement) {
 	const state = createInitialState();
 	
 	//! LOGIC waiting overlay for online and tournament modes
-	// Create waiting overlay
+	// create waiting overlay (only shown for online/tournament modes)
 	const waitingOverlay = document.createElement("div");
 	waitingOverlay.style.position = "absolute";
 	waitingOverlay.style.top = "0";
@@ -196,7 +196,7 @@ export async function renderGame(container: HTMLElement) {
 	waitingOverlay.style.width = "100%";
 	waitingOverlay.style.height = "100%";
 	waitingOverlay.style.background = "rgba(0,0,0,0.8)";
-	waitingOverlay.style.display = "flex";
+	waitingOverlay.style.display = mode === "local" ? "none" : "flex"; // Hide for local games
 	waitingOverlay.style.alignItems = "center";
 	waitingOverlay.style.justifyContent = "center";
 	waitingOverlay.style.color = "white";
@@ -208,12 +208,15 @@ export async function renderGame(container: HTMLElement) {
 	// register UI handlers for WS events
 	registerGameUiHandlers({
 		waitingForPlayers: () => {
-			waitingOverlay.textContent = "Waiting for opponent...";
-			waitingOverlay.style.display = "flex";
+			// Only show for online/tournament games
+			if (mode !== "local") {
+				waitingOverlay.textContent = "Waiting for opponent...";
+				waitingOverlay.style.display = "flex";
+			}
 		},
 		countdownToGame: (n, _side) => {
-			if (n > 0) {
-				//! LOGIC why $(n)?
+			// Only show countdown for online/tournament games
+			if (mode !== "local" && n > 0) {
 				waitingOverlay.textContent = `Starting in ${n}...`;
 				waitingOverlay.style.display = "flex";
 			}
