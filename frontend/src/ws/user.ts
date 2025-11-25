@@ -1,3 +1,4 @@
+import { Message } from "../chat/types";
 import { sockets } from "../config/constants";
 import { WS_HOST, WS_PORT, WS_PROTOCOL } from "../config/endpoints";
 import { Payload } from "../types/ws_message";
@@ -15,7 +16,7 @@ export function connectToUserWS(username: string) {
 	sockets.username = username;
 
 	ws.addEventListener("message", (event) => {
-		let parsed: Payload;
+		let parsed: Message;
 
 		try {
 			parsed = JSON.parse(event.data);

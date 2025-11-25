@@ -21,6 +21,16 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			socket.close(1011, "User not in database");
 			return;
 		}
+
+		// Send ChatHistory with Timeout
+		setTimeout(() => {
+			socket.send(JSON.stringify(populateMessage({
+				type: "init",
+				sender: socket.username
+			})));
+			chatBroadcast(populateMessage({type: "onlineUser"}));
+	 	}, 20);
+
 		// Client responds to ping with pong automatically
 		socket.on("pong", () => {
 			user.isAlive = true;
@@ -36,6 +46,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 
 		socket.on("close", () => {
 			removeUserOnline(socket.username);
+			chatBroadcast(populateMessage({type: "onlineUser"}));
 		});
 	});
 
