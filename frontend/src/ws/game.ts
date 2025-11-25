@@ -136,6 +136,14 @@ export function connectToSingleGameWS(state: MatchState, roomId?: string): () =>
 		const payload = parsed as Payload;
 
 		switch (payload.type) {
+			case "match-assigned": {
+				//! LOGIC
+				// Server tells us which side we're playing on
+				const data = (payload as any).data;
+				console.log(`[WS] Assigned to match ${data?.matchId} as ${data?.playerSide}`);
+				break;
+			}
+
 			case "state": {
 				const wasOver = state.isOver;
 
@@ -219,6 +227,14 @@ export function connectToTournamentWS(state: MatchState): () => void {
 		const payload = parsed as Payload;
 
 		switch (payload.type) {
+			case "match-assigned": {
+				//! LOGIC
+				// Server tells us which side we're playing on
+				const data = (payload as any).data;
+				console.log(`[WS] Assigned to match ${data?.matchId} as ${data?.playerSide}`);
+				break;
+			}
+
 			case "state": {
 				const wasOver = state.isOver;
 

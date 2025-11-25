@@ -96,9 +96,11 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			if (checkMatchFull(match)) {
 				console.log("[WS] Match already full");
 				socket.close(1008, "Match is already full");
+				return;
 			}
 
-			addPlayerToMatch(match, socket.username);
+			//! changed LOGIC here, need to be able to explain to jalombar
+			// Add socket to clients BEFORE addPlayerToMatch so it receives countdown messages
 			match.clients.add(socket);
 
 			socket.send(
@@ -110,13 +112,15 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 
 			socket.send(buildPayload("state", match.state));
 
-			//! LOGIC 
 			// If match is not full yet, send "waiting" message to all clients
 			if (!checkMatchFull(match)) {
 				for (const client of match.clients) {
 					client.send(buildPayload("waiting", undefined));
 				}
 			}
+
+			// Add player to match (this may trigger countdown if match becomes full)
+			addPlayerToMatch(match, socket.username);
 
 			socket.on("message", (raw: RawData) => handleSocketMessages(raw, match));
 
