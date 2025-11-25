@@ -1,6 +1,7 @@
 // src/router/router.ts
 import { fetchMe } from "../api/http";
 
+
 export type View = (container: HTMLElement) => void | (() => void) | Promise<void | (() => void)>;
 export type Routes = Record<string, View>;
 
