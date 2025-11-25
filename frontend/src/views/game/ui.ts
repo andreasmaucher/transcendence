@@ -1,7 +1,7 @@
 // src/views/game/ui.ts
 import { type GameConstants } from "../../constants";
 import { navigate } from "../../router/router";
-import { fetchGameConstants } from "../../api/http";
+import { fetchGameConstants, fetchMe } from "../../api/http";
 import { draw } from "../../rendering/canvas";
 import { setupInputs, setActiveSocket } from "../../game/input";
 import { MatchState } from "../../types/game";

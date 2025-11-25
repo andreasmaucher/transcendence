@@ -1,102 +1,6 @@
 import { userData } from "../config/constants";
 import { API_BASE } from "../config/endpoints";
-import { populateChatWindow, sendMessage, setupPrivateChathistory, wireIncomingChat } from "./chatHandler";
-import { chatHistory } from "./types";
-
-/* export function convertToHistory(json: any): chatHistory {
-	if (!json) {
-		console.error("convertToHistory received undefined or null JSON");
-		return {
-			user: "",
-			global: [],
-			private: new Map(),
-			tournament: [],
-		};
-	}
-
-	if (typeof json !== "object") {
-		console.error("convertToHistory received non-object JSON:", json);
-		return {
-			user: "",
-			global: [],
-			private: new Map(),
-			tournament: [],
-		};
-	}
-
-	if (!json.user || !json.global || !json.tournament) {
-		console.warn("JSON missing some expected properties:", json);
-	}
-
-	// Ensure private is always an object
-	const privateMessages = json.private && typeof json.private === "object" ? json.private : {};
-	if (json.private === undefined) {
-		console.warn("No private messages found, defaulting to empty Map");
-	}
-
-	try {
-		return {
-			user: json.user || "",
-			global: Array.isArray(json.global) ? json.global : [],
-			private: new Map(Object.entries(privateMessages)),
-			tournament: Array.isArray(json.tournament) ? json.tournament : [],
-		};
-	} catch (err) {
-		console.error("Error converting private messages to Map:", err, json.private);
-		return {
-			user: json.user || "",
-			global: [],
-			private: new Map(),
-			tournament: [],
-		};
-	}
-}
-
-export async function fetchChatHistory() {
-	try {
-		const response = await fetch(`${API_BASE}/api/chat/history`, {
-			credentials: "include",
-		});
-
-		if (!response.ok) {
-			console.error("Failed to fetch chat history, status:", response.status);
-			return;
-		}
-
-		const body: any = await response.json();
-
-		if (!body) {
-			console.warn("fetchChatHistory received empty body");
-			return;
-		}
-
-		console.log("Raw chat history response:", body);
-
-		if (!body.success) {
-			console.warn("Backend returned an error:", body.message);
-			return;
-		}
-
-		if (!body.data) {
-			console.warn("Backend returned success=true but no data:", body);
-			return;
-		}
-
-		userData.chatHistory = convertToHistory(body.data);
-		console.log("Converted chat history:", userData.chatHistory);
-	} catch (err) {
-		console.error("Error fetching chat history:", err);
-	}
-}
-
-export function convertToHistory(json: any): chatHistory {
-	return {
-		user: json.user,
-		global: json.global,
-		private: new Map(Object.entries(json.private || {})),
-		tournament: json.tournament,
-	};
-} */
+import { sendMessage, wireIncomingChat } from "./chatHandler";
 
 export async function fetchChatHistory() {
 	const response = await fetch(`${API_BASE}/api/chat/history`, {
@@ -122,8 +26,26 @@ export async function fetchChatHistory() {
 	};
 }
 
+export async function fetchOnlineUsers() {
+	const response = await fetch(`${API_BASE}/api/users/online`, {
+		credentials: "include",
+	});
+	if (!response.ok) {
+		console.error("Failed to fetch online users, status:", response.status);
+		return;
+	}
+	const body: any = await response.json();
+	console.log("Raw online users response:", body);
+
+	if (!body.success) {
+		console.warn("Backend returned an error:", body.message);
+		return;
+	}
+}
+
 export async function initChat(root: HTMLElement = document.body): Promise<() => void> {
 	await fetchChatHistory();
+	await fetchOnlineUsers();
 	if (!userData.chatHistory) console.log("[CHAT] Error retrieving chat history");
 
 	const onlineUserlist: string[] = ["Global Chat"];
