@@ -76,17 +76,17 @@ export async function renderGame(container: HTMLElement) {
 	container.innerHTML = "";
 	let cancelled = false;
 	const hash = location.hash;
-	// determine game mode from the URL hash
-	// - "tournament" -> connect to tournament WS
-	// - "online" -> connect to online single game WS
-	// - otherwise -> local single game WS
+	const queryStr = hash.split("?")[1] || "";
+	const params = new URLSearchParams(queryStr);
+	const modeParam = params.get("mode");
+	//! LOGIC properly extracting mode and room id from the URL
 	const mode: "tournament" | "online" | "local" =
-		hash.includes("mode=tournament")
-			? "tournament"
-			: hash.includes("mode=online")
-			? "online"
+		modeParam === "tournament" || modeParam === "online" || modeParam === "local"
+			? modeParam
 			: "local";
-	console.log("GAME MODE =", mode);
+	const roomId = params.get("id") || undefined;
+
+	console.log("GAME MODE =", mode, "ROOM ID =", roomId);
 
 	// UI WRAPPER
 	const wrapper = document.createElement("div");
@@ -186,16 +186,40 @@ export async function renderGame(container: HTMLElement) {
 	// 3) Start game
 	//
 	const state = createInitialState();
+	
+	//! LOGIC waiting overlay for online and tournament modes
+	// Create waiting overlay
+	const waitingOverlay = document.createElement("div");
+	waitingOverlay.style.position = "absolute";
+	waitingOverlay.style.top = "0";
+	waitingOverlay.style.left = "0";
+	waitingOverlay.style.width = "100%";
+	waitingOverlay.style.height = "100%";
+	waitingOverlay.style.background = "rgba(0,0,0,0.8)";
+	waitingOverlay.style.display = "flex";
+	waitingOverlay.style.alignItems = "center";
+	waitingOverlay.style.justifyContent = "center";
+	waitingOverlay.style.color = "white";
+	waitingOverlay.style.fontSize = "24px";
+	waitingOverlay.style.zIndex = "1000";
+	waitingOverlay.textContent = "Waiting for opponent...";
+	wrapper.append(waitingOverlay);
+
 	// register UI handlers for WS events
 	registerGameUiHandlers({
 		waitingForPlayers: () => {
-			// placeholder: show "Waiting..." overlay here
+			waitingOverlay.textContent = "Waiting for opponent...";
+			waitingOverlay.style.display = "flex";
 		},
-		countdownToGame: (_n, _side) => {
-			// placeholder: show "3,2,1"
+		countdownToGame: (n, _side) => {
+			if (n > 0) {
+				//! LOGIC why $(n)?
+				waitingOverlay.textContent = `Starting in ${n}...`;
+				waitingOverlay.style.display = "flex";
+			}
 		},
 		startGame: () => {
-			// placeholder: hide overlays here I assume? or just start the game?
+			waitingOverlay.style.display = "none";
 		},
 	});
 
@@ -204,7 +228,7 @@ export async function renderGame(container: HTMLElement) {
 		mode === "local"
 			? connectToLocalSingleGameWS(state)
 			: mode === "online"
-			? connectToSingleGameWS(state)
+			? connectToSingleGameWS(state, roomId)
 			: connectToTournamentWS(state);
 	setupInputs();
 

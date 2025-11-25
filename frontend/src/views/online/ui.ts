@@ -1,6 +1,7 @@
 // src/views/online/ui.ts
 import { navigate } from "../../router/router";
 import { t } from "../../i18n";
+import { API_BASE } from "../../config/endpoints";
 
 export function renderOnlineLobby(container: HTMLElement) {
   container.innerHTML = "";
@@ -21,9 +22,10 @@ export function renderOnlineLobby(container: HTMLElement) {
   createBtn.textContent = "Create New Game";
   root.append(createBtn);
 
+  //! LOGIC console.log("TODO: create new online game via backend + open WS");
   createBtn.onclick = () => {
-    alert("Creating room…");
-    console.log("TODO: create new online game via backend + open WS");
+    const newGameId = self.crypto?.randomUUID?.() || Math.random().toString(36).slice(2);
+    navigate(`#/game?mode=online&id=${newGameId}`);
   };
 
   const list = document.createElement("div");
@@ -32,11 +34,14 @@ export function renderOnlineLobby(container: HTMLElement) {
 
   async function fetchOpenGames() {
     try {
-      const res = await fetch("/api/single-games/open");
+      const res = await fetch(`${API_BASE}/api/single-games/open`, {
+        credentials: "include",
+      });
       const json = await res.json();
       if (!json.success) return [];
       return json.data || [];
-    } catch {
+    } catch (err) {
+      console.error("Failed to fetch open games:", err);
       return [];
     }
   }
@@ -59,8 +64,8 @@ export function renderOnlineLobby(container: HTMLElement) {
         label.textContent = `Game #${g.id}`;
 
         const owner = document.createElement("span");
-        owner.textContent = `Creator: ${g.player1}`;
-
+        //! LOGIC owner.textContent = `Creator: ${g.player1}`;
+        owner.textContent = `Creator: ${g.match?.players?.left || "Unknown"}`;
         const joinBtn = document.createElement("button");
         joinBtn.textContent = "Join";
         joinBtn.onclick = () => {

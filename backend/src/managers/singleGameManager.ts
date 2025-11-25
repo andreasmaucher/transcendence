@@ -18,9 +18,9 @@ export function forEachSingleGame(fn: (singleGame: SingleGame) => void): void {
 export function getOrCreateSingleGame(id: string, userId: string, mode: string): SingleGame {
 	let singleGame = singleGames.get(id);
 	if (!singleGame) {
-		let singleGameId = crypto.randomUUID();
+		// Use the URL id as the singleGame id so players can find each other
 		singleGame = {
-			id: singleGameId,
+			id: id,
 			mode: mode,
 		} as SingleGame;
 
@@ -51,7 +51,7 @@ export function getOrCreateSingleGame(id: string, userId: string, mode: string):
 		} catch (error: any) {
 			console.error("[SGM]" + error.message);
 		}
-		singleGames.set(singleGame.id, singleGame);
+		singleGames.set(id, singleGame);
 	}
 
 	return singleGame;

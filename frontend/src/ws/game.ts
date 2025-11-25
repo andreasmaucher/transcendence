@@ -106,8 +106,10 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 	return () => ws.close();
 }
 
-export function connectToSingleGameWS(state: MatchState): () => void {
-	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/single-game/${ROOM_ID}/ws`;
+//! LOGIC why WS and where is target room id from not there before
+export function connectToSingleGameWS(state: MatchState, roomId?: string): () => void {
+	const targetRoomId = roomId ?? ROOM_ID;
+	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/single-game/${targetRoomId}/ws`;
 
 	const ws = new WebSocket(wsUrl);
 	setActiveSocket(ws);

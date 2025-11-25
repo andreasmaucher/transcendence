@@ -11,7 +11,19 @@ export default async function singleGameRoutes(fastify: FastifyInstance) {
 			console.log("No open single games");
 			return reply.code(404).send({ success: false, message: "No open single games" });
 		} else {
-			return reply.code(200).send({ success: true, data: openSingleGames });
+			//! LOGIC WHY???
+			// Sanitize: remove non-serializable fields like 'clients' (Set<WebSocket>)
+			const data = openSingleGames.map((g) => ({
+				id: g.id,
+				mode: g.mode,
+				match: {
+					id: g.match.id,
+					state: g.match.state,
+					players: g.match.players,
+					mode: g.match.mode,
+				},
+			}));
+			return reply.code(200).send({ success: true, data });
 		}
 	});
 

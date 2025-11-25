@@ -110,6 +110,14 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 
 			socket.send(buildPayload("state", match.state));
 
+			//! LOGIC 
+			// If match is not full yet, send "waiting" message to all clients
+			if (!checkMatchFull(match)) {
+				for (const client of match.clients) {
+					client.send(buildPayload("waiting", undefined));
+				}
+			}
+
 			socket.on("message", (raw: RawData) => handleSocketMessages(raw, match));
 
 			socket.on("close", () => {
