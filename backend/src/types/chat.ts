@@ -12,7 +12,7 @@ export type ChatEvent =
 	| "init"
 	| "requestInit";
 
-export type Message = {
+export type ChatMessage = {
 	id: string;
 	sender: string;
 	receiver?: string;
@@ -26,7 +26,7 @@ export type Message = {
 
 export type chatHistory = {
 	user: string;
-	global: Message[];
-	private: Map<string, Message[]>;
-	tournament: Message[];
+	global: ChatMessage[];
+	private: Map<string, ChatMessage[]>;
+	tournament: ChatMessage[];
 };

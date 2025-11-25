@@ -3,9 +3,10 @@ import { Match, PaddleSide } from "../types/match.js";
 import { resetMatchState } from "../game/state.js";
 import { addMessageDB } from "../database/messages/setters.js";
 import { blockUserDB, unblockUserDB } from "../database/users/setters.js";
-import { chatBroadcast } from "./broadcaster.js";
+import { userBroadcast } from "./broadcaster.js";
 import { createUTCTimestamp } from "../utils/time.js";
 import { convertToMessage } from "../chat/utils.js";
+import { ChatMessage } from "../types/chat.js";
 
 // Handles the "message" type of socket messages for the user sockets
 export function handleChatMessages(raw: RawData) {
@@ -16,13 +17,17 @@ export function handleChatMessages(raw: RawData) {
 		console.log("[WS] Unable to parse Json");
 		return;
 	}
-	const msg = convertToMessage(rawMsg);
+	const msg: ChatMessage = convertToMessage(rawMsg);
 	msg.id = crypto.randomUUID();
 	msg.sentAt = createUTCTimestamp();
-	addMessageDB(msg);
-	if (msg.type === "block" && msg.receiver) blockUserDB(msg.sender, msg.receiver);
-	else if (msg.type === "unblock" && msg.receiver) unblockUserDB(msg.sender, msg.receiver);
-	chatBroadcast(msg);
+	try {
+		addMessageDB(msg);
+		if (msg.type === "block" && msg.receiver) blockUserDB(msg.sender, msg.receiver);
+		else if (msg.type === "unblock" && msg.receiver) unblockUserDB(msg.sender, msg.receiver);
+		userBroadcast("chat", msg);
+	} catch (error: any) {
+		console.log("[WS] ", error.message);
+	}
 }
 
 // Handles the "message" type of socket messages for the game sockets

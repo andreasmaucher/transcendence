@@ -1,5 +1,6 @@
 import { usersOnline } from "../config/structures.js";
 import { getUserByUsernameDB } from "../database/users/getters.js";
+import { userBroadcast } from "../transport/broadcaster.js";
 import { User } from "../types/user.js";
 import type WebSocket from "ws";
 
@@ -30,6 +31,10 @@ export function addUserOnline(username: string, socket: WebSocket): User | undef
 		}
 		usersOnline.set(user.username, user);
 		console.log(`User ${user.username} is now online`);
+
+		// Notify that user is online to other online users
+		userBroadcast("user-online", { username: user.username });
+
 		return user;
 	} else return undefined;
 }
@@ -78,6 +83,9 @@ export function removeUserOnline(username: string) {
 
 	usersOnline.delete(username);
 	console.log(`User ${username} is now offline`);
+
+	// Notify that user is offline to other online users
+	userBroadcast("user-offline", { username: username });
 }
 
 // Return user data from usersOnline Map structure (if present)

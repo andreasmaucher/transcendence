@@ -1,18 +1,28 @@
 // PAYLOAD RELATED TYPES
 
-import { Message } from "./chat.js";
+import { ChatMessage } from "./chat.js";
 import { MatchState } from "./match.js";
 
-export type PayloadTypes = "state" | "match-assigned" | "waiting" | "countdown" | "start" | "player-left" | "chat";
+export type PayloadTypes =
+	| "state"
+	| "match-assigned"
+	| "waiting"
+	| "countdown"
+	| "start"
+	| "player-left"
+	| "chat"
+	| "user-online"
+	| "user-offline";
+
 export type PayloadDataTypes =
 	| MatchState
 	| { matchId: string; playerSide: string }
 	| { value: number }
 	| undefined
-	| { player: string }
-	| Message;
+	| { username: string }
+	| ChatMessage;
 
 export type Payload = {
-	type: string;
+	type: PayloadTypes;
 	data: PayloadDataTypes;
 };

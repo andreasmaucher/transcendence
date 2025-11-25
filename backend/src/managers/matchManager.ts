@@ -12,7 +12,7 @@ import { tournaments } from "../config/structures.js";
 import { isRoundOver, isTournamentOver } from "./tournamentManagerHelpers.js";
 import { endTournament, forfeitTournament, goToNextRound } from "./tournamentManager.js";
 import { Match, TournamentMatchInfo, TournamentMatchType } from "../types/match.js";
-import { broadcast, buildPayload } from "../transport/broadcaster.js";
+import { buildPayload, gameBroadcast } from "../transport/broadcaster.js";
 
 // Set the starting state of the tournament match info
 export function initTournamentMatchInfo(
@@ -94,13 +94,13 @@ export function startGameCountdown(match: Match) {
 
 	const interval = setInterval(() => {
 		// Broadcast countdown to all players in the match
-		broadcast(buildPayload("countdown", { value: sec }), match);
+		gameBroadcast(buildPayload("countdown", { value: sec }), match);
 
 		if (sec === 0) {
 			clearInterval(interval);
 
 			startMatch(match);
-			broadcast(buildPayload("start", undefined), match);
+			gameBroadcast(buildPayload("start", undefined), match);
 		}
 
 		sec--;
@@ -143,8 +143,7 @@ export function forfeitMatch(match: Match, playerId: string) {
 			// Send a message BEFORE closing
 			client.send(
 				buildPayload("player-left", {
-					matchId: match.id,
-					player: playerId,
+					username: playerId,
 				})
 			);
 
