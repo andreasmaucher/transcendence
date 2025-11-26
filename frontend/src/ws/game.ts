@@ -22,6 +22,7 @@ export function registerGameUiHandlers(handlers: {
 
 export function connectToLocalSingleGameWS(state: MatchState): () => void {
 	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/local-single-game/${ROOM_ID}/ws`;
+	console.log("URL: ", wsUrl);
 
 	const ws = new WebSocket(wsUrl);
 	setActiveSocket(ws);

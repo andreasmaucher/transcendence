@@ -1,4 +1,5 @@
 import db from "../db_init.js";
+import crypto from "crypto";
 
 // Add (register) a new user to the database
 export function registerUserDB(username: string, hashedPassword: string, avatar: string) {
@@ -51,15 +52,15 @@ export function updateAvatarDB(username: string, avatar: string) {
 	else console.log(`[DB] Avatar updated for user ${username}`);
 }
 
-// Add a friend (ID) from the user.friends column
+// Add a friend (ID) to the friends column
 export function addFriendDB(username: string, friend: string) {
 	const json: any = db.prepare(`SELECT friends FROM users WHERE username = ?`).get(username);
 
 	// Parse the JSON
 	const friends = JSON.parse(json.friends);
 
-	// Add a new friend
-	friends.push(friend);
+	// Avoid duplicates
+	if (!friends.includes(friend)) friends.push(friend);
 
 	// Update back into the DB
 	const stmt = db.prepare("UPDATE users SET friends = ? WHERE username = ?");
@@ -69,7 +70,7 @@ export function addFriendDB(username: string, friend: string) {
 	else console.log(`[DB] Friend ${friend} added to user ${username}`);
 }
 
-// Remove friend (ID) from the user.friends column
+// Remove friend (ID) from the friends column
 export function removeFriendDB(username: string, friend: string) {
 	const json: any = db.prepare(`SELECT friends FROM users WHERE username = ?`).get(username);
 
@@ -85,6 +86,42 @@ export function removeFriendDB(username: string, friend: string) {
 	if (result.changes === 0)
 		throw new Error(`[DB] Failed to remove friend ${friend} from user ${username}`); // If DB run fails, throws error
 	else console.log(`[DB] Friend ${friend} removed from user ${username}`);
+}
+
+// Add an user (ID) to the blocked column
+export function blockUserDB(username: string, enemy: string) {
+	const json: any = db.prepare(`SELECT blocked FROM users WHERE username = ?`).get(username);
+
+	// Parse the JSON
+	const blocked = JSON.parse(json.blocked);
+
+	// Avoid duplicates
+	if (!blocked.includes(enemy)) blocked.push(enemy);
+
+	// Update back into the DB
+	const stmt = db.prepare("UPDATE users SET blocked = ? WHERE username = ?");
+	const result = stmt.run(JSON.stringify(blocked), username);
+	if (result.changes === 0)
+		throw new Error(`[DB] Failed to block ${enemy} for user ${username}`); // If DB run fails, throws error
+	else console.log(`[DB] User ${enemy} blocked for user ${username}`);
+}
+
+// Remove an user (ID) from the blocked column
+export function unblockUserDB(username: string, enemy: string) {
+	const json: any = db.prepare(`SELECT blocked FROM users WHERE username = ?`).get(username);
+
+	// Parse the JSON
+	const blocked = JSON.parse(json.blocked);
+
+	// Remove a friend
+	const updatedBlocked = blocked.filter((f: string) => f !== enemy);
+
+	// Update back into the DB
+	const stmt = db.prepare("UPDATE users SET blocked = ? WHERE username = ?");
+	const result = stmt.run(JSON.stringify(updatedBlocked), username);
+	if (result.changes === 0)
+		throw new Error(`[DB] Failed to unblock ${enemy} for user ${username}`); // If DB run fails, throws error
+	else console.log(`[DB] User ${enemy} unblocked for user ${username}`);
 }
 
 export function updateStatsDB(username: string, stats: string) {
@@ -103,4 +140,21 @@ export function updateStatsDB(username: string, stats: string) {
 export function removeUserDB(username: string): void {
 	const stmt = db.prepare("DELETE FROM users WHERE username = ?");
 	stmt.run(username);
+}
+
+//OAUTH
+// Insert a new GitHub OAuth user into the database
+export function registerGithubUserDB(username: string, providerId: string, avatar?: string) {
+	const stmt = db.prepare(`
+		INSERT INTO users (username, password, provider, provider_id, avatar, created_at)
+		VALUES (?, ?, 'github', ?, ?, CURRENT_TIMESTAMP)
+	`);
+
+	// placeholder password is ignored for OAuth users
+	const placeholderPassword = crypto.randomBytes(32).toString("hex");
+
+	const result = stmt.run(username, placeholderPassword, providerId, avatar);
+
+	if (result.changes === 0) throw new Error(`[DB] Failed to register GitHub user ${username}`);
+	else console.log(`[DB] Registered new GitHub user ${username}`);
 }

@@ -5,8 +5,8 @@ import { getOrCreateSingleGame } from "../managers/singleGameManager.js";
 import { getOrCreateTournament, addPlayerToTournament } from "../managers/tournamentManager.js";
 import { addPlayerToMatch, checkMatchFull, forfeitMatch, startMatch } from "../managers/matchManager.js";
 import { Match } from "../types/match.js";
-import { addUserOnline, removeUserOnline } from "../user/online.js";
-import { handleSocketMessages } from "./messages.js";
+import { addGameToUser, addUserOnline, removeGameFromUser, removeUserOnline } from "../user/online.js";
+import { handleChatMessages, handleGameMessages } from "./messages.js";
 import { authenticateWebSocket } from "../auth/verify.js";
 
 export function registerWebsocketRoute(fastify: FastifyInstance) {
@@ -14,9 +14,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 	fastify.get("/api/user/ws", { websocket: true }, (socket: any, request: any) => {
 		const payload = authenticateWebSocket(request, socket);
 		if (!payload) return;
-
-		console.log(`[WS] Websocket for User: ${payload.username} registered`);
-
+		console.log(`[userWS] Websocket for User: ${payload.username} registered`);
 		socket.username = payload.username;
 		const user = addUserOnline(payload.username, socket);
 		if (!user) {
@@ -29,8 +27,16 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			user.isAlive = true;
 		});
 
+		socket.on("message", (raw: RawData) => {
+			handleChatMessages(raw);
+		});
+
+		socket.on("error", (error: any) => {
+			console.error(`[userWS] Error for ${socket.username} on socket ${socket}:`, error);
+		});
+
 		socket.on("close", () => {
-			removeUserOnline(payload.username);
+			removeUserOnline(socket.username);
 		});
 	});
 
@@ -48,11 +54,17 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				return;
 			}
 
-			console.log(`[WS] Websocket for LocalSingleGame: ${singleGameId} and User: ${payload.username} registered`);
+			console.log(
+				`[gameWS] Websocket for LocalSingleGame: ${singleGameId} and User: ${payload.username} registered`
+			);
 
 			socket.username = payload.username;
 			const singleGame = getOrCreateSingleGame(singleGameId, payload.username, "local");
 			const match: Match = singleGame.match;
+
+			// Add the current game info to the userOnline struct
+			addGameToUser(socket.username, socket, singleGame.id);
+
 			// Since it's a local game add user and start the game
 			addPlayerToMatch(match, socket.username);
 			match.clients.add(socket);
@@ -60,13 +72,17 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 
 			socket.send(buildPayload("state", match.state));
 
-			socket.on("message", (raw: RawData) => handleSocketMessages(raw, match));
+			socket.on("message", (raw: RawData) => handleGameMessages(raw, match));
 
 			socket.on("close", () => {
 				match.clients.delete(socket);
+				// Forfeit match
 				forfeitMatch(match, socket.username);
+
+				// Remove the current game from the userOnline struct
+				removeGameFromUser(socket.username);
 			});
-			socket.on("error", (err: any) => console.error(`[WS error] match=${match.id}`, err));
+			socket.on("error", (err: any) => console.error(`[gameWS] match=${match.id}`, err));
 		}
 	);
 
@@ -84,9 +100,9 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				return;
 			}
 
-			if (singleGameId == "default")
-				console.log(`[WS] Websocket for SingleGame: ${singleGameId} and User: ${payload.username} registered`);
-			else console.log(`[WS] Websocket for SingleGame: ${singleGameId} and User: ${payload.username} connected`);
+			if (singleGameId === "default")
+				console.log(`[gameWS] Websocket for SingleGame: ${singleGameId} and User: ${payload.username} registered`);
+			else console.log(`[gameWS] Websocket for SingleGame: ${singleGameId} and User: ${payload.username} connected`);
 
 			socket.username = payload.username;
 
@@ -94,9 +110,12 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			const match: Match = singleGame.match;
 
 			if (checkMatchFull(match)) {
-				console.log("[WS] Match already full");
+				console.log("[gameWS] Match already full");
 				socket.close(1008, "Match is already full");
 			}
+
+			// Add the current game info to the userOnline struct
+			addGameToUser(socket.username, socket, singleGame.id);
 
 			addPlayerToMatch(match, socket.username);
 			match.clients.add(socket);
@@ -110,13 +129,17 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 
 			socket.send(buildPayload("state", match.state));
 
-			socket.on("message", (raw: RawData) => handleSocketMessages(raw, match));
+			socket.on("message", (raw: RawData) => handleGameMessages(raw, match));
 
 			socket.on("close", () => {
 				match.clients.delete(socket);
+				// Forfeit match for all players
 				forfeitMatch(match, socket.username);
+
+				// Remove the current game from the userOnline struct
+				removeGameFromUser(socket.username);
 			});
-			socket.on("error", (err: any) => console.error(`[ws error] match=${match.id}`, err));
+			socket.on("error", (err: any) => console.error(`[gameWS] match=${match.id}`, err));
 		}
 	);
 
@@ -136,15 +159,18 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				return;
 			}
 
-			if (tournamentId == "default")
-				console.log(`[WS] Websocket for Tournament: ${tournamentId} and User: ${payload.username} registered`);
-			else console.log(`[WS] Websocket for Tournament: ${tournamentId} and User: ${payload.username} connected`);
+			if (tournamentId === "default")
+				console.log(`[gameWS] Websocket for Tournament: ${tournamentId} and User: ${payload.username} registered`);
+			else console.log(`[gameWS] Websocket for Tournament: ${tournamentId} and User: ${payload.username} connected`);
 			socket.username = payload.username;
 
 			const tournament = getOrCreateTournament(tournamentId, tournamentName, tournamentSize);
 			const match = addPlayerToTournament(tournament, socket.username, socket);
 			if (match) {
 				match.clients.add(socket);
+
+				// Add the current game info to the userOnline struct
+				addGameToUser(socket.username, socket, tournament.id);
 
 				socket.send(
 					buildPayload("match-assigned", {
@@ -155,15 +181,20 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 
 				socket.send(buildPayload("state", match.state));
 
-				socket.on("message", (raw: RawData) => handleSocketMessages(raw, match));
+				socket.on("message", (raw: RawData) => handleGameMessages(raw, match));
 
 				socket.on("close", () => {
 					match.clients.delete(socket);
+
+					// Forfeit match (and tournament) for all players
 					forfeitMatch(match, socket.username);
+
+					// Remove the current game from the userOnline struct
+					removeGameFromUser(socket.username);
 				});
-				socket.on("error", (err: any) => console.error(`[ws error] match=${match.id}`, err));
+				socket.on("error", (err: any) => console.error(`[gameWS] match=${match.id}`, err));
 			} else {
-				console.log(`[WS] Tournament ${tournament.id} is already full`);
+				console.log(`[gameWS] Tournament ${tournament.id} is already full`);
 				socket.close(1008, "Tournament is already full");
 			}
 		}

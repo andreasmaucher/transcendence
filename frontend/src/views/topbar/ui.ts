@@ -4,6 +4,7 @@ import { navigate } from "../../router/router";
 import { setLanguage, getLanguage } from "../../i18n";
 import { t } from "../../i18n";
 import { connectToUserWS } from "../../ws/user";
+import { teardownChat } from "../menu/ui"; // Codex change: clean chat panel on logout
 
 let initialized = false;
 let disconnectUserWS: (() => void) | null = null;
@@ -186,6 +187,7 @@ function renderLoggedIn(userBox: HTMLDivElement, me: any) {
 			disconnectUserWS();
 			disconnectUserWS = null;
 		}
+		teardownChat();
 		clearUserBox(userBox);
 		renderLoggedOut(userBox);
 		navigate("#/login");
