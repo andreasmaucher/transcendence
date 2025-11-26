@@ -25,9 +25,9 @@ import { buildPayload } from "../transport/broadcaster.js";
 export function getOrCreateTournament(id: string, name?: string, size?: number): Tournament {
 	let tournament = tournaments.get(id);
 	if (!tournament) {
-		let tournamentId = crypto.randomUUID();
+		// use the provided id from URL so players can find each other
 		tournament = {
-			id: tournamentId,
+			id: id,
 			name: name,
 			isRunning: false,
 			state: createInitialTournamentState(size || 4),
@@ -69,7 +69,7 @@ export function getOrCreateTournament(id: string, name?: string, size?: number):
 		} catch (error: any) {
 			console.error("[TM] " + error.message);
 		}
-		tournaments.set(tournament.id, tournament);
+		tournaments.set(id, tournament);
 	}
 	return tournament;
 }
@@ -117,13 +117,53 @@ export function assignPlayersToRound(tournament: Tournament) {
 	const prevRound = tournament.matches.get(tournament.state.round - 1);
 	const nextRound = tournament.matches.get(tournament.state.round);
 	if (prevRound && nextRound) {
+		// Build a map of playerId -> WebSocket from previous round
+		const playerSockets = new Map<string, any>();
+		for (const match of prevRound) {
+			for (const client of match.clients) {
+				const username = (client as any).username;
+				if (username) {
+					playerSockets.set(username, client);
+				}
+			}
+		}
+
+		// Assign winners to new matches
 		for (const match of prevRound) {
 			const winner = extractMatchWinner(match);
-			addPlayerToTournament(tournament, winner);
+			const newMatch = addPlayerToTournament(tournament, winner);
+			// Add winner's socket to the new match
+			const winnerSocket = playerSockets.get(winner);
+			if (newMatch && winnerSocket) {
+				newMatch.clients.add(winnerSocket);
+				// Notify player of new match assignment
+				const playerSide = newMatch.players.left === winner ? "left" : "right";
+				winnerSocket.send(
+					buildPayload("match-assigned", {
+						matchId: newMatch.id,
+						playerSide: playerSide,
+					})
+				);
+			}
 		}
+		
+		// Assign losers to new matches
 		for (const match of prevRound) {
 			const loser = extractMatchLoser(match);
-			addPlayerToTournament(tournament, loser);
+			const newMatch = addPlayerToTournament(tournament, loser);
+			// Add loser's socket to the new match
+			const loserSocket = playerSockets.get(loser);
+			if (newMatch && loserSocket) {
+				newMatch.clients.add(loserSocket);
+				// Notify player of new match assignment
+				const playerSide = newMatch.players.left === loser ? "left" : "right";
+				loserSocket.send(
+					buildPayload("match-assigned", {
+						matchId: newMatch.id,
+						playerSide: playerSide,
+					})
+				);
+			}
 		}
 	}
 }
@@ -133,6 +173,29 @@ export function goToNextRound(tournament: Tournament) {
 	tournament.state.round++;
 	const matches = initTournamentMatches(tournament, tournament.state.size);
 	tournament.matches.set(tournament.state.round, matches);
+	
+	// Notify all players about round transition
+	const prevRoundMatches = tournament.matches.get(tournament.state.round - 1);
+	if (prevRoundMatches) {
+		for (const match of prevRoundMatches) {
+			for (const client of match.clients) {
+				const username = (client as any).username;
+				const winner = extractMatchWinner(match);
+				const isWinner = username === winner;
+				
+				client.send(
+					buildPayload("round-transition", {
+						round: tournament.state.round,
+						result: isWinner ? "winner" : "loser",
+						message: isWinner 
+							? "You won! Advancing to finals..." 
+							: "Advancing to 3rd place match...",
+					})
+				);
+			}
+		}
+	}
+	
 	assignPlayersToRound(tournament);
 	for (const match of matches) startGameCountdown(match);
 }
