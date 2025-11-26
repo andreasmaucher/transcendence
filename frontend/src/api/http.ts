@@ -2,6 +2,7 @@
 // Builds the URL from API_BASE and calls /api/constants via fetch(), without cookies (credentials: "omit")
 // API_BASE is the base URL for the backend HTTP API e.g. if you open http://localhost:5173/, API_BASE = http://localhost:4000
 
+import { userData } from "../config/constants";
 import { API_BASE } from "../config/endpoints";
 import type { GameConstants } from "../constants";
 
@@ -75,6 +76,8 @@ export async function logout(params: { username: string }): Promise<void> {
 		credentials: "include",
 		body: JSON.stringify(params),
 	});
+	userData.userSock?.close();
+	userData.gameSock?.close();
 	if (!res.ok) throw new Error("logout failed");
 }
 
@@ -107,35 +110,32 @@ export async function updateUser(params: {
 	}
 }
 
-
 // tournament
 
 export type Tournament = {
-  id: number;
-  name: string;
-  status: string;
+	id: number;
+	name: string;
+	status: string;
 };
-
-
 
 ////////// HARDCODED ##### TEMPORARY
 export async function fetchTournamentList(): Promise<Tournament[]> {
-  const res = await fetch(`${API_BASE}/api/tournament/list`, {
-    credentials: "include",
-  });
+	const res = await fetch(`${API_BASE}/api/tournament/list`, {
+		credentials: "include",
+	});
 
-  if (res.status === 404) {
-    // hardcoded tournoments *******************************
-    return [
-      { id: 1, name: "42 League", status: "open" },
-      { id: 2, name: "Berlin", status: "open" },
-    ];
-  }
+	if (res.status === 404) {
+		// hardcoded tournoments *******************************
+		return [
+			{ id: 1, name: "42 League", status: "open" },
+			{ id: 2, name: "Berlin", status: "open" },
+		];
+	}
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch tournament list");
-  }
+	if (!res.ok) {
+		throw new Error("Failed to fetch tournament list");
+	}
 
-  const body = await res.json();
-  return (body.data as Tournament[]) ?? [];
+	const body = await res.json();
+	return (body.data as Tournament[]) ?? [];
 }

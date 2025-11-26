@@ -19,6 +19,7 @@ import singleGameRoutes from "./routes/singleGame.js";
 import type WebSocket from "ws";
 import userManagementRoutes from "./routes/userManagement.js";
 import chatRoutes from "./routes/chat.js";
+import gamesRoutes from "./routes/games.js";
 
 const UPDATE_FPS = GAME_CONSTANTS.UPDATE_FPS;
 
@@ -74,6 +75,7 @@ fastify.get("/api/constants", async () => {
 
 await fastify.register(userRoutes);
 await fastify.register(userManagementRoutes);
+await fastify.register(gamesRoutes);
 await fastify.register(singleGameRoutes);
 await fastify.register(tournamentRoutes);
 await fastify.register(matchRoutes);
