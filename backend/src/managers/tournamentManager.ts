@@ -67,7 +67,7 @@ export function getOrCreateTournament(id: string, name?: string, size?: number):
 				tournament
 			); // 5 minutes
 		} catch (error: any) {
-			console.error("[TM] " + error.message);
+			console.error("[TM]", error.message);
 		}
 		tournaments.set(tournament.id, tournament);
 	}
@@ -87,7 +87,7 @@ export function startTournament(tournament: Tournament) {
 			tournament.state.isRunning = true;
 		}
 	} catch (error: any) {
-		console.error("[TM] " + error.message);
+		console.error("[TM]", error.message);
 	}
 }
 
@@ -99,7 +99,7 @@ export function addPlayerToTournament(tournament: Tournament, playerId: string, 
 			for (const match of matches) {
 				if (!checkMatchFull(match)) {
 					addPlayerToMatch(match, playerId);
-					if (tournament.state.round == 1) tournament.clients.add(socket);
+					if (tournament.state.round === 1) tournament.clients.add(socket);
 					if (checkTournamentFull(tournament)) startTournament(tournament);
 					return match;
 				}
@@ -108,7 +108,7 @@ export function addPlayerToTournament(tournament: Tournament, playerId: string, 
 
 		return undefined; // If all matches already full
 	} catch (error: any) {
-		console.error("[TM] " + error.message);
+		console.error("[TM]", error.message);
 	}
 }
 
@@ -166,8 +166,7 @@ export function forfeitTournament(tournamentId: string, playerId: string) {
 					// Send a message BEFORE closing
 					client.send(
 						buildPayload("player-left", {
-							matchId: match.id,
-							player: playerId,
+							username: playerId,
 						})
 					);
 					client.close(1000, "A player left");

@@ -3,7 +3,7 @@ import db from "../db_init.js";
 // Retrieve all tournaments from the database
 export function getAllTournamentsDB(): any[] {
 	const stmt = db.prepare(`
-    SELECT internal_id, id, size, winner, started_at, ended_at, notes
+    SELECT *
     FROM tournaments
     ORDER BY internal_id ASC
   `);

@@ -28,6 +28,7 @@ db.exec(`
 		provider_id TEXT DEFAULT NULL,
 		avatar TEXT,
 		friends TEXT DEFAULT '[]',
+		blocked TEXT DEFAULT '[]',
 		stats TEXT NULL,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
@@ -38,7 +39,7 @@ db.exec(`
 		name TEXT UNIQUE NOT NULL,
 		size INTEGER,
 		winner TEXT,
-		started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		started_at DATETIME,
 		ended_at DATETIME,
 		notes TEXT
 	);
@@ -56,7 +57,7 @@ db.exec(`
 		score_left INTEGER DEFAULT 0,
 		score_right INTEGER DEFAULT 0,
 		winner TEXT,
-		started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		started_at DATETIME,
 		ended_at DATETIME,
 		notes TEXT,
 
@@ -82,9 +83,9 @@ db.exec(`
 
 function cleanupIncompleteGames() {
 	try {
-		const deletedMatches = db.prepare(`DELETE FROM matches WHERE winner IS NULL`).run();
+		const deletedMatches = db.prepare(`DELETE FROM matches WHERE winner IS NULL AND notes IS NULL`).run();
 
-		const deletedTournaments = db.prepare(`DELETE FROM tournaments WHERE winner IS NULL`).run();
+		const deletedTournaments = db.prepare(`DELETE FROM tournaments WHERE winner IS NULL AND notes IS NULL`).run();
 
 		console.log(
 			`[DB] Cleanup complete — removed ${deletedMatches.changes} unfinished matches and ${deletedTournaments.changes} unfinished tournaments.`

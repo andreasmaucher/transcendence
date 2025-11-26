@@ -4,14 +4,14 @@ import { saveMatchOnChain } from "../wallet/contract";
 import { getWalletState } from "../wallet/wallet";
 import { ROOM_ID } from "../config/endpoints";
 import { fetchMe } from "../api/http";
-import { State } from "../game/state";
 
 import { t } from "../i18n";
 import { navigate } from "../router/router";
+import { MatchState } from "../types/game";
 
 // Draw everything (reads state but does not change it, since there is no game logic here)
 // function takes in a 2D canvas context ctx and the gurrent game State s
-export function draw(ctx: CanvasRenderingContext2D, s: State): void {
+export function draw(ctx: CanvasRenderingContext2D, s: MatchState): void {
 	// wipes all previous pixels in the full canvas area
 	ctx.clearRect(0, 0, s.width, s.height);
 	ctx.fillStyle = COLOR_BACKGROUND;
@@ -50,9 +50,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: State): void {
 		ctx.textAlign = "center";
 
 		// translated winner text
-		const winnerText = s.winner === "left"
-			? t("gameOver.leftWins")
-			: t("gameOver.rightWins");
+		const winnerText = s.winner === "left" ? t("gameOver.leftWins") : t("gameOver.rightWins");
 
 		ctx.fillText(winnerText, s.width / 2, s.height / 2);
 		ctx.fillText(t("gameOver.refresh"), s.width / 2, s.height / 2 + 40);
@@ -75,7 +73,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: State): void {
 			const gameId = `${ROOM_ID}-${now}`; // e.g., "tournament-123-1699999999999"
 			const gameIndex = 0; // TODO: inject real index from tournament bracket
 
-			const s2 = gameState as State;
+			const s2 = gameState as MatchState;
 			const params = {
 				tournamentId: ROOM_ID,
 				gameId,

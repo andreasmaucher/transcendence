@@ -12,7 +12,7 @@ import { tournaments } from "../config/structures.js";
 import { isRoundOver, isTournamentOver } from "./tournamentManagerHelpers.js";
 import { endTournament, forfeitTournament, goToNextRound } from "./tournamentManager.js";
 import { Match, TournamentMatchInfo, TournamentMatchType } from "../types/match.js";
-import { broadcast, buildPayload } from "../transport/broadcaster.js";
+import { buildPayload, gameBroadcast } from "../transport/broadcaster.js";
 
 // Set the starting state of the tournament match info
 export function initTournamentMatchInfo(
@@ -62,7 +62,7 @@ export function createMatch({
 	try {
 		createMatchDB(match); // Add new match to database (without starting it)
 	} catch (error: any) {
-		console.error(error.message);
+		console.error("[MM]", error.message);
 	}
 	return match;
 }
@@ -70,9 +70,9 @@ export function createMatch({
 // Start match
 export function startMatch(match: Match) {
 	try {
-		if (match.singleGameId && match.mode == "local") {
+		if (match.singleGameId && match.mode === "local") {
 			startMatchDB(match.id);
-		} else if (match.singleGameId && match.mode == "remote") {
+		} else if (match.singleGameId && match.mode === "remote") {
 			// If it's a remote single game, handle the timeout cleanup here
 			let singleGame = getSingleGame(match.singleGameId);
 			if (singleGame && singleGame.expirationTimer) {
@@ -85,7 +85,7 @@ export function startMatch(match: Match) {
 		else return; // Temporary error handling
 		match.state.isRunning = true;
 	} catch (error: any) {
-		console.error(error.message);
+		console.error("[MM]", error.message);
 	}
 }
 
@@ -94,13 +94,13 @@ export function startGameCountdown(match: Match) {
 
 	const interval = setInterval(() => {
 		// Broadcast countdown to all players in the match
-		broadcast(buildPayload("countdown", { value: sec }), match);
+		gameBroadcast(buildPayload("countdown", { value: sec }), match);
 
 		if (sec === 0) {
 			clearInterval(interval);
 
 			startMatch(match);
-			broadcast(buildPayload("start", undefined), match);
+			gameBroadcast(buildPayload("start", undefined), match);
 		}
 
 		sec--;
@@ -127,7 +127,7 @@ export function addPlayerToMatch(match: Match, playerId: string) {
 		else return; // Temporary error handling, match full
 		if (match.singleGameId && checkMatchFull(match)) startGameCountdown(match);
 	} catch (error: any) {
-		console.error(error.message);
+		console.error("[MM]", error.message);
 	}
 }
 
@@ -143,8 +143,7 @@ export function forfeitMatch(match: Match, playerId: string) {
 			// Send a message BEFORE closing
 			client.send(
 				buildPayload("player-left", {
-					matchId: match.id,
-					player: playerId,
+					username: playerId,
 				})
 			);
 

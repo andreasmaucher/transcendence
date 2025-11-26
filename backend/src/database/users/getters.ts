@@ -3,7 +3,7 @@ import db from "../db_init.js";
 // Retrieve all users from the database
 export function getAllUsersDB(): any[] {
 	const stmt = db.prepare(`
-    SELECT internal_id, username, avatar, provider, provider_id, friends, stats, created_at
+    SELECT *
     FROM users
     ORDER BY internal_id ASC
   `);
@@ -29,7 +29,7 @@ export function getUserByUsernameDB(username: string): any {
 }
 
 // Check if the username is already present in the database (if present)
-export function getUsernameDB(username: string): boolean {
+export function isUsernameDB(username: string): boolean {
 	const stmt = db.prepare(`
 		SELECT 1
 		FROM users
@@ -51,4 +51,31 @@ export function getUserFriendsDB(username: string): string[] {
 	const friends: string[] = JSON.parse(result.friends);
 
 	return friends;
+}
+
+// Retrieve the frieds of the user
+export function getBlockedUsersDB(username: string): string[] {
+	const stmt = db.prepare(`SELECT blocked FROM users WHERE username = ?`);
+
+	const result: any = stmt.get(username); // returns one row or undefined
+	if (!result) throw new Error(`[DB] Blocked users for ${username} not found`);
+
+	const blocked: string[] = JSON.parse(result.blocked);
+
+	return blocked;
+}
+
+//OAUTH
+// Retrieve the username of a GithubUser
+export function getGithubUserByProviderIdDB(providerId: string): string | undefined {
+	const stmt = db.prepare(`
+		SELECT username
+		FROM users
+		WHERE provider = 'github' AND provider_id = ?
+		LIMIT 1
+	`);
+
+	const result: any = stmt.get(providerId);
+
+	return result ? result.username : undefined;
 }

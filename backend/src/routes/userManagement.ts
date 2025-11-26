@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { getUserByUsernameDB, getUserFriendsDB, getUsernameDB } from "../database/users/getters.js";
+import { getUserByUsernameDB, getUserFriendsDB, isUsernameDB } from "../database/users/getters.js";
 import { verifyPassword, hashPassword } from "../user/password.js";
 import {
 	registerUserDB,
@@ -21,7 +21,7 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 	fastify.get("/api/user/check/:username", async (request: FastifyRequest, reply: FastifyReply) => {
 		const { username } = request.params as { username: string };
 
-		const exists = getUsernameDB(username);
+		const exists = isUsernameDB(username);
 		return reply.code(200).send({ success: true, exists });
 	});
 
@@ -39,7 +39,7 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 			return reply.code(400).send({ success: false, message: "Username and password are required" });
 
 		// Duplicate username check (clear message for users)
-		if (getUsernameDB(username)) return reply.code(409).send({ success: false, message: "Username already taken" });
+		if (isUsernameDB(username)) return reply.code(409).send({ success: false, message: "Username already taken" });
 
 		try {
 			// Store default avatar if not provided
@@ -60,7 +60,7 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 
 			return reply.code(200).send({ success: true, message: "Registration successful" });
 		} catch (error: any) {
-			console.log(error.message);
+			console.error("[userRT]", error.message);
 			return reply.code(400).send({ success: false, message: "Unable to register user" });
 		}
 	});
@@ -93,7 +93,7 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 		};
 		const user = getUserOnline(username);
 		// Close user websocket connection
-		if (user) user.socket.close(1000, "User logged out");
+		if (user) user.userWS.close(1000, "User logged out");
 
 		// Expire the cookie immediately
 		clearSessionCookie(reply);
@@ -119,7 +119,7 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 
 		if (newUsername) {
 			try {
-				if (getUsernameDB(newUsername))
+				if (isUsernameDB(newUsername))
 					return reply.code(409).send({ success: false, message: "Username already in use" });
 				updateUsernameDB(payload.username, newUsername);
 				updateUserOnline({
@@ -128,7 +128,7 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 				});
 				return reply.code(200).send({ success: true, message: "Username updated successfully" });
 			} catch (error: any) {
-				console.log(error.message);
+				console.error("[userRT]", error.message);
 				return reply.code(400).send({ success: false, message: "Unable to update username" });
 			}
 		} else if (newPassword) {
@@ -137,7 +137,7 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 				updatePasswordDB(payload.username, hashedPassword);
 				return reply.code(200).send({ success: true, message: "Password updated successfully" });
 			} catch (error: any) {
-				console.log(error.message);
+				console.error("[userRT]", error.message);
 				return reply.code(400).send({ success: false, message: "Unable to update password" });
 			}
 		} else if (newAvatar) {
@@ -150,7 +150,7 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 				});
 				return reply.code(200).send({ success: true, message: "Avatar updated successfully" });
 			} catch (error: any) {
-				console.log(error.message);
+				console.error("[userRT]", error.message);
 				return reply.code(400).send({ success: false, message: "Unable to update avatar" });
 			}
 		} else {
@@ -173,7 +173,7 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 			addFriendDB(payload.username, friend);
 			return reply.code(200).send({ success: true, message: "Friend added successfully" });
 		} catch (error: any) {
-			console.log(error.message);
+			console.error("[userRT]", error.message);
 			return reply.code(400).send({ success: false, message: "Unable to add friend" });
 		}
 	});
@@ -196,7 +196,7 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 				return reply.code(200).send({ success: true, message: "Friend added successfully" });
 			} else reply.code(400).send({ success: false, message: "Friend not present in user friends list" });
 		} catch (error: any) {
-			console.log(error.message);
+			console.error("[userRT]", error.message);
 			return reply.code(400).send({ success: false, message: "Unable to add friend" });
 		}
 	});

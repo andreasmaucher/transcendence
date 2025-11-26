@@ -1,18 +1,34 @@
 // CHAT RELATED TYPES
 
-export type Message = {
+export type ChatEvent =
+	| "direct"
+	| "broadcast"
+	| "invite"
+	| "tournament"
+	| "profile-link"
+	| "block"
+	| "unblock";
+
+export type ChatMessage = {
 	id: string;
 	sender: string;
-	receiver: string | null;
-	type: string;
+	receiver?: string;
+	type: ChatEvent;
 	gameId?: string;
 	content?: string;
 	sentAt: string;
 };
 
-export type chatHistory = {
+export type chatHistoryBE = {
 	user: string;
-	global: Message[];
-	private: Map<string, Message[]>;
-	tournament: Message[];
+	global: ChatMessage[];
+	private: ChatMessage[];
+	tournament: ChatMessage[];
+};
+
+export type userData = {
+	user: string;
+	chatHistory: chatHistoryBE;
+	blockedUsers: string[];
+	friends: string[];
 };

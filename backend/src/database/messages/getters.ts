@@ -1,11 +1,11 @@
 import db from "../db_init.js";
 
 // Retrieve all messages from the database
-export function getAllMessages(): any[] {
+export function getAllMessagesDB(): any[] {
 	const stmt = db.prepare(`
-        SELECT internal_id, sender, receiver, type, content, sent_at
+        SELECT *
         FROM messages
-        ORDER BY sent_at DESC
+        ORDER BY sent_at ASC
     `);
 
 	return stmt.all();
@@ -16,11 +16,11 @@ export function getAllGlobalMessagesDB(): any[] {
 	const stmt = db.prepare(`
         SELECT *
         FROM messages
-        WHERE receiver IS NULL
-        ORDER BY sent_at DESC
+        WHERE type = ?
+        ORDER BY sent_at ASC
     `);
 
-	return stmt.all(); // returns empty array if no messages found
+	return stmt.all("broadcast"); // returns empty array if no messages found
 }
 
 // Retrieve the messages where the user is either the sender (and the receiver is not null) or the receiver
@@ -30,7 +30,7 @@ export function getPrivateUserMessagesDB(username: string): any[] {
         FROM messages
         WHERE (sender = ? OR receiver = ?) 
           AND receiver IS NOT NULL
-        ORDER BY sent_at DESC
+        ORDER BY sent_at ASC
     `);
 
 	return stmt.all(username, username); // returns empty array if no messages found
@@ -42,7 +42,7 @@ export function getUserAsSenderMessagesDB(username: string): any[] {
         SELECT *
         FROM messages
         WHERE sender = ?
-        ORDER BY sent_at DESC
+        ORDER BY sent_at ASC
     `);
 
 	return stmt.all(username); // returns empty array if no messages found
@@ -54,7 +54,7 @@ export function getUserAsReceiverMessagesDB(username: string): any[] {
         SELECT *
         FROM messages
         WHERE receiver = ?
-        ORDER BY sent_at DESC
+        ORDER BY sent_at ASC
     `);
 
 	return stmt.all(username); // returns empty array if no messages found
@@ -66,11 +66,11 @@ export function checkIfTournamentMessagesDB(username: string): string | undefine
         SELECT *
         FROM messages
         WHERE type = ? AND (sender = ? OR receiver = ?)
-        ORDER BY sent_at DESC
+        ORDER BY sent_at ASC
     `);
 
-	const messages: any = stmt.all("tournament", username); // returns empty array if no messages found
-	if (messages.length == 0) return undefined;
+	const messages: any = stmt.all("tournament", username, username); // returns empty array if no messages found
+	if (messages.length === 0) return undefined;
 	else {
 		let gameId = undefined;
 		for (const message of messages) {
@@ -86,8 +86,8 @@ export function getTournamentMessagesDB(tournamentId: string): any[] {
 	const stmt = db.prepare(`
         SELECT *
         FROM messages
-        WHERE type = ? AND gameId = ?
-        ORDER BY sent_at DESC
+        WHERE type = ? AND game_id = ?
+        ORDER BY sent_at ASC
     `);
 
 	return stmt.all("tournament", tournamentId); // returns empty array if no messages found
