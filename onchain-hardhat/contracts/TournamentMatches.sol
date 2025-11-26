@@ -60,7 +60,7 @@ contract TournamentMatches {
     ) external {
         bytes32 key = computeKey(tournamentId, gameId);
         // Prevent overwriting an existing record
-        require(bytes(games[key].gameId).length == 0, "game already saved");
+        require(bytes(games[key].gameId).length === 0, "game already saved");
 
         games[key] = Game({
             tournamentId: tournamentId,

@@ -17,13 +17,18 @@ export type ChatMessage = {
 	gameId?: string;
 	content?: string;
 	sentAt: string;
-	onlineUser?: string[];
-	chatHistory?: chatHistory;
 };
 
-export type chatHistory = {
+export type chatHistoryBE = {
 	user: string;
 	global: ChatMessage[];
-	private: { [username: string]: ChatMessage[] };
+	private: ChatMessage[];
 	tournament: ChatMessage[];
+};
+
+export type userData = {
+	user: string;
+	chatHistory: chatHistoryBE;
+	blockedUsers: string[];
+	friends: string[];
 };

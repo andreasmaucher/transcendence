@@ -297,7 +297,7 @@ export function wireIncomingChat(
 	ws.onmessage = (event) => {
 		try {
 			const payload = JSON.parse(event.data);
-			if (payload && payload.type == "chat") {
+			if (payload && payload.type === "chat") {
 				const msg: Message = payload.data;
 				console.log("WS EVENT:", msg);
 

@@ -28,7 +28,7 @@ export function createMatchDB(match: Match): void {
 // Add a player (left or right) to the match
 export function addPlayerMatchDB(id: string, playerId: string, side: string): void {
 	let stmt = null;
-	if (side == "left") {
+	if (side === "left") {
 		stmt = db.prepare(`
 			UPDATE matches
 			SET player_left = ?

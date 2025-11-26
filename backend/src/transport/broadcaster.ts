@@ -33,19 +33,19 @@ export function gameBroadcast(payload: string, match: Match): void {
 }
 
 export function shouldSendMessage(message: ChatMessage, user: User): boolean {
-	if (message.sender == user.username) return true;
-	else if (message.receiver == user.username) return true;
-	else if (message.type == "broadcast") return true;
-	else if (message.type == "tournament" && user.gameId && user.gameId == message.gameId) return true;
+	if (message.sender === user.username) return true;
+	else if (message.receiver === user.username) return true;
+	else if (message.type === "broadcast") return true;
+	else if (message.type === "tournament" && user.gameId && user.gameId === message.gameId) return true;
 	else return false;
 }
 
-export function userBroadcast(type: string, data: PayloadDataTypes): void {
+export function userBroadcast(type: PayloadTypes, data: PayloadDataTypes): void {
 	usersOnline.forEach((user) => {
 		const ws = user.userWS;
 
 		if (ws.readyState === ws.OPEN) {
-			if (type == "chat") {
+			if (type === "chat") {
 				const message = data as ChatMessage;
 				if (shouldSendMessage(message, user)) {
 					try {
@@ -57,7 +57,7 @@ export function userBroadcast(type: string, data: PayloadDataTypes): void {
 						} catch {}
 					}
 				}
-			} else if (type == "user-online") {
+			} else if (type === "user-online" || type === "user-offline") {
 				try {
 					ws.send(buildPayload(type, data));
 				} catch {

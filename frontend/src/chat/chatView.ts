@@ -1,6 +1,7 @@
 import { generalData, userData } from "../config/constants";
 import { API_BASE } from "../config/endpoints";
 import { populateChatWindow, populateOnlineUserList, sendMessage, setupPrivateChathistory, wireIncomingChat } from "./chatHandler";
+import { Message } from "./types";
 
 export function debugPrivateInsert(chatHistory: chatHistory, username: string) {
 	console.log("\n==============================");
@@ -24,6 +25,22 @@ export function debugPrivateInsert(chatHistory: chatHistory, username: string) {
 	console.log("==============================\n");
 }
 
+
+export function populatePrivateConv(username: string, privateMessages: Message[]): Map<string, Message[]> {
+	const privateConvs = new Map<string, Message[]>();
+	for (const message of privateMessages) {
+		const otherUser = message.sender === username ? message.receiver : message.sender;
+
+		if (!otherUser) continue;
+
+		if (!privateConvs.has(otherUser)) privateConvs.set(otherUser, []);
+
+		privateConvs.get(otherUser)!.push(message);
+	}
+	return privateConvs;
+}
+
+
 export async function fetchChatHistory() {
 	const response = await fetch(`${API_BASE}/api/chat/history`, {
 		credentials: "include",
@@ -43,7 +60,7 @@ export async function fetchChatHistory() {
 	userData.chatHistory = {
 		user: body.data.user,
 		global: body.data.global,
-		private: new Map(Object.entries(body.data.private || {})),
+		private: populatePrivateConv(body.data.user, body.data.private),
 		tournament: body.data.tournament,
 	};
 	debugPrivateInsert(userData.chatHistory, "Hans Wurst");

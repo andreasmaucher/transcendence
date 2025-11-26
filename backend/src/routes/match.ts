@@ -9,7 +9,7 @@ export default async function matchRoutes(fastify: FastifyInstance) {
 			const matches = getAllMatchesDB();
 			return reply.code(200).send({ success: true, data: matches });
 		} catch (error: any) {
-			console.log(error.message);
+			console.error("[matchRT]", error.message);
 			return reply.code(500).send({ success: false, message: "Unable to retrieve matches" });
 		}
 	});
@@ -23,7 +23,7 @@ export default async function matchRoutes(fastify: FastifyInstance) {
 			const match = getMatchByIdDB(id);
 			return reply.code(200).send({ success: true, data: match });
 		} catch (error: any) {
-			console.log(error.message);
+			console.error("[matchRT]", error.message);
 			return reply.code(404).send({ success: false, message: "Match not found" });
 		}
 	});
