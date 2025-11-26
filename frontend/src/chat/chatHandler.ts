@@ -1,4 +1,4 @@
-import { userData } from "../config/constants";
+import { generalData, userData } from "../config/constants";
 import { ChatEvent, chatHistory, Message } from "./types";
 
 export function sendMessage(
@@ -22,6 +22,8 @@ export function sendMessage(
 	}
 }
 
+// RENDER FUNCTIONS ///////////////////////////////////////////////////////////
+
 export function renderIncomingMessage(message: Message, chatMessages: HTMLElement) {
 	const item = document.createElement("div");
 	item.className = "chat-message";
@@ -32,21 +34,111 @@ export function renderIncomingMessage(message: Message, chatMessages: HTMLElemen
 	item.style.cursor = "pointer";
 
 	item.innerHTML = `
-	<strong>${message.sender}</strong><br>
-	<span>${message.content}</span><br>
-	<small>${message.sentAt}</small><br>`;
+	<div style="display:flex; justify-content:space-between; font-size:12px;">
+		<strong>${message.sender}</strong>
+		<small>${message.sentAt}</small>
+	</div>
+	<span>${message.content}</span>
+	`;
 
 	chatMessages.append(item);
-	chatMessages.scrollTop = chatMessages.scrollHeight;
+	requestAnimationFrame(() => {
+		chatMessages.scrollTop = chatMessages.scrollHeight;
+	});
 }
 
-export function setupPrivateChathistory(chatHistory: chatHistory, username: string): Message[] {
-	debugPrintGlobalHistory(chatHistory);
-	if (!chatHistory.private.has(username)) {
-		chatHistory.private.set(username, []);
-		console.log("I have no private Chat");
+export function renderChatHeaderButtons(
+	chatHeader: HTMLElement,
+	activeChat: string | null
+) {
+	chatHeader.innerHTML = "";
+
+	const title = document.createElement("span");
+	title.textContent =
+		activeChat === "Global Chat"
+			? "Global Chat"
+			: `Chat with ${activeChat}`;
+
+	title.style.flex = "1";
+	title.style.fontWeight = "bold";
+
+	chatHeader.style.display = "flex";
+	chatHeader.style.alignItems = "flex-start"; 
+	chatHeader.style.justifyContent = "space-between";
+	chatHeader.style.paddingTop = "0px";
+	chatHeader.style.paddingBottom = "2px";
+
+
+	if (activeChat === "Global Chat") {
+		chatHeader.append(title);
+		return;
 	}
-	return chatHistory.private.get(username)!;
+
+	// Button-container
+	const btnRow = document.createElement("div");
+	btnRow.style.display = "flex";
+	btnRow.style.gap = "6px";
+	btnRow.style.marginTop = "-3px";
+	btnRow.style.transform = "translateY(-1px)";
+
+	const createIconBtn = (
+		symbol: string, 
+		title: string, 
+		action: () => void,
+		blocked: boolean = false
+	) => {
+		const btn = document.createElement("button");
+		btn.textContent = symbol;
+		btn.title = title;
+		btn.style.padding = "4px 6px";
+		btn.style.fontSize = "14px";
+		btn.style.borderRadius = "4px";
+		btn.style.border = "1px solid #666";
+		btn.style.background = blocked 
+		? "rgba(255, 0, 0, 0.58)"
+		: "rgba(255,255,255,0.12)";
+		btn.style.cursor = "pointer";
+		btn.onclick = (e) => {
+			e.stopPropagation();
+			action();
+		};
+		return btn;
+	};
+
+	const btnProfile = createIconBtn("👤", "Open profile", () => {
+		window.location.href = `/profile/${activeChat}`;
+	});
+
+	const btnDuel = createIconBtn("⚔️", "Challenge to match", () => {
+		console.log(`⚔️ Challenge sent to ${activeChat}`);
+	});
+
+	// TODO: Check if this is handed out with the chatHistory (empty?)
+	if (!userData.blockedUsers)
+		userData.blockedUsers = [];
+	const isBlocked = userData.blockedUsers?.includes(activeChat!);
+
+	const btnBlock = createIconBtn(
+		isBlocked? "♻️": "🚫",
+		isBlocked? "Unblock user" : "Block user",
+		() => {
+		if (!isBlocked){
+			userData.blockedUsers?.push(activeChat!);
+			sendMessage('block', `You've blocked ${activeChat}`, activeChat);
+			console.log(`🚫 User ${activeChat} was blocked`);
+		} else {
+			userData.blockedUsers = userData.blockedUsers!.filter(u => u !== activeChat);
+			sendMessage("unblock", `You've unblocked ${activeChat}`, activeChat);
+			console.log(`♻️ User ${activeChat} was UNBLOCKED`);
+		}
+		renderChatHeaderButtons(chatHeader, activeChat);
+	}, 
+	isBlocked
+	);
+
+	btnRow.append(btnProfile, btnDuel, btnBlock);
+
+	chatHeader.append(title, btnRow);
 }
 
 export function renderOnlineUsers(
@@ -54,17 +146,9 @@ export function renderOnlineUsers(
 	chatMessages: HTMLElement,
 	chatHeader: HTMLElement,
 	activePrivateChat: { current: string | null },
-	usersOnline: string[],
-	chatHistory: chatHistory,
-	message: Message
 ) {
 	friendList.innerHTML = "";
-	usersOnline.forEach((username) => {
-		// create a container
-		const wrapper = document.createElement("div");
-		wrapper.style.display = "flex";
-		wrapper.style.flexDirection = "column";
-		wrapper.style.marginBottom = "10px";
+	generalData.onlineUsers!.forEach((username) => {
 
 		const userItem = document.createElement("div");
 		userItem.textContent = username;
@@ -78,71 +162,54 @@ export function renderOnlineUsers(
 		// Create Friendslist
 		userItem.onclick = () => {
 			if (username === "Global Chat") {
-				activePrivateChat.current = "global";
+				activePrivateChat.current = "Global Chat";
 				chatHeader.textContent = `Global Chat`;
 			} else {
 				activePrivateChat.current = username;
-				chatHeader.textContent = `Live_Chat with ${username}`;
+				chatHeader.textContent = `Chat with ${username}`;
 			}
 			chatMessages.innerHTML = "";
-			populateChatWindow(chatHistory, chatMessages, username, activePrivateChat!);
+			populateChatWindow(userData.chatHistory!, chatMessages, username, activePrivateChat!);
+			renderChatHeaderButtons(chatHeader, activePrivateChat.current);
 		};
-
-		// Create Buttons for Friendlist
-		if (username !== "Global Chat") {
-			const btnRow = document.createElement("div");
-			btnRow.style.display = "flex";
-			btnRow.style.gap = "4px";
-
-			// --- Button 1 ---
-			const btn1 = document.createElement("button");
-			btn1.textContent = "A";
-			btn1.style.padding = "2px 6px";
-			btn1.style.fontSize = "10px";
-			btn1.onclick = (e) => {
-				e.stopPropagation();
-				console.log("Button A clicked for", username);
-			};
-
-			// --- Button 2 ---
-			const btn2 = document.createElement("button");
-			btn2.textContent = "B";
-			btn2.style.padding = "2px 6px";
-			btn2.style.fontSize = "10px";
-			btn2.onclick = (e) => {
-				e.stopPropagation();
-				console.log("Button B clicked for", username);
-			};
-
-			// --- Button 3 ---
-			const btn3 = document.createElement("button");
-			btn3.textContent = "C";
-			btn3.style.padding = "2px 6px";
-			btn3.style.fontSize = "10px";
-			btn3.onclick = (e) => {
-				e.stopPropagation();
-				console.log("Button C clicked for", username);
-			};
-
-			btnRow.append(btn1, btn2, btn3);
-			wrapper.append(userItem, btnRow);
-		} else {
-			// No buttons for globalChat
-			wrapper.append(userItem);
-		}
-		friendList.append(wrapper);
+		friendList.append(userItem);
 	});
 }
 
-export function populateUserOnlineList(msg: Message, username: string | null = null): string[] {
+// METHODS /////////////////////////////////////////////////////////////////////
+
+export function setupPrivateChathistory(username: string): Message[] {
+	if (!userData.chatHistory!.private.has(username)) {
+		userData.chatHistory!.private.set(username, []);
+		console.log("I have no private Chat");
+	}
+	return userData.chatHistory!.private.get(username)!;
+}
+
+export function populateOnlineUserList(username: string | null = null): string[] {
 	let onlineList: string[] = [];
 
-	if (!msg.onlineUser) return [];
+	if (!generalData.onlineUsers) return ["Global Chat"];
 	onlineList.push("Global Chat");
-	msg.onlineUser.forEach((user) => {
+	generalData.onlineUsers.forEach((user) => {
+		console.log(`${user} is online!`)
 		if (username !== user) onlineList.push(user);
 	});
 	return onlineList;
+}
+
+export function addOnlineUser(username: string) {
+	if (!generalData.onlineUsers!.includes(username))
+		generalData.onlineUsers!.push(username);
+	if (!generalData.allUsers?.includes(username))
+		generalData.allUsers?.push(username);
+}
+
+export function removeOnlineUser(onlineUserList: string[], username: string) {
+	const index = onlineUserList.indexOf(username);
+	if (index !== -1) {
+		onlineUserList.splice(index, 1);
+	}
 }
 
 // TODO Problems with fetching the Message[] from private
@@ -155,11 +222,12 @@ export function populateChatWindow(
 	chatMessages.innerHTML = "";
 
 	let chatHistoryToAdd: Message[] = [];
-	if (activePrivateChat.current === "global" || activePrivateChat.current === null) {
-		chatHistoryToAdd = chatHistory.global;
+	if (activePrivateChat.current === "Global Chat") {
+		chatHistoryToAdd = chatHistory.global.reverse();
 		console.log("GlobalChatHistory should be loaded!");
 	} else {
-		chatHistoryToAdd = setupPrivateChathistory(chatHistory, username);
+		chatHistoryToAdd = setupPrivateChathistory(username);
+		chatHistoryToAdd.reverse();
 		console.log(`private chatHistory for ${activePrivateChat.current} loaded!`);
 	}
 	// DEBUG
@@ -171,25 +239,25 @@ export function populateChatWindow(
 	});
 }
 
-export function appendMessageToHistory(chatHistory: chatHistory, message: Message): void {
+export function appendMessageToHistory(message: Message): void {
 	if (message.type === "broadcast") {
-		chatHistory.global.push(message);
+		userData.chatHistory!.global.push(message);
 		return;
 	}
 	if (message.type === "direct") {
-		const otherUser = message.sender === chatHistory.user ? message.receiver : message.sender;
+		const otherUser = message.sender === userData.chatHistory!.user ? message.receiver : message.sender;
 		if (!otherUser) return;
-		if (!chatHistory.private.has(otherUser)) chatHistory.private.set(otherUser, []);
-		chatHistory.private.get(otherUser)!.push(message);
+		if (!userData.chatHistory!.private.has(otherUser)) userData.chatHistory!.private.set(otherUser, []);
+			userData.chatHistory!.private.get(otherUser)!.push(message);
 		return;
 	}
 	if (message.type === "tournament") {
-		chatHistory.tournament.push(message);
+		userData.chatHistory!.tournament.push(message);
 		return;
 	}
 }
 
-// FOR THE DEBUGGING PART
+// FOR DEBUGGING
 export function debugPrintGlobalHistory(chatHistory: chatHistory | undefined) {
 	if (!chatHistory) {
 		console.log("⚠ No chatHistory available yet.");
@@ -211,12 +279,8 @@ export function wireIncomingChat(
 	chatMessages: HTMLElement,
 	friendList: HTMLElement,
 	chatHeader: HTMLElement,
-	activePrivateChat: { current: string | null },
-	userOnlineList: string[]
+	activePrivateChat: { current: string | null }
 ): () => void {
-	let chatHistory: chatHistory;
-	//let lastChatHistoryloaded: {current: string | null } = {current: null}
-
 	const ws = userData.userSock;
 	if (!ws) {
 		console.warn("Chat socket not connected");
@@ -225,76 +289,65 @@ export function wireIncomingChat(
 	}
 
 	const previousHandler = ws.onmessage;
-	userOnlineList.splice(0, userOnlineList.length, "Global Chat");
+
+	generalData.onlineUsers = populateOnlineUserList(userData.username);
+	populateChatWindow(userData.chatHistory!, chatMessages, userData.username!, activePrivateChat);
+	renderOnlineUsers(friendList, chatMessages, chatHeader, activePrivateChat);
 
 	ws.onmessage = (event) => {
 		try {
-			//const msg: Message =
 			const payload = JSON.parse(event.data);
 			if (payload && payload.type == "chat") {
 				const msg: Message = payload.data;
 				console.log("WS EVENT:", msg);
 
 				switch (msg.type) {
-					/* case "init": {
-						chatHistory = msg.chatHistory!;
-						chatHistory.private = ensureMap(chatHistory.private);
-						//debugPrintGlobalHistory(chatHistory);
-						console.log("TYPE OF PRIVATE:", chatHistory.private);
-						console.log("IS MAP?", chatHistory.private instanceof Map);
-						console.log("ENTRIES:", chatHistory.private);
-						populateChatWindow(chatHistory!, chatMessages, sockets.username!, activePrivateChat);
-						console.log(`Init chatHistory for ${sockets.username}`);
-						break;
-					} */
 					case "broadcast": {
-						if (activePrivateChat.current === null || activePrivateChat.current === "global")
+						if (activePrivateChat.current === "Global Chat")
 							renderIncomingMessage(msg, chatMessages);
-						appendMessageToHistory(userData.chatHistory!, msg);
+						appendMessageToHistory(msg);
 						break;
 					}
 					case "direct": {
-						if (activePrivateChat.current === msg.sender || activePrivateChat.current === msg.receiver)
+						if ((activePrivateChat.current === msg.sender || activePrivateChat.current === msg.receiver)
+						&& !userData.blockedUsers?.includes(msg.sender))
 							renderIncomingMessage(msg, chatMessages);
-						appendMessageToHistory(userData.chatHistory!, msg);
-						break;
-					}
-					case "onlineUser": {
-						// Update onlineUserList in the frontend
-						userOnlineList.splice(0, userOnlineList.length, ...populateUserOnlineList(msg, userData.username));
-						console.log(`OnlineUserList: ${userOnlineList}`);
-
-						// build the chat
-						renderOnlineUsers(
-							friendList,
-							chatMessages,
-							chatHeader,
-							activePrivateChat,
-							userOnlineList,
-							userData.chatHistory!,
-							msg
-						);
+						appendMessageToHistory(msg);
 						break;
 					}
 				}
 			}
+
+			if (payload && payload.type == "user-online") {
+				const newUserOnline = payload.data.username;
+				console.log(`${newUserOnline} entered the realm!`)
+				addOnlineUser(newUserOnline);
+				renderOnlineUsers(
+							friendList,
+							chatMessages,
+							chatHeader,
+							activePrivateChat,
+						);
+					}
+
+			if (payload && payload.type == "user-offline") {
+				const newUserOffline = payload.data.username;
+				console.log(`${newUserOffline} left the realm!`)
+				addOnlineUser(newUserOffline);
+				renderOnlineUsers(
+							friendList,
+							chatMessages,
+							chatHeader,
+							activePrivateChat,
+						);
+					}
+				
 		} catch (err) {
-			console.error("Failed to parse incoming chat message", err);
+			console.error("Failed to parse incoming payload", err);
 		}
 	};
 
 	return () => {
 		ws.onmessage = previousHandler ?? null;
 	};
-}
-
-// HELPER /////////////////////////////////////////////////////////////////////
-function ensureMap<T>(input: any): Map<string, T> {
-	if (input instanceof Map) return input;
-	if (Array.isArray(input)) {
-		// input = [ [username, Message[]], ... ]
-		return new Map(input as [string, T][]);
-	}
-	// Fallback für Objekt-Form { username: Message[] }
-	return new Map(Object.entries(input || {})) as Map<string, T>;
 }

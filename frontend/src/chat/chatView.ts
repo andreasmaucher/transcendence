@@ -1,102 +1,28 @@
-import { userData } from "../config/constants";
+import { generalData, userData } from "../config/constants";
 import { API_BASE } from "../config/endpoints";
-import { populateChatWindow, sendMessage, setupPrivateChathistory, wireIncomingChat } from "./chatHandler";
-import { chatHistory } from "./types";
+import { populateChatWindow, populateOnlineUserList, sendMessage, setupPrivateChathistory, wireIncomingChat } from "./chatHandler";
 
-/* export function convertToHistory(json: any): chatHistory {
-	if (!json) {
-		console.error("convertToHistory received undefined or null JSON");
-		return {
-			user: "",
-			global: [],
-			private: new Map(),
-			tournament: [],
-		};
+export function debugPrivateInsert(chatHistory: chatHistory, username: string) {
+	console.log("\n==============================");
+	console.log("🧪 DEBUG: PRIVATE HISTORY AFTER INSERT");
+	console.log("==============================");
+
+	const map = chatHistory.private;
+	console.log("Private map keys:", Array.from(map.keys()));
+
+	const conv = map.get(username);
+	if (!conv) {
+		console.log(`❌ No private history for ${username}`);
+		return;
 	}
 
-	if (typeof json !== "object") {
-		console.error("convertToHistory received non-object JSON:", json);
-		return {
-			user: "",
-			global: [],
-			private: new Map(),
-			tournament: [],
-		};
-	}
+	console.log(`📂 Messages with ${username}:`);
+	conv.forEach((m, i) => {
+		console.log(`   #${i + 1}: [${m.sentAt}] ${m.sender} → ${m.receiver}: "${m.content}"`);
+	});
 
-	if (!json.user || !json.global || !json.tournament) {
-		console.warn("JSON missing some expected properties:", json);
-	}
-
-	// Ensure private is always an object
-	const privateMessages = json.private && typeof json.private === "object" ? json.private : {};
-	if (json.private === undefined) {
-		console.warn("No private messages found, defaulting to empty Map");
-	}
-
-	try {
-		return {
-			user: json.user || "",
-			global: Array.isArray(json.global) ? json.global : [],
-			private: new Map(Object.entries(privateMessages)),
-			tournament: Array.isArray(json.tournament) ? json.tournament : [],
-		};
-	} catch (err) {
-		console.error("Error converting private messages to Map:", err, json.private);
-		return {
-			user: json.user || "",
-			global: [],
-			private: new Map(),
-			tournament: [],
-		};
-	}
+	console.log("==============================\n");
 }
-
-export async function fetchChatHistory() {
-	try {
-		const response = await fetch(`${API_BASE}/api/chat/history`, {
-			credentials: "include",
-		});
-
-		if (!response.ok) {
-			console.error("Failed to fetch chat history, status:", response.status);
-			return;
-		}
-
-		const body: any = await response.json();
-
-		if (!body) {
-			console.warn("fetchChatHistory received empty body");
-			return;
-		}
-
-		console.log("Raw chat history response:", body);
-
-		if (!body.success) {
-			console.warn("Backend returned an error:", body.message);
-			return;
-		}
-
-		if (!body.data) {
-			console.warn("Backend returned success=true but no data:", body);
-			return;
-		}
-
-		userData.chatHistory = convertToHistory(body.data);
-		console.log("Converted chat history:", userData.chatHistory);
-	} catch (err) {
-		console.error("Error fetching chat history:", err);
-	}
-}
-
-export function convertToHistory(json: any): chatHistory {
-	return {
-		user: json.user,
-		global: json.global,
-		private: new Map(Object.entries(json.private || {})),
-		tournament: json.tournament,
-	};
-} */
 
 export async function fetchChatHistory() {
 	const response = await fetch(`${API_BASE}/api/chat/history`, {
@@ -120,14 +46,55 @@ export async function fetchChatHistory() {
 		private: new Map(Object.entries(body.data.private || {})),
 		tournament: body.data.tournament,
 	};
+	debugPrivateInsert(userData.chatHistory, "Hans Wurst");
+}
+
+export async function fetchAllUsers() {
+	const response = await fetch(`${API_BASE}/api/users/all`, {
+		credentials: "include",
+	});
+	if (!response.ok) {
+		console.error("Failed to fetch all users, status:", response.status);
+		return;
+	}
+	const body: any = await response.json();
+	console.log("Raw all users response:", body);
+
+	if (!body.success) {
+		console.warn("Backend returned an error:", body.message);
+		return;
+	}
+
+	generalData.allUsers = body.data;
+}
+
+export async function fetchOnlineUsers() {
+	const response = await fetch(`${API_BASE}/api/users/online`, {
+		credentials: "include",
+	});
+	if (!response.ok) {
+		console.error("Failed to fetch online users, status:", response.status);
+		return;
+	}
+	const body: any = await response.json();
+	console.log("Raw online users response:", body);
+
+	if (!body.success) {
+		console.warn("Backend returned an error:", body.message);
+		return;
+	}
+
+	generalData.onlineUsers = body.data;
 }
 
 export async function initChat(root: HTMLElement = document.body): Promise<() => void> {
 	await fetchChatHistory();
+	await fetchAllUsers();
+	await fetchOnlineUsers();
 	if (!userData.chatHistory) console.log("[CHAT] Error retrieving chat history");
 
 	const onlineUserlist: string[] = ["Global Chat"];
-	let activePrivateChat: { current: string | null } = { current: null };
+	let activePrivateChat: { current: string | null } = { current: "Global Chat" };
 
 	// LIVE CHAT /; ///////////////////////////////////////////////////////////////
 	// MAIN CHAT PANEL (Container für Chat + Friends)
@@ -195,8 +162,8 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	sendBtn.style.cursor = "pointer";
 	inputRow.append(sendBtn);
 
-	// FRIENDS - RIGHT SIDE ///////////////////////////////////////////////////////
-	// FRIEND LIST (rechte Spalte)
+	// CHANNELS - RIGHT SIDE ///////////////////////////////////////////////////////
+	// CHANNEL LIST
 	const friends = document.createElement("div");
 	friends.style.width = "180px";
 	friends.style.display = "flex";
@@ -205,22 +172,22 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	friends.style.borderLeft = "1px solid #666";
 	friends.style.transition = "width 0.25s ease, padding 0.25s ease";
 	panel.append(friends);
-	// HEADER (bleibt immer sichtbar)
+	// HEADER 
 	const fHeader = document.createElement("div");
-	fHeader.textContent = "Friends";
+	fHeader.textContent = "Channels";
 	fHeader.style.fontWeight = "600";
 	fHeader.style.margin = "8px";
 	fHeader.style.cursor = "pointer";
 	fHeader.style.whiteSpace = "nowrap";
 	friends.append(fHeader);
-	// FRIEND LIST CONTENT
-	const friendList = document.createElement("div");
-	friendList.style.flex = "1";
-	friendList.style.overflowY = "auto";
-	friendList.style.padding = "10px";
-	friends.append(friendList);
+	// CHANNEL LIST CONTENT
+	const channelList = document.createElement("div");
+	channelList.style.flex = "1";
+	channelList.style.overflowY = "auto";
+	channelList.style.padding = "10px";
+	friends.append(channelList);
 
-	// EXAMPLE FRIENDS
+	// ONLINE USER LIST
 	onlineUserlist.forEach((n) => {
 		const item = document.createElement("div");
 		item.textContent = n;
@@ -229,34 +196,36 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 		item.style.background = "rgba(255,255,255,0.08)";
 		item.style.borderRadius = "4px";
 		item.style.cursor = "pointer";
-		friendList.append(item);
+		channelList.append(item);
 	});
 	// CHAT EXPANDS AUTOMATICALLY
 	chat.style.flex = "1";
 	// TOGGLE OPEN/CLOSE FRIEND LIST
-	let friendsOpen = true;
+	let channelOpen = true;
 	fHeader.onclick = () => {
-		friendsOpen = !friendsOpen;
-		if (friendsOpen) {
+		channelOpen = !channelOpen;
+		if (channelOpen) {
 			// NORMAL (aufgeklappt)
 			friends.style.width = "180px";
 			friends.style.padding = "6px";
-			friendList.style.display = "block";
+			channelList.style.display = "block";
+			
 			// Header horizontal
 			fHeader.style.writingMode = "horizontal-tb";
 			fHeader.style.margin = "6px";
 			fHeader.style.rotate = "0deg";
-			fHeader.textContent = "Friends";
+			fHeader.textContent = "Channels";
 		} else {
 			// EINGEKLAPPT — nur schmale Leiste sichtbar
 			friends.style.width = "32px"; // genug Platz für vertikale Schrift
 			friends.style.padding = "0";
-			friendList.style.display = "none";
+			channelList.style.display = "none";
+
 			// Header senkrecht von oben nach unten
 			fHeader.style.writingMode = "vertical-lr"; // von oben nach unten
 			fHeader.style.rotate = "0deg"; // keine Drehung!
 			fHeader.style.margin = "40px auto 0 auto"; // VERSATZT unter Minimize-Button
-			fHeader.textContent = "Friends";
+			fHeader.textContent = "Channels";
 		}
 	};
 
@@ -277,14 +246,32 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	};
 
 	// EVENTS //////
-	const cleanupWire = wireIncomingChat(chatMessages, friendList, chatHeader, activePrivateChat, onlineUserlist);
-	//populateChatWindow({ user: "", global: [], private: new Map(), tournament: [] }, chatMessages);
+	const cleanupWire = wireIncomingChat(chatMessages, channelList, chatHeader, activePrivateChat);
 
-	// SEND MESSAGE
+	// SEND MESSAGE ONE CLICK
 	sendBtn.onclick = () => {
-		if (activePrivateChat.current === null) sendMessage("broadcast", input.value);
-		else sendMessage("direct", input.value, activePrivateChat.current);
+
+		if (activePrivateChat.current === "Global Chat")
+			sendMessage("broadcast", input.value);
+		else 
+			sendMessage("direct", input.value, activePrivateChat.current);
+
+		input.value = "";
 	};
+
+	// SEND MESSAGE BY PRESSING ENTER
+	input.addEventListener("keydown", (e) => {
+	if (e.key === "Enter") {
+		e.preventDefault();
+
+		if (activePrivateChat.current === "Global Chat")
+			sendMessage("broadcast", input.value);
+		else
+			sendMessage("direct", input.value, activePrivateChat.current);
+
+		input.value = "";
+	}
+});
 
 	root.append(panel);
 

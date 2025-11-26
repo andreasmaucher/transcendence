@@ -5,9 +5,7 @@ export type ChatEvent = "direct"
 | "profile-link" 
 | "block" 
 | "unblock"
-| "onlineUser"
-| "init"
-| "requestInit";
+| "onlineUser";
 
 export type Message = {
 	type: ChatEvent;
@@ -29,5 +27,37 @@ export type chatHistory = {
 	tournament: Message[];
 };
 
-export type chatType = "global"
-| "private";
+export type Payload =
+	| { type: "user-online"; data: { username: string } }
+	| { type: "user-offline"; data: { username: string } }
+	| { type: "chat"; data: Message }
+	| { type: "match-assigned"; data: { matchId: string; playerSide: string } }
+	| { type: "countdown"; data: { value: number } }
+	| { type: "state"; data: undefined }
+	| { type: "waiting"; data: undefined }
+	| { type: "start"; data: undefined }
+	| { type: "player-left"; data: undefined };
+
+/*export type PayloadTypes =
+	| "state"
+	| "match-assigned"
+	| "waiting"
+	| "countdown"
+	| "start"
+	| "player-left"
+	| "chat"
+	| "user-online"
+	| "user-offline";
+
+export type PayloadDataTypes =
+	//| MatchState
+	| { matchId: string; playerSide: string }
+	| { value: number }
+	| undefined
+	| { username: string }
+	| ChatMessage;
+
+export type Payload = {
+	type: PayloadTypes;
+	data: PayloadDataTypes;
+};*/

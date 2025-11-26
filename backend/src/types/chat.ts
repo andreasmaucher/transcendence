@@ -7,10 +7,7 @@ export type ChatEvent =
 	| "tournament"
 	| "profile-link"
 	| "block"
-	| "unblock"
-	| "onlineUser"
-	| "init"
-	| "requestInit";
+	| "unblock";
 
 export type ChatMessage = {
 	id: string;
@@ -27,6 +24,6 @@ export type ChatMessage = {
 export type chatHistory = {
 	user: string;
 	global: ChatMessage[];
-	private: Map<string, ChatMessage[]>;
+	private: { [username: string]: ChatMessage[] };
 	tournament: ChatMessage[];
 };

@@ -94,7 +94,6 @@ export function getUserOnline(username: string): User | undefined {
 	else return undefined;
 }
 
-export function getAllOnlineUsers(): User[] {
-	const allOnlineUsers = Array.from(usersOnline.values());
-	return allOnlineUsers;
+export function getAllOnlineUsers(): string[] {
+	return Array.from(usersOnline.keys());
 }

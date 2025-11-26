@@ -4,6 +4,7 @@ import { chatHistory } from "../chat/types";
 
 export const generalData = {
 	onlineUsers: null as string[] | null,
+	allUsers: null as string[] | null,
 };
 
 export const userData = {
