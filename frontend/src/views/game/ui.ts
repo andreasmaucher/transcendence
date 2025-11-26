@@ -6,6 +6,7 @@ import { draw } from "../../rendering/canvas";
 import { setupInputs, setActiveSocket } from "../../game/input";
 import { MatchState } from "../../types/game";
 import { connectToLocalSingleGameWS } from "../../ws/game";
+import { userData } from "../../config/constants";
 
 let GAME_CONSTANTS: GameConstants | null = null;
 
@@ -133,7 +134,10 @@ export async function renderGame(container: HTMLElement) {
 	exitBtn.style.padding = "4px 8px";
 	exitBtn.style.fontSize = "14px";
 	exitBtn.style.cursor = "pointer";
-	exitBtn.onclick = () => navigate("#/menu");
+	exitBtn.onclick = () => {
+		navigate("#/menu");
+		userData.gameSock?.close();
+	};
 	ui.append(exitBtn);
 
 	//

@@ -125,6 +125,7 @@ All backend endpoints return JSON format. All POST request expect the data to be
 |--------|----------------------------------|----------------------------------------|-----------------------------|-------------------------------|
 | `GET`  | `/api/user/:username`            | GET req with username as param         | Username                    | The user (if it exists)       |
 | `GET`  | `/api/user/online/:username`     | Checks if username is online           | Username                    | True or false                 |
+| `GET`  | `/api/user/data`                 | GET req                                | None (session cookie)       | userData                      |
 | `GET`  | `/api/user/me`                   | Returns logged-in user                 | None (session cookie)       | Current logged-in user        |
 
 
@@ -139,6 +140,12 @@ All backend endpoints return JSON format. All POST request expect the data to be
 | `POST` | `/api/user/update`               | Updates user information               | Username, newUsername?, newP | True or false                |
 | `POST` | `/api/user/add-friend`           | Adds other user as friend              | Username, friend            | True or false                 |
 | `POST` | `/api/user/remove-friend`        | Removes other user as friend           | Username, friend            | True or false                 |
+
+## GAMES (BOTH SINGLE AND TOURNAMENTS)
+
+| Method | Path                             | Description                            | Params                      | Return                        |
+|--------|----------------------------------|----------------------------------------|-----------------------------|-------------------------------|
+| `GET`  | `/api/games/open`                | GET req                                | None                        | All open games                |
 
 ## SINGLE GAME
 
@@ -223,3 +230,5 @@ MM = MatchManager
 SGM = SingleGameManager
 TM = TournamentManager
 RT = Routes
+BE = Backend
+FE = Frontend
