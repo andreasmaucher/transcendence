@@ -156,17 +156,34 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			else console.log(`[WS] Websocket for Tournament: ${tournamentId} and User: ${payload.username} connected`);
 			socket.username = payload.username;
 
-			const tournament = getOrCreateTournament(tournamentId, tournamentName, tournamentSize);
-			const match = addPlayerToTournament(tournament, socket.username, socket);
-			if (match) {
-				match.clients.add(socket);
+		const tournament = getOrCreateTournament(tournamentId, tournamentName, tournamentSize);
+		//! LOGIC so the second game in the tournament sides are corretly assigned to the players
+		// Find which match this player will join and determine their side BEFORE adding them
+		let playerSide: "left" | "right" = "left";
+		const matches = tournament.matches.get(tournament.state.round);
+		if (matches) {
+			for (const m of matches) {
+				if (!m.players.left || !m.players.right) {
+					// This is the match the player will join
+					playerSide = !m.players.left ? "left" : "right";
+					console.log(`[WS] Player ${payload.username} will be assigned to match ${m.id} as ${playerSide}`);
+					break;
+				}
+			}
+		}
+		
+		const match = addPlayerToTournament(tournament, socket.username, socket);
+		if (match) {
+			match.clients.add(socket);
 
-				socket.send(
-					buildPayload("match-assigned", {
-						matchId: match.id,
-						playerSide: match.players.left === payload.username ? "left" : "right",
-					})
-				);
+			console.log(`[WS] Player ${payload.username} joined match ${match.id} - left: ${match.players.left}, right: ${match.players.right}`);
+
+			socket.send(
+				buildPayload("match-assigned", {
+					matchId: match.id,
+					playerSide: playerSide,
+				})
+			);
 
 				socket.send(buildPayload("state", match.state));
 
