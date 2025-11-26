@@ -8,7 +8,10 @@ export function getAllMessagesDB(): any[] {
         ORDER BY sent_at ASC
     `);
 
-	return stmt.all();
+	const messages = stmt.all();
+	if (messages.length === 0) throw new Error(`[DB] No messages found`);
+
+	return messages;
 }
 
 // Retrieve all global messages (with receiver null)
@@ -20,7 +23,10 @@ export function getAllGlobalMessagesDB(): any[] {
         ORDER BY sent_at ASC
     `);
 
-	return stmt.all("broadcast"); // returns empty array if no messages found
+	const messages = stmt.all("broadcast"); // returns empty array if no messages found
+	if (messages.length === 0) throw new Error(`[DB] No global messages found`);
+
+	return messages;
 }
 
 // Retrieve the messages where the user is either the sender (and the receiver is not null) or the receiver
@@ -33,7 +39,10 @@ export function getPrivateUserMessagesDB(username: string): any[] {
         ORDER BY sent_at ASC
     `);
 
-	return stmt.all(username, username); // returns empty array if no messages found
+	const messages = stmt.all(username, username); // returns empty array if no messages found
+	if (messages.length === 0) throw new Error(`[DB] No privatemessages found`);
+
+	return messages;
 }
 
 // Retrieve the messages where the user is the sender
@@ -45,7 +54,10 @@ export function getUserAsSenderMessagesDB(username: string): any[] {
         ORDER BY sent_at ASC
     `);
 
-	return stmt.all(username); // returns empty array if no messages found
+	const messages = stmt.all(username); // returns empty array if no messages found
+	if (messages.length === 0) throw new Error(`[DB] No messages found`);
+
+	return messages;
 }
 
 // Retrieve the messages where the user is the receiver
@@ -57,7 +69,10 @@ export function getUserAsReceiverMessagesDB(username: string): any[] {
         ORDER BY sent_at ASC
     `);
 
-	return stmt.all(username); // returns empty array if no messages found
+	const messages = stmt.all(username); // returns empty array if no messages found
+	if (messages.length === 0) throw new Error(`[DB] No messages found`);
+
+	return messages;
 }
 
 // Check if the user is part of a tournament group chat and return the id of that tournament if yes
@@ -90,5 +105,8 @@ export function getTournamentMessagesDB(tournamentId: string): any[] {
         ORDER BY sent_at ASC
     `);
 
-	return stmt.all("tournament", tournamentId); // returns empty array if no messages found
+	const messages = stmt.all("tournament", tournamentId); // returns empty array if no messages found
+	if (messages.length === 0) throw new Error(`[DB] No tournament messages found`);
+
+	return messages;
 }

@@ -10,6 +10,7 @@ export type UserDB = {
 	provider_id: string | null;
 	avatar: string;
 	friends: string[];
+	blocked: string[];
 	stats: string | null;
 	created_at: string;
 };
@@ -20,6 +21,21 @@ export type TournamentDB = {
 	name: string;
 	size: number;
 	winner: string | null;
+	started_at: string | null;
+	ended_at: string | null;
+	notes: string | null;
+};
+
+export type TournamentProDB = {
+	internal_id: number;
+	id: string;
+	name: string;
+	size: number;
+	winner: string | null;
+	players: {
+		username: string;
+		display_name: string;
+	}[];
 	started_at: string | null;
 	ended_at: string | null;
 	notes: string | null;
