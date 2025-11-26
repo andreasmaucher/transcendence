@@ -7,6 +7,7 @@ import { setupInputs, setActiveSocket } from "../../game/input";
 import { MatchState } from "../../types/game";
 import { connectToLocalSingleGameWS } from "../../ws/game";
 import { userData } from "../../config/constants";
+import { connectToLocalSingleGameWS, connectToSingleGameWS, connectToTournamentWS, registerGameUiHandlers } from "../../ws/game";
 
 let GAME_CONSTANTS: GameConstants | null = null;
 
@@ -77,7 +78,16 @@ export async function renderGame(container: HTMLElement) {
 	container.innerHTML = "";
 	let cancelled = false;
 	const hash = location.hash;
-	const mode = hash.includes("mode=online") ? "online" : "local";
+	// determine game mode from the URL hash
+	// - "tournament" -> connect to tournament WS
+	// - "online" -> connect to online single game WS
+	// - otherwise -> local single game WS
+	const mode: "tournament" | "online" | "local" =
+		hash.includes("mode=tournament")
+			? "tournament"
+			: hash.includes("mode=online")
+			? "online"
+			: "local";
 	console.log("GAME MODE =", mode);
 
 	// UI WRAPPER
@@ -181,8 +191,26 @@ export async function renderGame(container: HTMLElement) {
 	// 3) Start game
 	//
 	const state = createInitialState();
-	//const cleanupWS = connectToBackend(state);
-	const cleanupWS = connectToLocalSingleGameWS(state); // for now only local single game option
+	// register UI handlers for WS events
+	registerGameUiHandlers({
+		waitingForPlayers: () => {
+			// placeholder: show "Waiting..." overlay here
+		},
+		countdownToGame: (_n, _side) => {
+			// placeholder: show "3,2,1"
+		},
+		startGame: () => {
+			// placeholder: hide overlays here I assume? or just start the game?
+		},
+	});
+
+	// choose the correct WS connector based on mode
+	const cleanupWS =
+		mode === "local"
+			? connectToLocalSingleGameWS(state)
+			: mode === "online"
+			? connectToSingleGameWS(state)
+			: connectToTournamentWS(state);
 	setupInputs();
 
 	const cleanupLoop = startGameLoop(canvas, state);
