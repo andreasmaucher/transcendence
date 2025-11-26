@@ -210,6 +210,7 @@ export async function renderGame(container: HTMLElement) {
 	// 3) Start game
 	//
 	const state = createInitialState();
+	state.mode = mode;
 	
 	//! LOGIC waiting overlay for online and tournament modes
 	// create waiting overlay (only shown for online/tournament modes)
