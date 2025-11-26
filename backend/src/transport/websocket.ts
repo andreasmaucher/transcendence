@@ -175,6 +175,9 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 		const match = addPlayerToTournament(tournament, socket.username, socket);
 		if (match) {
 			match.clients.add(socket);
+			// Store reference for Round 2 reassignment
+			socket.currentTournamentMatch = match;
+			socket.tournamentId = tournament.id;
 
 			console.log(`[WS] Player ${payload.username} joined match ${match.id} - left: ${match.players.left}, right: ${match.players.right}`);
 
@@ -182,18 +185,29 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				buildPayload("match-assigned", {
 					matchId: match.id,
 					playerSide: playerSide,
-				})
+					tournamentMatchType: match.tournament?.type,
+					round: tournament.state.round,
+				} as any)
 			);
 
-				socket.send(buildPayload("state", match.state));
+			socket.send(buildPayload("state", match.state));
+			 //! LOGIC for tournaments
+            // For tournaments, use socket.currentMatch which will be updated between rounds
+			// Use a wrapper function that reads the current match from socket
+			socket.on("message", (raw: RawData) => {
+				const currentMatch = socket.currentTournamentMatch || match;
+				handleSocketMessages(raw, currentMatch);
+			});
 
-				socket.on("message", (raw: RawData) => handleSocketMessages(raw, match));
-
-				socket.on("close", () => {
-					match.clients.delete(socket);
-					forfeitMatch(match, socket.username);
-				});
-				socket.on("error", (err: any) => console.error(`[ws error] match=${match.id}`, err));
+			socket.on("close", () => {
+				const currentMatch = socket.currentTournamentMatch || match;
+				currentMatch.clients.delete(socket);
+				forfeitMatch(currentMatch, socket.username);
+			});
+			socket.on("error", (err: any) => {
+				const currentMatch = socket.currentTournamentMatch || match;
+				console.error(`[ws error] match=${currentMatch?.id}`, err);
+			});
 			} else {
 				console.log(`[WS] Tournament ${tournament.id} is already full`);
 				socket.close(1008, "Tournament is already full");

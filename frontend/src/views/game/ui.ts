@@ -148,6 +148,18 @@ export async function renderGame(container: HTMLElement) {
 	sideIndicator.style.fontWeight = "bold";
 	ui.append(sideIndicator);
 
+	// TOURNAMENT MATCH TYPE INDICATOR (final/3rd place)
+	const tournamentIndicator = document.createElement("div");
+	tournamentIndicator.style.display = "none";
+	tournamentIndicator.style.background = "rgba(255,215,0,0.9)";
+	tournamentIndicator.style.padding = "8px 12px";
+	tournamentIndicator.style.borderRadius = "6px";
+	tournamentIndicator.style.color = "#000";
+	tournamentIndicator.style.fontSize = "16px";
+	tournamentIndicator.style.textAlign = "center";
+	tournamentIndicator.style.fontWeight = "bold";
+	ui.append(tournamentIndicator);
+
 	// Register callback to update side indicator when player is assigned
 	if (mode !== "local") {
 		import("../../game/input.js").then(({ onSideAssigned }) => {

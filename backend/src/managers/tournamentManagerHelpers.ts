@@ -17,7 +17,13 @@ export function initTournamentMatches(tournament: Tournament, size: number): Mat
 	const round = tournament.state.round;
 
 	// How many matches in this round
-	const matchCount = size / Math.pow(2, round);
+	let matchCount = size / Math.pow(2, round);
+	//! LOGIC for tournaments
+	// Special case: final round should have 2 matches (final + 3rd place)
+	// The formula gives 1 match, but we need 2 for double-elimination style
+	if (isFinalRound(tournament) && size >= 4) {
+		matchCount = 2;
+	}
 
 	for (let i = 0; i < matchCount; i++) {
 		let matchId = crypto.randomUUID();

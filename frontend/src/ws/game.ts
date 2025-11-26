@@ -8,16 +8,19 @@ import { Payload } from "../types/ws_message";
 let waitingForPlayers: () => void = () => {};
 let countdownToGame: (n: number, side?: "left" | "right") => void = () => {};
 let startGame: () => void = () => {};
+let tournamentMatchType: (type: string, round: number) => void = () => {};
 
 // function that registers the UI handlers (replaces the no-op functions above with the actual handlers)
 export function registerGameUiHandlers(handlers: {
 	waitingForPlayers?: () => void;
 	countdownToGame?: (n: number, side?: "left" | "right") => void;
 	startGame?: () => void;
+	tournamentMatchType?: (type: string, round: number) => void;
 }) {
 	if (handlers.waitingForPlayers) waitingForPlayers = handlers.waitingForPlayers;
 	if (handlers.countdownToGame) countdownToGame = handlers.countdownToGame;
 	if (handlers.startGame) startGame = handlers.startGame;
+	if (handlers.tournamentMatchType) tournamentMatchType = handlers.tournamentMatchType;
 }
 
 export function connectToLocalSingleGameWS(state: MatchState): () => void {
@@ -240,6 +243,11 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 				const data = (payload as any).data;
 				console.log(`[WS] Assigned to match ${data?.matchId} as ${data?.playerSide}`);
 				setAssignedSide(data?.playerSide || null);
+				
+				// Notify UI about tournament match type
+				if (data?.tournamentMatchType) {
+					tournamentMatchType(data.tournamentMatchType, data.round || 1);
+				}
 				break;
 			}
 
