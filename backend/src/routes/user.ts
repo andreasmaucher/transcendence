@@ -1,8 +1,10 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { getAllOnlineUsers, isUserOnline } from "../user/online.js";
-import { getAllUsersDB, getUserByUsernameDB } from "../database/users/getters.js";
+import { getAllUsersDB, getBlockedUsersDB, getUserByUsernameDB, getUserFriendsDB } from "../database/users/getters.js";
 import { clearSessionCookie } from "../auth/session.js";
 import { authenticateRequest } from "../auth/verify.js";
+import { userData } from "../types/chat.js";
+import { buildChatHistory } from "../managers/chatManager.js";
 
 export default async function userRoutes(fastify: FastifyInstance) {
 	// ROUTES FOR MULTIPLE USERS
@@ -50,6 +52,28 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		} catch (error: any) {
 			console.error("[userRT]", error.message);
 			return reply.code(500).send({ success: false, message: "Unable to find user" });
+		}
+	});
+
+	// GET the userData of the logged-in user, based on the session cookie
+	fastify.get("/api/user/data", async (request: FastifyRequest, reply: FastifyReply) => {
+		// Check if cookies are valid
+		const payload = authenticateRequest(request, reply);
+		if (!payload) return reply.code(401).send({ success: false, message: "Unauthorized" });
+		const { username } = payload;
+
+		// Look up the user by username in the database
+		try {
+			const userPayload: userData = {
+				user: username,
+				chatHistory: buildChatHistory(username),
+				friends: getUserFriendsDB(username),
+				blockedUsers: getBlockedUsersDB(username),
+			};
+			return reply.code(200).send({ success: true, data: userPayload });
+		} catch (error: any) {
+			console.error("[userRT]", error.message);
+			return reply.code(404).send({ success: false, message: "UserData not found" });
 		}
 	});
 

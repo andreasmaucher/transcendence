@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { buildChatHistory } from "../chat/history.js";
 import { authenticateRequest } from "../auth/verify.js";
+import { buildChatHistory } from "../managers/chatManager.js";
 
 export default async function chatRoutes(fastify: FastifyInstance) {
 	// GET user chat history

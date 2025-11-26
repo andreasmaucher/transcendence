@@ -5,7 +5,7 @@ export function getAllMessagesDB(): any[] {
 	const stmt = db.prepare(`
         SELECT *
         FROM messages
-        ORDER BY sent_at DESC
+        ORDER BY sent_at ASC
     `);
 
 	return stmt.all();
@@ -17,7 +17,7 @@ export function getAllGlobalMessagesDB(): any[] {
         SELECT *
         FROM messages
         WHERE type = ?
-        ORDER BY sent_at DESC
+        ORDER BY sent_at ASC
     `);
 
 	return stmt.all("broadcast"); // returns empty array if no messages found
@@ -30,7 +30,7 @@ export function getPrivateUserMessagesDB(username: string): any[] {
         FROM messages
         WHERE (sender = ? OR receiver = ?) 
           AND receiver IS NOT NULL
-        ORDER BY sent_at DESC
+        ORDER BY sent_at ASC
     `);
 
 	return stmt.all(username, username); // returns empty array if no messages found
@@ -42,7 +42,7 @@ export function getUserAsSenderMessagesDB(username: string): any[] {
         SELECT *
         FROM messages
         WHERE sender = ?
-        ORDER BY sent_at DESC
+        ORDER BY sent_at ASC
     `);
 
 	return stmt.all(username); // returns empty array if no messages found
@@ -54,7 +54,7 @@ export function getUserAsReceiverMessagesDB(username: string): any[] {
         SELECT *
         FROM messages
         WHERE receiver = ?
-        ORDER BY sent_at DESC
+        ORDER BY sent_at ASC
     `);
 
 	return stmt.all(username); // returns empty array if no messages found
@@ -66,7 +66,7 @@ export function checkIfTournamentMessagesDB(username: string): string | undefine
         SELECT *
         FROM messages
         WHERE type = ? AND (sender = ? OR receiver = ?)
-        ORDER BY sent_at DESC
+        ORDER BY sent_at ASC
     `);
 
 	const messages: any = stmt.all("tournament", username, username); // returns empty array if no messages found
@@ -87,7 +87,7 @@ export function getTournamentMessagesDB(tournamentId: string): any[] {
         SELECT *
         FROM messages
         WHERE type = ? AND game_id = ?
-        ORDER BY sent_at DESC
+        ORDER BY sent_at ASC
     `);
 
 	return stmt.all("tournament", tournamentId); // returns empty array if no messages found

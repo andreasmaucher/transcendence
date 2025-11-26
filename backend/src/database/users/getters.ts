@@ -53,6 +53,18 @@ export function getUserFriendsDB(username: string): string[] {
 	return friends;
 }
 
+// Retrieve the frieds of the user
+export function getBlockedUsersDB(username: string): string[] {
+	const stmt = db.prepare(`SELECT blocked FROM users WHERE username = ?`);
+
+	const result: any = stmt.get(username); // returns one row or undefined
+	if (!result) throw new Error(`[DB] Blocked users for ${username} not found`);
+
+	const blocked: string[] = JSON.parse(result.blocked);
+
+	return blocked;
+}
+
 //OAUTH
 // Retrieve the username of a GithubUser
 export function getGithubUserByProviderIdDB(providerId: string): string | undefined {

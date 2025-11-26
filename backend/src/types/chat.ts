@@ -22,9 +22,16 @@ export type ChatMessage = {
 	sentAt: string;
 };
 
-export type chatHistory = {
+export type chatHistoryBE = {
 	user: string;
 	global: ChatMessage[];
-	private: Map<string, ChatMessage[]>;
+	private: ChatMessage[];
 	tournament: ChatMessage[];
+};
+
+export type userData = {
+	user: string;
+	chatHistory: chatHistoryBE;
+	blockedUsers: string[];
+	friends: string[];
 };
