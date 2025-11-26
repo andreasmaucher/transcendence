@@ -10,6 +10,9 @@ let activeSocket: WebSocket | null = null;
 // track which paddle side a player controls (null = local game where both paddles are controlled in one window)
 let assignedSide: PaddleSide | null = null;
 
+// callback to notify UI when side is assigned
+let onSideAssignedCallback: ((side: PaddleSide) => void) | null = null;
+
 // set the active socket to the given WebSocket
 // if it is null, the active socket is not set and we stop sending input commands to the backend
 // this is triggered in main.ts when the WebSocket connection is established or lost
@@ -21,6 +24,17 @@ export function setActiveSocket(ws: WebSocket | null): void {
 export function setAssignedSide(side: PaddleSide | null): void {
 	assignedSide = side;
 	console.log(`[INPUT] Assigned to control: ${side || "both paddles (local mode)"}`);
+	
+	//! LOGIC to make sure players see which paddle they are controlling (message printed in the UI)
+	// notify UI if callback is registered and side is not null
+	if (side && onSideAssignedCallback) {
+		onSideAssignedCallback(side);
+	}
+}
+
+// register a callback to be notified when player side is assigned
+export function onSideAssigned(callback: (side: PaddleSide) => void): void {
+	onSideAssignedCallback = callback;
 }
 
 // object to keep track of the last sent direction for each paddle

@@ -85,8 +85,9 @@ export async function renderGame(container: HTMLElement) {
 			? modeParam
 			: "local";
 	const roomId = params.get("id") || undefined;
+	const tournamentName = params.get("name") || undefined;
 
-	console.log("GAME MODE =", mode, "ROOM ID =", roomId);
+	console.log("GAME MODE =", mode, "ROOM ID =", roomId, "TOURNAMENT NAME =", tournamentName);
 
 	// UI WRAPPER
 	const wrapper = document.createElement("div");
@@ -133,6 +134,29 @@ export async function renderGame(container: HTMLElement) {
 
 		userBox.append(avatar, name);
 	})();
+
+	//! LOGIC
+	// PLAYER SIDE INDICATOR (for online/tournament modes)
+	const sideIndicator = document.createElement("div");
+	sideIndicator.style.display = "none"; // Hidden by default
+	sideIndicator.style.background = "rgba(0,0,0,0.5)";
+	sideIndicator.style.padding = "4px 8px";
+	sideIndicator.style.borderRadius = "6px";
+	sideIndicator.style.color = "#fff";
+	sideIndicator.style.fontSize = "14px";
+	sideIndicator.style.textAlign = "center";
+	sideIndicator.style.fontWeight = "bold";
+	ui.append(sideIndicator);
+
+	// Register callback to update side indicator when player is assigned
+	if (mode !== "local") {
+		import("../../game/input.js").then(({ onSideAssigned }) => {
+			onSideAssigned((side) => {
+				sideIndicator.textContent = side === "left" ? "You control: LEFT paddle (W/S)" : "You control: RIGHT paddle (↑/↓)";
+				sideIndicator.style.display = "block";
+			});
+		});
+	}
 
 	//
 	// EXIT BUTTON
@@ -232,7 +256,7 @@ export async function renderGame(container: HTMLElement) {
 			? connectToLocalSingleGameWS(state)
 			: mode === "online"
 			? connectToSingleGameWS(state, roomId)
-			: connectToTournamentWS(state);
+			: connectToTournamentWS(state, roomId, tournamentName);
 	setupInputs();
 
 	const cleanupLoop = startGameLoop(canvas, state);

@@ -109,27 +109,29 @@ export async function updateUser(params: {
 
 
 // tournament
-
+//! LOGIC can i really take out id: number & status: string
 export type Tournament = {
-  id: number;
+  id: string;
   name: string;
-  status: string;
+  state: {
+    size: number;
+    isRunning: boolean;
+    round: number;
+    isOver: boolean;
+  };
+  playersJoined: number;
 };
 
 
-
-////////// HARDCODED ##### TEMPORARY
+//! LOGIC took out hardcoded tournaments
 export async function fetchTournamentList(): Promise<Tournament[]> {
-  const res = await fetch(`${API_BASE}/api/tournament/list`, {
+  const res = await fetch(`${API_BASE}/api/tournaments/open`, {
     credentials: "include",
   });
 
   if (res.status === 404) {
-    // hardcoded tournoments *******************************
-    return [
-      { id: 1, name: "42 League", status: "open" },
-      { id: 2, name: "Berlin", status: "open" },
-    ];
+    // o open tournaments //! WHY
+    return [];
   }
 
   if (!res.ok) {

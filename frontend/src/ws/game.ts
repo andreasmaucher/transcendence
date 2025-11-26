@@ -201,8 +201,13 @@ export function connectToSingleGameWS(state: MatchState, roomId?: string): () =>
 	return () => ws.close();
 }
 
-export function connectToTournamentWS(state: MatchState): () => void {
-	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/tournament/${ROOM_ID}/ws`;
+//! LOGIC added room id here
+export function connectToTournamentWS(state: MatchState, roomId?: string, tournamentName?: string): () => void {
+	const targetRoomId = roomId ?? ROOM_ID;
+	//! LOGIC
+	// add tournament name as query parameter if provided
+	const nameParam = tournamentName ? `?name=${encodeURIComponent(tournamentName)}` : '';
+	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/tournament/${targetRoomId}/ws${nameParam}`;
 
 	const ws = new WebSocket(wsUrl);
 	setActiveSocket(ws);
