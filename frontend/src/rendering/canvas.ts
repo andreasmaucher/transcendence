@@ -54,8 +54,11 @@ export function draw(ctx: CanvasRenderingContext2D, s: State): void {
 			? t("gameOver.leftWins")
 			: t("gameOver.rightWins");
 
-		ctx.fillText(winnerText, s.width / 2, s.height / 2);
-		
+		// Only show winner text for non-tournament matches
+		if (s.mode !== "tournament") {
+			ctx.fillText(winnerText, s.width / 2, s.height / 2);
+		}
+
 		// Only show refresh text for non-tournament matches
 		if (s.mode !== "tournament") {
 			ctx.fillText(t("gameOver.refresh"), s.width / 2, s.height / 2 + 40);
