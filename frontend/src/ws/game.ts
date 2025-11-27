@@ -1,3 +1,4 @@
+import { userData } from "../config/constants";
 import { ROOM_ID, WS_HOST, WS_PORT, WS_PROTOCOL } from "../config/endpoints";
 import { flushInputs, queueInput, setActiveSocket } from "../game/input";
 import { applyBackendState } from "../game/state";
@@ -25,6 +26,7 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 	console.log("URL: ", wsUrl);
 
 	const ws = new WebSocket(wsUrl);
+	userData.gameSock = ws;
 	setActiveSocket(ws);
 
 	let resetRequested = false;
@@ -85,7 +87,7 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 				break;
 			}
 
-		/* 	case "chat":
+			/* 	case "chat":
 				addChatMessage(payload.data.from, payload.data.message);
 				break; */
 
@@ -98,7 +100,7 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 	ws.addEventListener("close", () => {
 		setActiveSocket(null);
 		resetRequested = false;
-		setTimeout(() => connectToLocalSingleGameWS(state), 1000);
+		//setTimeout(() => connectToLocalSingleGameWS(state), 1000);
 	});
 
 	ws.addEventListener("error", () => ws.close());
@@ -111,6 +113,7 @@ export function connectToSingleGameWS(state: MatchState): () => void {
 	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/single-game/${ROOM_ID}/ws`;
 
 	const ws = new WebSocket(wsUrl);
+	userData.gameSock = ws;
 	setActiveSocket(ws);
 
 	let resetRequested = false;
@@ -181,7 +184,7 @@ export function connectToSingleGameWS(state: MatchState): () => void {
 	ws.addEventListener("close", () => {
 		setActiveSocket(null);
 		resetRequested = false;
-		setTimeout(() => connectToSingleGameWS(state), 1000);
+		//setTimeout(() => connectToSingleGameWS(state), 1000);
 	});
 
 	ws.addEventListener("error", () => ws.close());
@@ -194,6 +197,7 @@ export function connectToTournamentWS(state: MatchState): () => void {
 	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/tournament/${ROOM_ID}/ws`;
 
 	const ws = new WebSocket(wsUrl);
+	userData.gameSock = ws;
 	setActiveSocket(ws);
 
 	let resetRequested = false;
@@ -263,7 +267,7 @@ export function connectToTournamentWS(state: MatchState): () => void {
 	ws.addEventListener("close", () => {
 		setActiveSocket(null);
 		resetRequested = false;
-		setTimeout(() => connectToTournamentWS(state), 1000);
+		//setTimeout(() => connectToTournamentWS(state), 1000);
 	});
 
 	ws.addEventListener("error", () => ws.close());
