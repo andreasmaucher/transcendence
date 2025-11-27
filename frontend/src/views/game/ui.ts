@@ -79,7 +79,7 @@ export async function renderGame(container: HTMLElement) {
 	const queryStr = hash.split("?")[1] || "";
 	const params = new URLSearchParams(queryStr);
 	const modeParam = params.get("mode");
-	//! LOGIC properly extracting mode and room id from the URL
+	// properly extracting mode and room id from the URL
 	const mode: "tournament" | "online" | "local" =
 		modeParam === "tournament" || modeParam === "online" || modeParam === "local"
 			? modeParam
@@ -135,7 +135,6 @@ export async function renderGame(container: HTMLElement) {
 		userBox.append(avatar, name);
 	})();
 
-	//! LOGIC
 	// PLAYER SIDE INDICATOR (for online/tournament modes)
 	const sideIndicator = document.createElement("div");
 	sideIndicator.style.display = "none"; // Hidden by default
@@ -224,7 +223,6 @@ export async function renderGame(container: HTMLElement) {
 	const state = createInitialState();
 	state.mode = mode;
 	
-	//! LOGIC waiting overlay for online and tournament modes
 	// create waiting overlay (only shown for online/tournament modes)
 	const waitingOverlay = document.createElement("div");
 	waitingOverlay.style.position = "absolute";

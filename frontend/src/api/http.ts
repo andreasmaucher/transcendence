@@ -109,7 +109,8 @@ export async function updateUser(params: {
 
 
 // tournament
-//! LOGIC can i really take out id: number & status: string
+// Mirrors the backend `/api/tournaments/open` payload:
+// includes full tournament state plus a precomputed playersJoined count for the lobby
 export type Tournament = {
   id: string;
   name: string;
@@ -123,14 +124,12 @@ export type Tournament = {
 };
 
 
-//! LOGIC took out hardcoded tournaments
 export async function fetchTournamentList(): Promise<Tournament[]> {
   const res = await fetch(`${API_BASE}/api/tournaments/open`, {
     credentials: "include",
   });
 
   if (res.status === 404) {
-    // o open tournaments //! WHY
     return [];
   }
 

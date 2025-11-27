@@ -104,7 +104,6 @@ export function draw(ctx: CanvasRenderingContext2D, s: State): void {
 				txHash,
 			};
 		});
-		//! LOGIC for disabling blockchain save prompt for tournament mode
 		} // Close the "if (s.mode !== "tournament")" block
 		ctx.textAlign = "left"; // reset text alignment
 	}

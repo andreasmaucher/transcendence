@@ -110,7 +110,6 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 	return () => ws.close();
 }
 
-//! LOGIC why WS and where is target room id from not there before
 export function connectToSingleGameWS(state: MatchState, roomId?: string): () => void {
 	const targetRoomId = roomId ?? ROOM_ID;
 	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/single-game/${targetRoomId}/ws`;
@@ -141,8 +140,7 @@ export function connectToSingleGameWS(state: MatchState, roomId?: string): () =>
 
 		switch (payload.type) {
 			case "match-assigned": {
-				//! LOGIC
-				// Server tells us which side we're playing on
+				// server tells us which side we're playing on
 				const data = (payload as any).data;
 				console.log(`[WS] Assigned to match ${data?.matchId} as ${data?.playerSide}`);
 				setAssignedSide(data?.playerSide || null);
@@ -204,10 +202,8 @@ export function connectToSingleGameWS(state: MatchState, roomId?: string): () =>
 	return () => ws.close();
 }
 
-//! LOGIC added room id here
 export function connectToTournamentWS(state: MatchState, roomId?: string, tournamentName?: string): () => void {
 	const targetRoomId = roomId ?? ROOM_ID;
-	//! LOGIC
 	// add tournament name as query parameter if provided
 	const nameParam = tournamentName ? `?name=${encodeURIComponent(tournamentName)}` : '';
 	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/tournament/${targetRoomId}/ws${nameParam}`;
@@ -238,13 +234,11 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 
 		switch (payload.type) {
 			case "match-assigned": {
-				//! LOGIC
-				// Server tells us which side we're playing on
+				// server tells us which side we're playing on
 				const data = (payload as any).data;
-				console.log(`[WS] Assigned to match ${data?.matchId} as ${data?.playerSide}`);
 				setAssignedSide(data?.playerSide || null);
 				
-				// Notify UI about tournament match type
+				// notify UI about tournament match type
 				if (data?.tournamentMatchType) {
 					tournamentMatchType(data.tournamentMatchType, data.round || 1);
 				}

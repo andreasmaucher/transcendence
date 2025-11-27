@@ -22,7 +22,7 @@ export function renderOnlineLobby(container: HTMLElement) {
   createBtn.textContent = "Create New Game";
   root.append(createBtn);
 
-  //! LOGIC console.log("TODO: create new online game via backend + open WS");
+  // create new online game via backend + open WS (pin up a unique lobby/room ID whenever a user clicks “Create New Game”)
   createBtn.onclick = () => {
     const newGameId = self.crypto?.randomUUID?.() || Math.random().toString(36).slice(2);
     navigate(`#/game?mode=online&id=${newGameId}`);
@@ -67,7 +67,7 @@ export function renderOnlineLobby(container: HTMLElement) {
           : `Game #${g.id}`;
         label.textContent = gameName;
 
-        //! LOGIC owner.textContent = `Creator: ${g.player1}`;
+        // "Join" button logic in the online lobby
         const joinBtn = document.createElement("button");
         joinBtn.textContent = "Join";
         joinBtn.onclick = () => {
