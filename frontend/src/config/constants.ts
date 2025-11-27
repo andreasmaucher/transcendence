@@ -15,3 +15,5 @@ export const userData = {
 	friends: null as string[] | null,
 	blockedUsers: null as string[] | null,
 };
+
+export const blockedUsers = new Map<string, string[]>();
