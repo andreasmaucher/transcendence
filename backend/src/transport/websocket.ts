@@ -8,6 +8,7 @@ import { Match } from "../types/match.js";
 import { addGameToUser, addUserOnline, removeGameFromUser, removeUserOnline } from "../user/online.js";
 import { handleChatMessages, handleGameMessages } from "./messages.js";
 import { authenticateWebSocket } from "../auth/verify.js";
+import { createTournamentPlayerDB } from "../database/tournament_players/setters.js";
 
 export function registerWebsocketRoute(fastify: FastifyInstance) {
 	// Register user socket
@@ -154,6 +155,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			const tournamentId = request.params.id;
 			const tournamentName = request.query.name;
 			const tournamentSize = request.query.size;
+			const userDisplayName = request.query.displayName;
 			if (!tournamentId) {
 				socket.close(1011, "Tournament id missing");
 				return;
@@ -168,6 +170,9 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			const match = addPlayerToTournament(tournament, socket.username, socket);
 			if (match) {
 				match.clients.add(socket);
+
+				// Create the tournament player row in the database
+				createTournamentPlayerDB(tournament.id, socket.username, userDisplayName);
 
 				// Add the current game info to the userOnline struct
 				addGameToUser(socket.username, socket, tournament.id);
