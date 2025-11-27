@@ -17,8 +17,6 @@ const app = document.getElementById("app");
 if (!app) {
   throw new Error("#app container not found in index.html");
 }
-const container = document.getElementById("app")!;
-container.classList.add("page-transition");
 
 initStarfield();    
 
