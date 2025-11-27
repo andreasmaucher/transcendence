@@ -99,11 +99,12 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				return;
 			}
 
-			//! changed LOGIC here, need to be able to explain to jalombar
-			// Add socket to clients BEFORE addPlayerToMatch so it receives countdown messages
+			// ANDY: add socket to clients BEFORE addPlayerToMatch so it receives countdown messages
+			// reason is that addPlayerToMatch triggers startGameCountdown as soon as the second player joins but the new socket was not in match.clients yet
+			// so it missed the entire countdown process and stayed in waiting for opponent mode
 			match.clients.add(socket);
 
-			// determine which side this player will be assigned to
+			// determine which side this player will be assigned to before calling addPlayerToMatch
 			const playerSide = !match.players.left ? "left" : "right";
 
 			socket.send(
@@ -115,14 +116,14 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 
 			socket.send(buildPayload("state", match.state));
 
-			// If match is not full yet, send "waiting" message to all clients
+			// if the match is not full yet, send "waiting" message to all clients
 			if (!checkMatchFull(match)) {
 				for (const client of match.clients) {
 					client.send(buildPayload("waiting", undefined));
 				}
 			}
 
-			// Add player to match (this may trigger countdown if match becomes full)
+			// add player to match (this may trigger countdown if match becomes full)
 			addPlayerToMatch(match, socket.username);
 
 			socket.on("message", (raw: RawData) => handleSocketMessages(raw, match));
@@ -157,14 +158,15 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			socket.username = payload.username;
 
 		const tournament = getOrCreateTournament(tournamentId, tournamentName, tournamentSize);
-		//! LOGIC so the second game in the tournament sides are corretly assigned to the players
+		// ANDY: added this part to ensure that in the second round of the tournament the sides are correctly assigned to the players
 		// Find which match this player will join and determine their side BEFORE adding them
 		let playerSide: "left" | "right" = "left";
 		const matches = tournament.matches.get(tournament.state.round);
+		// scan the matches to find one with an open slot and then determine the side the player will be assigned to
 		if (matches) {
 			for (const m of matches) {
 				if (!m.players.left || !m.players.right) {
-					// This is the match the player will join
+					// this is the match the player will join
 					playerSide = !m.players.left ? "left" : "right";
 					console.log(`[WS] Player ${payload.username} will be assigned to match ${m.id} as ${playerSide}`);
 					break;
@@ -175,11 +177,9 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 		const match = addPlayerToTournament(tournament, socket.username, socket);
 		if (match) {
 			match.clients.add(socket);
-			// Store reference for Round 2 reassignment
-			socket.currentTournamentMatch = match;
-			socket.tournamentId = tournament.id;
-
-			console.log(`[WS] Player ${payload.username} joined match ${match.id} - left: ${match.players.left}, right: ${match.players.right}`);
+			// ANDY: store reference for Round 2 reassignment so we can pick a socket up after a match is over and drop it into the next match
+			socket.currentTournamentMatch = match; // track wich match the socket belongs to
+			socket.tournamentId = tournament.id; // tracks the tournament this socket belongs to
 
 			socket.send(
 				buildPayload("match-assigned", {
@@ -191,9 +191,8 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			);
 
 			socket.send(buildPayload("state", match.state));
-			 //! LOGIC for tournaments
-            // For tournaments, use socket.currentMatch which will be updated between rounds
-			// Use a wrapper function that reads the current match from socket
+            // ANDY: for tournaments using socket.currentMatch which will be updated between rounds
+			// wrapper ensures every incoming message (player input, reset, etc.) is routed to whichever match the socket is currently assigned to
 			socket.on("message", (raw: RawData) => {
 				const currentMatch = socket.currentTournamentMatch || match;
 				handleSocketMessages(raw, currentMatch);

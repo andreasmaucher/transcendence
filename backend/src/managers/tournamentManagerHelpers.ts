@@ -18,9 +18,7 @@ export function initTournamentMatches(tournament: Tournament, size: number): Mat
 
 	// How many matches in this round
 	let matchCount = size / Math.pow(2, round);
-	//! LOGIC for tournaments
-	// Special case: final round should have 2 matches (final + 3rd place)
-	// The formula gives 1 match, but we need 2 for double-elimination style
+	// ANDY: with the formula above only one final would be possible but we need also the game for 3rd place
 	if (isFinalRound(tournament) && size >= 4) {
 		matchCount = 2;
 	}

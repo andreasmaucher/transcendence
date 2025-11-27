@@ -226,15 +226,16 @@ export function assignPlayersToRound(tournament: Tournament) {
 
 // Move tournament logic to the next round
 export function goToNextRound(tournament: Tournament) {
+	// ANDY: added logic to ensure that second round starts when both matches of the first round have finished
 	const currentRound = tournament.state.round;
 	const nextRound = currentRound + 1;
-	//! LOGIC so that the second round starts!!
-	// Check if Round 2 matches already exist (from a previous failed attempt)
+
+	// check if Round 2 matches already exist (from a previous failed attempt where we left the match objects in the database)
 	if (tournament.matches.has(nextRound)) {
 		console.log(`[TM] Round ${nextRound} matches already exist, trying player assignment again`);
 		assignPlayersToRound(tournament);
 		
-		// Check if assignment succeeded this time
+		// check if player assignment for round 2 is possibel this time
 		const matches = tournament.matches.get(nextRound);
 		if (matches) {
 			let assignmentSucceeded = true;
@@ -246,7 +247,7 @@ export function goToNextRound(tournament: Tournament) {
 			}
 			
 			if (assignmentSucceeded) {
-				// NOW increment the round
+				// if player assignment succeeded increment the round
 				tournament.state.round = nextRound;
 				console.log(`[TM] Player assignment succeeded, advancing to Round ${nextRound}`);
 				for (const match of matches) startGameCountdown(match);
@@ -257,7 +258,6 @@ export function goToNextRound(tournament: Tournament) {
 		return;
 	}
 	
-	//! LOGIC for tournaments dont increment the round or create matches until after validation passed
 	// pre-build the matches for the next round without assuming that the players are ready yet
 	const matches = initTournamentMatches({ ...tournament, state: { ...tournament.state, round: nextRound } }, tournament.state.size);
 	tournament.matches.set(nextRound, matches);
@@ -278,7 +278,7 @@ export function goToNextRound(tournament: Tournament) {
 		}
 	}
 	
-	// if the assignment failed roll back the round increment and wait for all matches to finish
+	// if the assignment failed roll back the round increment and wait for all matches to finish (but we leave the match objects in the database)
 	// we only advance to the next step when every game of the next round has both players ready
 	if (!assignmentSucceeded) {
 		tournament.state.round = originalRound;
