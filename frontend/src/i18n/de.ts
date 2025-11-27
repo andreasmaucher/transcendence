@@ -9,8 +9,8 @@ export default {
     title: "PONG",
     playGame: "Spiel Starten",
     tournaments: "Turniere",
-    localMatch: "Lokales Match",
-    onlineMatch: "Online Match",
+    localMatch: "Lokaler Kampf",
+    onlineMatch: "Online-Duell",
   },
 
   game: {
@@ -41,6 +41,7 @@ export default {
     errFixForm: "Bitte Fehler korrigieren.",
     errAuthFailed: "Authentifizierung fehlgeschlagen.",
     errGeneric: "Fehler",
+    loginGitHub: "Mit GitHub anmelden",
   },
 
   profile: {
@@ -55,6 +56,7 @@ export default {
     passwordTooShort: "Passwort zu kurz.",
     saved: "Gespeichert!",
     updateFailed: "Speichern fehlgeschlagen.",
+    changeAvatar: "Avatar Hochladen",
   },
 
   gameOver: {

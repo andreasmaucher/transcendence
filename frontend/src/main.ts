@@ -1,4 +1,3 @@
-// src/main.ts
 import { startRouter, registerRoutes } from "./router/router";
 import { setupInputs } from "./game/input";
 
@@ -8,11 +7,20 @@ import { renderGame } from "./views/game/ui";
 import { renderProfile } from "./views/profile/ui";
 import { renderTournament } from "./views/tournament/ui";
 import { initTopBar } from "./views/topbar/ui";
+import { renderOnlineLobby } from "./views/online/ui";
+import "./global.css";
+
+import { initStarfield } from "./rendering/starfield";
+
 
 const app = document.getElementById("app");
 if (!app) {
   throw new Error("#app container not found in index.html");
 }
+const container = document.getElementById("app")!;
+container.classList.add("page-transition");
+
+initStarfield();    
 
 setupInputs();
 initTopBar();
@@ -23,6 +31,7 @@ registerRoutes({
   "#/game": renderGame,
   "#/profile": renderProfile,
   "#/tournament": renderTournament,
+  "#/online": renderOnlineLobby,
 });
 
 startRouter(app);

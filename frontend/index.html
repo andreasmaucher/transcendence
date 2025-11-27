@@ -3,14 +3,52 @@
   <head>
     <meta charset="UTF-8" />
     <title>Transcendence Pong</title>
+
     <style>
-      html, body, #app { height: 100%; margin: 0; }
-      body { background: #0f172a; color: #e2e8f0; font-family: system-ui, sans-serif; }
-      #app { display: grid; place-items: center; }
+      html, body, #app {
+        height: 100%;
+        margin: 0;
+      }
+
+      body {
+        background: #000000;
+        color: #e2e8f0;
+        font-family: system-ui, sans-serif;
+        overflow: hidden; /* prevents scrollbars from the starfield */
+      }
+
+      #app {
+        position: relative;
+        z-index: 1;           /* app is above starfield */
+        display: grid;
+        place-items: center;
+      }
+
+      .screen-bg {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        background: #000000;
+        pointer-events: none;
+      }
+
+      #bg-stars {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
     </style>
   </head>
+
   <body>
+    <!-- Starfield background -->
+    <div class="screen-bg">
+      <canvas id="bg-stars"></canvas>
+    </div>
+
+    <!-- Application root -->
     <div id="app"></div>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

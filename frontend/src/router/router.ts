@@ -1,6 +1,7 @@
 // src/router/router.ts
 import { fetchMe } from "../api/http";
 
+
 export type View = (container: HTMLElement) => void | (() => void) | Promise<void | (() => void)>;
 export type Routes = Record<string, View>;
 
@@ -95,8 +96,7 @@ async function render() {
     }
 
     root.replaceChildren();
-    const maybeCleanup = await view(root);  // <--- also important
-
+    const maybeCleanup = await view(root);
     if (typeof maybeCleanup === "function") cleanup = maybeCleanup;
 
   } finally {

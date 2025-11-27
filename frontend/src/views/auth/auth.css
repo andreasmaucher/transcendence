@@ -1,0 +1,197 @@
+/* ------------------------------------------
+   Root layout
+------------------------------------------- */
+.auth-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100vh;
+  padding: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ------------------------------------------
+   Transparent neon card
+------------------------------------------- */
+.auth-card {
+  width: 100%;
+  max-width: 360px;
+  padding: 24px;
+  border-radius: 12px;
+  background: transparent;
+
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  animation: auth-fade-in 0.25s ease-out;
+}
+
+@keyframes auth-fade-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ------------------------------------------
+   Title (Pink neon)
+------------------------------------------- */
+.auth-title {
+  font-family: Orbitron, sans-serif;
+  font-weight: 700;
+  font-size: 112px;
+  letter-spacing: 4px;
+  text-align: center;
+  color: #ff2cfb;
+
+  text-shadow:
+    0 0 10px #ff6bff,
+    0 0 20px #ff2cfb66,
+    0 0 36px #ff2cfb33;
+  margin: 0;
+}
+
+/* ------------------------------------------
+   Tabs (Cyan underline + glow)
+------------------------------------------- */
+.auth-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 8px;
+}
+
+.auth-tab {
+  background: transparent;
+  border: none;
+  color: #2ffffa;
+
+  font-family: Orbitron, sans-serif;
+  font-size: 16px;
+  padding: 4px 10px;
+  cursor: pointer;
+  opacity: 0.55;
+
+  position: relative;
+  transition: opacity 0.2s ease, text-shadow 0.2s ease;
+}
+
+.auth-tab::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0%;
+  height: 2px;
+  background: #2ffffa;
+  box-shadow: 0 0 6px #2ffffa88;
+  transition: width 0.25s;
+}
+
+.auth-tab.active,
+.auth-tab:hover {
+  opacity: 1;
+  text-shadow: 0 0 10px #2ffffa88;
+}
+
+.auth-tab.active::after,
+.auth-tab:hover::after {
+  width: 100%;
+}
+
+/* ------------------------------------------
+   Form & Labels
+------------------------------------------- */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.auth-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #9bd4ff; /* soft neon-blue label tone */
+  font-size: 12px;
+  font-family: Orbitron, sans-serif;
+  letter-spacing: 0.5px;
+}
+
+/* ------------------------------------------
+   Inputs (pink focus)
+------------------------------------------- */
+.auth-input {
+  background: #0a0a0a;
+  border: 2px solid #ff2cfb;
+  padding: 8px 10px;
+  border-radius: 4px;
+  color: white;
+  font-size: 14px;
+  outline: none;
+
+  transition: 
+    border-color 0.2s ease,
+    box-shadow 0.25s ease,
+    transform 0.1s ease;
+}
+
+.auth-input:focus {
+  border-color: #ff6bff;
+  box-shadow:
+    0 0 12px #ff6bff88,
+    0 0 20px #ff2cfb55;
+  transform: scale(1.01);
+}
+
+/* ------------------------------------------
+   Error messages
+------------------------------------------- */
+.auth-field-error {
+  color: #ff4f7a;
+  font-size: 12px;
+  min-height: 14px;
+}
+
+.auth-message {
+  color: #ff4f7a;
+  font-size: 14px;
+  min-height: 20px;
+  text-align: center;
+}
+
+/* ------------------------------------------
+   Buttons (transparent neon)
+------------------------------------------- */
+.auth-submit {
+  background: transparent;
+  border: 2px solid #ff2cfb;
+  color: #ff6bff;
+
+  padding: 10px 12px;
+  border-radius: 4px;
+
+  font-size: 15px;
+  font-family: Orbitron, sans-serif;
+  cursor: pointer;
+  font-weight: bold;
+
+  transition:
+    color 0.2s ease,
+    box-shadow 0.25s ease,
+    background-color 0.25s ease,
+    transform 0.1s ease;
+}
+
+.auth-submit:hover {
+  background-color: rgba(255, 44, 251, 0.12);
+  color: #ff2cfb;
+  box-shadow:
+    0 0 14px #ff6bff,
+    0 0 22px #ff2cfb77;
+}
+
+.auth-submit:active {
+  transform: scale(0.97);
+}

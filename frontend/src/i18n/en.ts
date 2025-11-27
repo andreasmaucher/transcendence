@@ -9,8 +9,8 @@ export default {
     title: "PONG",
     playGame: "Start Game",
     tournaments: "Tournaments",
-    localMatch: "Local Match",
-    onlineMatch: "Online Match",
+    localMatch: "Play Local",
+    onlineMatch: "Play Online",
   },
 
   game: {
@@ -30,7 +30,7 @@ export default {
   },
 
   auth: {
-    welcome: "Welcome Challenger",
+    Pong: "PONG",
     login: "Login",
     register: "Register",
     username: "Username",
@@ -41,6 +41,7 @@ export default {
     errFixForm: "Please fix the errors.",
     errAuthFailed: "Authentication failed.",
     errGeneric: "Error",
+    loginGitHub: "Sign in with GitHub",
   },
 
   profile: {
@@ -55,6 +56,7 @@ export default {
     passwordTooShort: "Password too short.",
     saved: "Saved!",
     updateFailed: "Update failed.",
+    changeAvatar: "Upload Avatar",
   },
 
     gameOver: {
