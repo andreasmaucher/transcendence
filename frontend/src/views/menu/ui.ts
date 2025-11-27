@@ -2,7 +2,6 @@ import { navigate } from "../../router/router";
 import { t } from "../../i18n";
 import { initChat } from "../../chat/chatView";
 import "./menu.css";
-import { applyPageTransition } from "../../utils/transition";
 
 export let disposeChat: (() => void | Promise<void>) | null = null;
 
@@ -49,7 +48,6 @@ export async function renderMenu(container: HTMLElement) {
 
 
   disposeChat = await initChat();
-  applyPageTransition(container);
   return () => {
     teardownChat();
   };
