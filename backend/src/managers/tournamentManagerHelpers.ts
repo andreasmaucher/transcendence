@@ -14,14 +14,15 @@ export function forEachTournament(fn: (tournament: Tournament) => void): void {
 // Create all the matches of the actual round of the tournament
 export function initTournamentMatches(tournament: Tournament, size: number): Match[] {
 	const matches: Match[] = [];
-	const round = tournament.state.round;
+	//const round = tournament.state.round;
 
 	// How many matches in this round
-	let matchCount = size / Math.pow(2, round);
-	// ANDY: with the formula above only one final would be possible but we need also the game for 3rd place
+	//let matchCount = size / Math.pow(2, round);
+	let matchCount = size / 2;
+	/* // ANDY: with the formula above only one final would be possible but we need also the game for 3rd place
 	if (isFinalRound(tournament) && size >= 4) {
 		matchCount = 2;
-	}
+	} */
 
 	for (let i = 0; i < matchCount; i++) {
 		let matchId = crypto.randomUUID();

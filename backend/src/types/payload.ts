@@ -16,7 +16,7 @@ export type PayloadTypes =
 
 export type PayloadDataTypes =
 	| MatchState
-	| { matchId: string; playerSide: string }
+	| { matchId: string; playerSide: string; tournamentMatchType?: string; round?: number }
 	| { value: number }
 	| undefined
 	| { username: string }

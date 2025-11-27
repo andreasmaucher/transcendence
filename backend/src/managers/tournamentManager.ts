@@ -20,21 +20,19 @@ import crypto from "crypto";
 import { Match } from "../types/match.js";
 import { forfeitMatchDB } from "../database/matches/setters.js";
 import { buildPayload } from "../transport/broadcaster.js";
-import { createTournamentPlayerDB } from "../database/tournament_players/setters.js";
 
 // Get or Create a tournament, called only when creating a socket connection
-export function getOrCreateTournament(id: string, name?: string, size?: number): Tournament {
-	let tournament = tournaments.get(id);
+export function getOrCreateTournament(id: string, name: string, size?: number): Tournament {
+	let tournament: Tournament | undefined = tournaments.get(id);
 	if (!tournament) {
 		// use the provided id from URL so players can find each other
 		tournament = {
-			id: id,
+			id: crypto.randomUUID(),
 			name: name,
-			isRunning: false,
 			state: createInitialTournamentState(size || 4),
 			matches: new Map<number, Match[]>(),
-			clients: new Set(),
-		} as Tournament;
+			players: [],
+		};
 
 		try {
 			// Add new tournament to database (without starting it)
@@ -100,7 +98,7 @@ export function addPlayerToTournament(tournament: Tournament, playerId: string, 
 			for (const match of matches) {
 				if (!checkMatchFull(match)) {
 					addPlayerToMatch(match, playerId);
-					if (tournament.state.round === 1) tournament.clients.add(socket);
+					//if (tournament.state.round === 1) tournament.clients.add(socket);
 					if (checkTournamentFull(tournament)) startTournament(tournament);
 					return match;
 				}
@@ -125,11 +123,11 @@ export function assignPlayersToRound(tournament: Tournament) {
 				allHaveWinners = false;
 			}
 		}
-		
+
 		if (!allHaveWinners) {
 			return;
 		}
-		
+
 		// ANDY: creates a map of username -> socket from previous round
 		// we need to be able to find the socket for the winner / loser to assign them to the new match
 		// attach to the new match by updating socket.currentTournamentMatch
@@ -142,7 +140,7 @@ export function assignPlayersToRound(tournament: Tournament) {
 				}
 			}
 		}
-		
+
 		// assign winners to new matches
 		for (const match of prevRound) {
 			const winner = extractMatchWinner(match);
@@ -150,25 +148,25 @@ export function assignPlayersToRound(tournament: Tournament) {
 			if (winner === "error" || winner === "guest") {
 				continue;
 			}
-			
+
 			const newMatch = addPlayerToTournament(tournament, winner);
 			if (!newMatch) {
 				continue;
 			}
-			
+
 			// move the socket of the winning player to the new match
 			const socket = playerSockets.get(winner);
 			if (!socket) {
 				continue;
 			}
-			
+
 			// remove the client from old match (semi-final)
 			match.clients.delete(socket);
 			// add the same socket to the new match (final or 3rd place game)
 			newMatch.clients.add(socket);
 			// update the sockets current tournament match reference so input messages are routed to the new match
 			socket.currentTournamentMatch = newMatch;
-			
+
 			// build & send new match assignment with tournament info to the frontend
 			const playerSide = newMatch.players.left === winner ? "left" : "right";
 			socket.send(
@@ -179,34 +177,34 @@ export function assignPlayersToRound(tournament: Tournament) {
 					round: tournament.state.round,
 				} as any)
 			);
-			
+
 			// send initial state of new match to the frontend so when a player joins the new match the canvas can render the right scene
 			socket.send(buildPayload("state", newMatch.state));
 		}
-		
+
 		// second loop that assigns the losers to the 3rd place game starts from here, basically same logic as the first loop
 		for (const match of prevRound) {
 			const loser = extractMatchLoser(match);
 			if (loser === "error" || loser === "guest") {
 				continue;
 			}
-			
+
 			// add the loser to the new match
 			const newMatch = addPlayerToTournament(tournament, loser);
 			if (!newMatch) {
 				continue;
 			}
-			
+
 			// move the looser socket to the new match
 			const socket = playerSockets.get(loser);
 			if (!socket) {
 				continue;
 			}
-			
+
 			match.clients.delete(socket);
 			newMatch.clients.add(socket);
 			socket.currentTournamentMatch = newMatch;
-			
+
 			// send new match assignment with tournament info
 			const playerSide = newMatch.players.left === loser ? "left" : "right";
 			socket.send(
@@ -217,7 +215,7 @@ export function assignPlayersToRound(tournament: Tournament) {
 					round: tournament.state.round,
 				} as any)
 			);
-			
+
 			// send initial state of new match
 			socket.send(buildPayload("state", newMatch.state));
 		}
@@ -234,7 +232,7 @@ export function goToNextRound(tournament: Tournament) {
 	if (tournament.matches.has(nextRound)) {
 		console.log(`[TM] Round ${nextRound} matches already exist, trying player assignment again`);
 		assignPlayersToRound(tournament);
-		
+
 		// check if player assignment for round 2 is possibel this time
 		const matches = tournament.matches.get(nextRound);
 		if (matches) {
@@ -245,7 +243,7 @@ export function goToNextRound(tournament: Tournament) {
 					break;
 				}
 			}
-			
+
 			if (assignmentSucceeded) {
 				// if player assignment succeeded increment the round
 				tournament.state.round = nextRound;
@@ -257,18 +255,21 @@ export function goToNextRound(tournament: Tournament) {
 		}
 		return;
 	}
-	
+
 	// pre-build the matches for the next round without assuming that the players are ready yet
-	const matches = initTournamentMatches({ ...tournament, state: { ...tournament.state, round: nextRound } }, tournament.state.size);
+	const matches = initTournamentMatches(
+		{ ...tournament, state: { ...tournament.state, round: nextRound } },
+		tournament.state.size
+	);
 	tournament.matches.set(nextRound, matches);
-	
+
 	// temporarily increment round so assignPlayersToRound sees the correct round numbers
 	const originalRound = tournament.state.round;
 	tournament.state.round = nextRound;
-	
+
 	// try to assign players (this might fail if winners aren't ready yet)
 	assignPlayersToRound(tournament);
-	
+
 	// check if assignPlayersToRound succeeded by checking if matches have players
 	let assignmentSucceeded = true;
 	for (const match of matches) {
@@ -277,15 +278,17 @@ export function goToNextRound(tournament: Tournament) {
 			break;
 		}
 	}
-	
+
 	// if the assignment failed roll back the round increment and wait for all matches to finish (but we leave the match objects in the database)
 	// we only advance to the next step when every game of the next round has both players ready
 	if (!assignmentSucceeded) {
 		tournament.state.round = originalRound;
-		console.log(`[TM] Player assignment incomplete, rolling back to Round ${originalRound}, waiting for all matches to finish...`);
+		console.log(
+			`[TM] Player assignment incomplete, rolling back to Round ${originalRound}, waiting for all matches to finish...`
+		);
 		return;
 	}
-	
+
 	// when the assignment succeeded the round is already incremented so we can just start the matches
 	for (const match of matches) startGameCountdown(match);
 }
@@ -296,7 +299,7 @@ export function endTournament(tournament: Tournament) {
 
 	const finalRoundMatches = tournament.matches.get(tournament.state.round);
 	if (!finalRoundMatches) return;
-	
+
 	const finalMatch = finalRoundMatches.find((m) => m.tournament?.type === "final");
 	if (!finalMatch) {
 		console.error(`[TM] No final match found for tournament ${tournament.id}`);
@@ -316,7 +319,8 @@ export function forfeitTournament(tournamentId: string, playerId: string) {
 		if (roundMatches) {
 			for (const match of roundMatches) {
 				match.state.isRunning = false;
-				for (const client of tournament.clients) {
+				const clients = tournament.players.map((player) => player.socket);
+				for (const client of clients) {
 					// Send a message BEFORE closing
 					client.send(
 						buildPayload("player-left", {
