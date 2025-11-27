@@ -116,16 +116,9 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				return;
 			}
 
-<<<<<<< HEAD
-			// Add the current game info to the userOnline struct
-			addGameToUser(socket.username, socket, singleGame.id);
-
-			addPlayerToMatch(match, socket.username);
-=======
 			// ANDY: add socket to clients BEFORE addPlayerToMatch so it receives countdown messages
 			// reason is that addPlayerToMatch triggers startGameCountdown as soon as the second player joins but the new socket was not in match.clients yet
 			// so it missed the entire countdown process and stayed in waiting for opponent mode
->>>>>>> tournament_logic
 			match.clients.add(socket);
 
 			// determine which side this player will be assigned to before calling addPlayerToMatch
@@ -140,9 +133,6 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 
 			socket.send(buildPayload("state", match.state));
 
-<<<<<<< HEAD
-			socket.on("message", (raw: RawData) => handleGameMessages(raw, match));
-=======
 			// if the match is not full yet, send "waiting" message to all clients
 			if (!checkMatchFull(match)) {
 				for (const client of match.clients) {
@@ -153,8 +143,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			// add player to match (this may trigger countdown if match becomes full)
 			addPlayerToMatch(match, socket.username);
 
-			socket.on("message", (raw: RawData) => handleSocketMessages(raw, match));
->>>>>>> tournament_logic
+			socket.on("message", (raw: RawData) => handleGameMessages(raw, match));
 
 			socket.on("close", () => {
 				match.clients.delete(socket);
@@ -214,20 +203,6 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			socket.currentTournamentMatch = match; // track wich match the socket belongs to
 			socket.tournamentId = tournament.id; // tracks the tournament this socket belongs to
 
-<<<<<<< HEAD
-				// Create the tournament player row in the database
-				createTournamentPlayerDB(tournament.id, socket.username, userDisplayName);
-
-				// Add the current game info to the userOnline struct
-				addGameToUser(socket.username, socket, tournament.id);
-
-				socket.send(
-					buildPayload("match-assigned", {
-						matchId: match.id,
-						playerSide: match.players.left === payload.username ? "left" : "right",
-					})
-				);
-=======
 			socket.send(
 				buildPayload("match-assigned", {
 					matchId: match.id,
@@ -236,30 +211,15 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 					round: tournament.state.round,
 				} as any)
 			);
->>>>>>> tournament_logic
 
 			socket.send(buildPayload("state", match.state));
             // ANDY: for tournaments using socket.currentMatch which will be updated between rounds
 			// wrapper ensures every incoming message (player input, reset, etc.) is routed to whichever match the socket is currently assigned to
 			socket.on("message", (raw: RawData) => {
 				const currentMatch = socket.currentTournamentMatch || match;
-				handleSocketMessages(raw, currentMatch);
+				handleGameMessages(raw, currentMatch);
 			});
 
-<<<<<<< HEAD
-				socket.on("message", (raw: RawData) => handleGameMessages(raw, match));
-
-				socket.on("close", () => {
-					match.clients.delete(socket);
-
-					// Forfeit match (and tournament) for all players
-					forfeitMatch(match, socket.username);
-
-					// Remove the current game from the userOnline struct
-					removeGameFromUser(socket.username);
-				});
-				socket.on("error", (err: any) => console.error(`[gameWS] match=${match.id}`, err));
-=======
 			socket.on("close", () => {
 				const currentMatch = socket.currentTournamentMatch || match;
 				currentMatch.clients.delete(socket);
@@ -269,7 +229,6 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				const currentMatch = socket.currentTournamentMatch || match;
 				console.error(`[ws error] match=${currentMatch?.id}`, err);
 			});
->>>>>>> tournament_logic
 			} else {
 				console.log(`[gameWS] Tournament ${tournament.id} is already full`);
 				socket.close(1008, "Tournament is already full");

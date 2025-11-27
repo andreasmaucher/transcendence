@@ -96,7 +96,7 @@ export function startGameCountdown(match: Match) {
 	const interval = setInterval(() => {
 		// Broadcast countdown to all players in the match
 		console.log(`[MM] Broadcasting countdown ${sec} to ${match.clients.size} clients`);
-		broadcast(buildPayload("countdown", { value: sec }), match);
+		gameBroadcast(buildPayload("countdown", { value: sec }), match);
 
 		if (sec === 0) {
 			clearInterval(interval);

@@ -51,12 +51,9 @@ export function renderOnlineLobby(container: HTMLElement) {
   const createBtn = document.createElement("button");
   createBtn.className = "tournament-create-btn";
   createBtn.textContent = "Create New Game";
-<<<<<<< HEAD
-=======
   root.append(createBtn);
 
   // create new online game via backend + open WS (pin up a unique lobby/room ID whenever a user clicks “Create New Game”)
->>>>>>> tournament_logic
   createBtn.onclick = () => {
     const newGameId = self.crypto?.randomUUID?.() || Math.random().toString(36).slice(2);
     navigate(`#/game?mode=online&id=${newGameId}`);
@@ -98,24 +95,19 @@ export function renderOnlineLobby(container: HTMLElement) {
         const row = document.createElement("div");
         row.className = "tournament-row";
 
-<<<<<<< HEAD
-        // LEFT SIDE (game label)
-        const left = document.createElement("div");
-        left.textContent = `Game #${g.id}  —  Creator: ${g.player1}`;
-        row.append(left);
+        const label = document.createElement("span");
+        // display as "alice Game #1"
+        const gameName = g.creator && g.gameNumber
+          ? `${g.creator} Game #${g.gameNumber}`
+          : `Game #${g.id}`;
+        label.textContent = gameName;
 
         // RIGHT SIDE (buttons) same layout as tournament-right block
         const right = document.createElement("div");
         right.style.display = "flex";
         right.style.gap = "0.6rem";
-=======
-        const label = document.createElement("span");
-        // display as "alice Game #1"
-        const gameName = g.creator && g.gameNumber 
-          ? `${g.creator} Game #${g.gameNumber}` 
-          : `Game #${g.id}`;
-        label.textContent = gameName;
->>>>>>> tournament_logic
+
+        row.append(label);
 
         // "Join" button logic in the online lobby
         const joinBtn = document.createElement("button");
@@ -126,10 +118,7 @@ export function renderOnlineLobby(container: HTMLElement) {
         right.append(joinBtn);
         row.append(right);
 
-<<<<<<< HEAD
-=======
         row.append(label, joinBtn);
->>>>>>> tournament_logic
         listEl.append(row);
       }
     });
