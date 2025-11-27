@@ -9,8 +9,8 @@ export default {
     title: "PONG",
     playGame: "Lancer le Jeu",
     tournaments: "Tournois",
-    localMatch: "Match Local",
-    onlineMatch: "Match en Ligne",
+    localMatch: "Combat Local",
+    onlineMatch: "Duel en Ligne",
   },
 
   game: {
@@ -41,6 +41,7 @@ export default {
     errFixForm: "Corrigez les erreurs.",
     errAuthFailed: "Échec de connexion.",
     errGeneric: "Erreur",
+    loginGitHub: "Se connecter avec GitHub",
   },
 
   profile: {
@@ -55,6 +56,7 @@ export default {
     passwordTooShort: "Mot de passe trop court.",
     saved: "Enregistré !",
     updateFailed: "Échec de mise à jour.",
+    changeAvatar: "Changer d'Avatar",
   },
   
     gameOver: {
