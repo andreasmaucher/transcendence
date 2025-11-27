@@ -1,114 +1,56 @@
-// src/views/menu/ui.ts
 import { navigate } from "../../router/router";
 import { t } from "../../i18n";
-import { sendMessage } from "../../chat/chatHandler";
 import { initChat } from "../../chat/chatView";
+import "./menu.css";
+import { applyPageTransition } from "../../utils/transition";
 
 export let disposeChat: (() => void | Promise<void>) | null = null;
 
 export function teardownChat() {
-	disposeChat?.();
-	disposeChat = null;
+  disposeChat?.();
+  disposeChat = null;
 }
 
 export async function renderMenu(container: HTMLElement) {
-	container.innerHTML = "";
+  container.innerHTML = "";
 
-	const root = document.createElement("div");
-	root.className = "menu-screen";
-	container.append(root);
+  const root = document.createElement("div");
+  root.className = "menu-screen";
+  container.append(root);
 
-	// Title
-	const title = document.createElement("h1");
-	title.textContent = t("menu.title");
-	title.style.textAlign = "center";
-	title.style.width = "100%";
-	root.append(title);
 
-	// Buttons
-	const btns = document.createElement("div");
-	btns.className = "menu-buttons";
-	btns.style.justifyContent = "center";
-	root.append(btns);
 
-	const playBtn = document.createElement("button");
-	playBtn.textContent = t("menu.playGame");
+  const title = document.createElement("h1");
+  title.textContent = t("menu.title");
+  title.className = "menu-title";
+  root.append(title);
 
-	const tournamentBtn = document.createElement("button");
-	tournamentBtn.textContent = t("menu.tournaments");
 
-	btns.append(playBtn, tournamentBtn);
+  const btns = document.createElement("div");
+  btns.className = "menu-buttons";
+  root.append(btns);
 
-	// Shared floating submenu
-	const submenu = document.createElement("div");
-	submenu.className = "submenu";
-	submenu.style.position = "absolute";
-	submenu.style.display = "none";
-	submenu.style.flexDirection = "column";
-	submenu.style.gap = "8px";
-	submenu.style.padding = "10px";
-	submenu.style.background = "rgba(0,0,0,0.7)";
-	submenu.style.border = "1px solid #777";
-	submenu.style.borderRadius = "6px";
-	submenu.style.zIndex = "9999";
-	root.append(submenu);
+  const localBtn = document.createElement("button");
+  localBtn.className = "menu-btn";
+  localBtn.textContent = t("menu.localMatch");
+  localBtn.onclick = () => navigate("#/game?mode=local");
 
-	function showSubmenu(content: HTMLElement, anchor: HTMLElement) {
-		submenu.innerHTML = "";
-		submenu.append(content);
+  const onlineBtn = document.createElement("button");
+  onlineBtn.className = "menu-btn";
+  onlineBtn.textContent = t("menu.onlineMatch");
+  onlineBtn.onclick = () => navigate("#/online");
 
-		const rect = anchor.getBoundingClientRect();
-		submenu.style.left = rect.left + "px";
-		submenu.style.top = rect.bottom + "px";
-		submenu.style.display = "flex";
-	}
+  const tournamentBtn = document.createElement("button");
+  tournamentBtn.className = "menu-btn";
+  tournamentBtn.textContent = t("menu.tournaments");
+  tournamentBtn.onclick = () => navigate("#/tournament");
 
-	function hideSubmenu() {
-		submenu.style.display = "none";
-	}
+  btns.append(localBtn, onlineBtn, tournamentBtn);
 
-	// PLAY GAME Hover submenu (Local / Online)
-	playBtn.onmouseenter = () => {
-		const box = document.createElement("div");
-		box.style.display = "flex";
-		box.style.flexDirection = "column";
-		box.style.gap = "6px";
 
-		const localBtn = document.createElement("button");
-		localBtn.textContent = t("menu.localMatch");
-		localBtn.onclick = () => navigate("#/game?mode=local");
-
-		const onlineBtn = document.createElement("button");
-		onlineBtn.textContent = t("menu.onlineMatch");
-		onlineBtn.onclick = () => navigate("#/game?mode=online");
-
-		box.append(localBtn, onlineBtn);
-		showSubmenu(box, playBtn);
-	};
-
-	// TOURNAMENT: direct navigation, no submenu
-	tournamentBtn.onclick = () => navigate("#/tournament");
-
-	// Hide submenu when mouse leaves the region
-	root.addEventListener("mousemove", (e) => {
-		const target = e.target as Node;
-		const inside = submenu.contains(target) || playBtn.contains(target);
-		if (!inside) hideSubmenu();
-	});
-
-	submenu.addEventListener("mouseleave", () => {
-		hideSubmenu();
-	});
-
-	playBtn.addEventListener("mouseleave", (e) => {
-		if (!submenu.contains(e.relatedTarget as Node)) {
-			hideSubmenu();
-		}
-	});
-
-	disposeChat = await initChat();
-
-	return () => {
-		teardownChat();
-	};
+  disposeChat = await initChat();
+  applyPageTransition(container);
+  return () => {
+    teardownChat();
+  };
 }

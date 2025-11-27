@@ -1,13 +1,17 @@
 // src/views/game/ui.ts
 import { type GameConstants } from "../../constants";
 import { navigate } from "../../router/router";
-import { fetchGameConstants, fetchMe } from "../../api/http";
+import { fetchGameConstants } from "../../api/http";
 import { draw } from "../../rendering/canvas";
 import { setupInputs, setActiveSocket } from "../../game/input";
 import { MatchState } from "../../types/game";
-import { connectToLocalSingleGameWS } from "../../ws/game";
+import {
+	connectToLocalSingleGameWS,
+	connectToSingleGameWS,
+	connectToTournamentWS,
+	registerGameUiHandlers,
+} from "../../ws/game";
 import { userData } from "../../config/constants";
-import { connectToLocalSingleGameWS, connectToSingleGameWS, connectToTournamentWS, registerGameUiHandlers } from "../../ws/game";
 import { showCountdown } from "../game/countdown";
 
 let GAME_CONSTANTS: GameConstants | null = null;
@@ -17,7 +21,8 @@ let GAME_CONSTANTS: GameConstants | null = null;
 // -------------------------------
 function createInitialState(): MatchState {
 	if (!GAME_CONSTANTS) throw new Error("Game constants not loaded");
-	const centerY = (GAME_CONSTANTS.fieldHeight - GAME_CONSTANTS.paddleHeight) / 2;
+	const centerY =
+		(GAME_CONSTANTS.fieldHeight - GAME_CONSTANTS.paddleHeight) / 2;
 
 	const left = {
 		x: GAME_CONSTANTS.paddleMargin,
@@ -28,7 +33,10 @@ function createInitialState(): MatchState {
 	};
 
 	const right = {
-		x: GAME_CONSTANTS.fieldWidth - GAME_CONSTANTS.paddleMargin - GAME_CONSTANTS.paddleWidth,
+		x:
+			GAME_CONSTANTS.fieldWidth -
+			GAME_CONSTANTS.paddleMargin -
+			GAME_CONSTANTS.paddleWidth,
 		y: centerY,
 		w: GAME_CONSTANTS.paddleWidth,
 		h: GAME_CONSTANTS.paddleHeight,
@@ -57,7 +65,10 @@ function createInitialState(): MatchState {
 	};
 }
 
-function startGameLoop(canvas: HTMLCanvasElement, state: MatchState): () => void {
+function startGameLoop(
+	canvas: HTMLCanvasElement,
+	state: MatchState
+): () => void {
 	const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
 	let running = true;
@@ -78,101 +89,80 @@ function startGameLoop(canvas: HTMLCanvasElement, state: MatchState): () => void
 export async function renderGame(container: HTMLElement) {
 	container.innerHTML = "";
 	let cancelled = false;
+
 	const hash = location.hash;
-	// determine game mode from the URL hash
-	// - "tournament" -> connect to tournament WS
-	// - "online" -> connect to online single game WS
-	// - otherwise -> local single game WS
 	const mode: "tournament" | "online" | "local" =
 		hash.includes("mode=tournament")
 			? "tournament"
 			: hash.includes("mode=online")
 			? "online"
 			: "local";
+
 	console.log("GAME MODE =", mode);
 
-	// UI WRAPPER
+	// ==========================================================
+	// GAME FRAME WRAPPER WITH BORDER INLINE
+	// ==========================================================
 	const wrapper = document.createElement("div");
 	wrapper.style.position = "relative";
 	wrapper.style.width = "fit-content";
-	wrapper.style.margin = "0 auto";
+	wrapper.style.margin = "80px auto 0 auto";
+
+	// BORDER + GLOW MATCHING MENU STYLE
+	wrapper.style.padding = "14px";
+	wrapper.style.borderRadius = "12px";
+	wrapper.style.background = "rgba(10, 10, 10, 0.45)";
+	wrapper.style.backdropFilter = "blur(6px)";
+
+	wrapper.style.border = "2px solid rgba(255, 44, 251, 0.25)";
+	wrapper.style.boxShadow = `
+		0 0 10px rgba(255, 44, 251, 0.18),
+		0 0 26px rgba(255, 44, 251, 0.12),
+		inset 0 0 12px rgba(255, 44, 251, 0.15)
+	`;
+
 	container.append(wrapper);
 
-	// Floating UI (top-right)
-	const ui = document.createElement("div");
-	ui.style.position = "absolute";
-	ui.style.top = "-150px";
-	ui.style.right = "10px";
-	ui.style.display = "flex";
-	ui.style.flexDirection = "column";
-	ui.style.gap = "8px";
-	ui.style.zIndex = "9999";
-	wrapper.append(ui);
-
-	// USER INFO (avatar + name)
-	const userBox = document.createElement("div");
-	userBox.style.display = "flex";
-	userBox.style.alignItems = "center";
-	userBox.style.gap = "8px";
-	userBox.style.background = "rgba(0,0,0,0.5)";
-	userBox.style.padding = "4px 8px";
-	userBox.style.borderRadius = "6px";
-	userBox.style.color = "#fff";
-	ui.append(userBox);
-
-	(async () => {
-		const me = await fetchMe();
-		if (!me) return;
-
-		const avatar = document.createElement("img");
-		avatar.src = me.avatar || "/default-avatar.png";
-		avatar.width = 32;
-		avatar.height = 32;
-		avatar.style.borderRadius = "50%";
-		avatar.style.objectFit = "cover";
-
-		const name = document.createElement("span");
-		name.textContent = me.username;
-
-		userBox.append(avatar, name);
-	})();
-
-	//
-	// EXIT BUTTON
-	//
+	// ==========================================================
+	// CLEAN EXIT BUTTON
+	// ==========================================================
 	const exitBtn = document.createElement("button");
-	exitBtn.textContent = "Exit Game";
-	exitBtn.style.padding = "4px 8px";
-	exitBtn.style.fontSize = "14px";
+	exitBtn.textContent = "Exit";
+	exitBtn.style.position = "absolute";
+	exitBtn.style.top = "-60px";
+	exitBtn.style.right = "0";
+
+	exitBtn.style.padding = "8px 16px";
+	exitBtn.style.fontSize = "16px";
+	exitBtn.style.fontWeight = "bold";
+
+	exitBtn.style.color = "#ff6bff";
+	exitBtn.style.background = "rgba(10,10,10,0.6)";
+	exitBtn.style.border = "2px solid #ff2cfb";
+	exitBtn.style.borderRadius = "6px";
+	exitBtn.style.backdropFilter = "blur(5px)";
 	exitBtn.style.cursor = "pointer";
+
+	exitBtn.style.transition =
+		"background-color 0.25s ease, box-shadow 0.25s ease, transform 0.12s ease";
+
+	exitBtn.onmouseenter = () => {
+		exitBtn.style.backgroundColor = "rgba(255,44,251,0.15)";
+		exitBtn.style.boxShadow =
+			"0 0 14px #ff6bff, 0 0 22px #ff2cfb66";
+	};
+
+	exitBtn.onmouseleave = () => {
+		exitBtn.style.backgroundColor = "rgba(10,10,10,0.6)";
+		exitBtn.style.boxShadow = "none";
+	};
+
 	exitBtn.onclick = () => {
 		navigate("#/menu");
 		userData.gameSock?.close();
 	};
-	ui.append(exitBtn);
 
-	//
-	// MUTE BUTTON
-	//
-	//   let muted = false;
-	//   const audio = new Audio("/assets/game-music.mp3");
-	//   audio.loop = true;
-	//   audio.volume = 0.4;
-	//   audio.play().catch(() => { /* autoplay block ignored */ });
-
-	//   const muteBtn = document.createElement("button");
-	//   muteBtn.textContent = "Mute";
-	//   muteBtn.style.padding = "4px 8px";
-	//   muteBtn.style.fontSize = "14px";
-	//   muteBtn.style.cursor = "pointer";
-
-	//   muteBtn.onclick = () => {
-	//     muted = !muted;
-	//     audio.muted = muted;
-	//     muteBtn.textContent = muted ? "Unmute" : "Mute";
-	//   };
-
-	//   ui.append(muteBtn);
+	wrapper.append(exitBtn);
 
 	//
 	// 1) Fetch game constants
@@ -188,12 +178,12 @@ export async function renderGame(container: HTMLElement) {
 	canvas.height = GAME_CONSTANTS.fieldHeight;
 	wrapper.append(canvas);
 
-	// Draw a static preview frame so the field, paddles, and ball are visible
+	// preview before countdown
 	const previewState = createInitialState();
 	const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 	draw(ctx, previewState);
 
-	// Run countdown after drawing preview
+	// countdown
 	if (mode === "local") {
 		await showCountdown(wrapper, canvas);
 	}
@@ -202,39 +192,28 @@ export async function renderGame(container: HTMLElement) {
 	// 3) Start game
 	//
 	const state = createInitialState();
-	// register UI handlers for WS events
+
 	registerGameUiHandlers({
-		waitingForPlayers: () => {
-			// placeholder: show "Waiting..." overlay here
-		},
-		countdownToGame: (_n, _side) => {
-			// placeholder: show "3,2,1"
-		},
-		startGame: () => {
-			// placeholder: hide overlays here I assume? or just start the game?
-		},
+		waitingForPlayers: () => {},
+		countdownToGame: () => {},
+		startGame: () => {},
 	});
 
-	// choose the correct WS connector based on mode
 	const cleanupWS =
 		mode === "local"
 			? connectToLocalSingleGameWS(state)
 			: mode === "online"
 			? connectToSingleGameWS(state)
 			: connectToTournamentWS(state);
-	setupInputs();
 
+	setupInputs();
 	const cleanupLoop = startGameLoop(canvas, state);
 
-	//
-	// Return cleanup for router
-	//
+	// cleanup
 	return () => {
 		cancelled = true;
 		cleanupLoop();
 		cleanupWS();
 		setActiveSocket(null);
-		//   audio.pause();
-		//    audio.src = "";
 	};
 }

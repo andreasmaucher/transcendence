@@ -1,0 +1,172 @@
+
+
+#global-topbar {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 9999;
+  font-family: Orbitron, sans-serif;
+}
+
+/* ==========================================================
+   LANGUAGE SWITCHER
+========================================================== */
+
+#global-lang-switcher button {
+  background: rgba(10, 10, 10, 0.65);
+  border: 2px solid #2ffffa;
+  padding: 5px 8px;
+  border-radius: 4px;
+  color: #2ffffa;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: bold;
+  transition:
+    background-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.15s ease;
+}
+
+#global-lang-switcher button:hover {
+  background-color: rgba(47, 255, 250, 0.12);
+  box-shadow:
+    0 0 8px #2ffffa,
+    0 0 14px #2ffffa66;
+}
+
+#global-lang-switcher button:active {
+  transform: scale(0.96);
+}
+
+/* Language submenu */
+
+#global-lang-submenu {
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: rgba(10,10,10,0.8);
+  border: 2px solid #2ffffa;
+  border-radius: 6px;
+  position: fixed;
+  z-index: 10000;
+  backdrop-filter: blur(4px);
+  color: #ff2cfb;
+  min-width: 40px;
+}
+
+#global-lang-submenu button {
+  background: transparent;
+  border: none;
+  color: #2ffffa;
+  padding: 2px 6px;
+  cursor: pointer;
+  font-size: 11px;
+  letter-spacing: 1px;
+  transition: text-shadow 0.25s ease;
+}
+
+#global-lang-submenu button:hover {
+  text-shadow: 0 0 10px #ff2cfb;
+}
+
+
+
+#global-user-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(10, 10, 10, 0.6);
+  padding: 5px 8px;
+  border-radius: 6px;
+  //border: 2px solid #2ffffa;
+  color: #2ffffa;
+  font-size: 17px;
+  cursor: pointer;
+
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.25s ease,
+    transform 0.15s ease;
+}
+
+#global-user-box:hover {
+  background-color: rgba(255, 44, 251, 0.12);
+  box-shadow:
+    0 0 8px #2ffffa,
+    0 0 14px #2ffffa;
+}
+
+#global-user-box:active {
+  transform: scale(0.97);
+}
+
+/* ==========================================================
+   USER SUBMENU (COMPACT)
+========================================================== */
+
+#global-user-submenu {
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  background: rgba(10,10,10,0.85);
+  border: 2px solid #2ffffa;
+  border-radius: 6px;
+  position: fixed;
+  z-index: 10000;
+  backdrop-filter: blur(4px);
+  min-width: 95px;
+  align-items: center;
+  text-align: center;
+}
+
+/* Smaller submenu avatar */
+.submenu-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ff2cfb;
+}
+
+/* Username text */
+.user-name {
+  color: #fff;
+  font-size: 12px;
+  letter-spacing: 0.4px;
+}
+
+/* Buttons inside submenu */
+
+#global-user-submenu button {
+  background: transparent;
+  border: 1px solid #2ffffa99;
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: #2ffffa;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+
+  transition:
+    color 0.2s ease,
+    background-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.15s ease;
+}
+
+#global-user-submenu button:hover {
+  background-color: rgba(255, 44, 251, 0.12);
+  color: #ff2cfb;
+  box-shadow:
+    0 0 10px #ff6bff,
+    0 0 18px #2ffffa99;
+}
+
+#global-user-submenu button:active {
+  transform: scale(0.96);
+}

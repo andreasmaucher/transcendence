@@ -9,8 +9,8 @@ export default {
     title: "PONG",
     playGame: "Start Game",
     tournaments: "Tournaments",
-    localMatch: "Local Match",
-    onlineMatch: "Online Match",
+    localMatch: "Play Local",
+    onlineMatch: "Play Online",
   },
 
   game: {
@@ -56,6 +56,7 @@ export default {
     passwordTooShort: "Password too short.",
     saved: "Saved!",
     updateFailed: "Update failed.",
+    changeAvatar: "Upload Avatar",
   },
 
     gameOver: {

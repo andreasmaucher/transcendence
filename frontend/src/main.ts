@@ -8,6 +8,7 @@ import { renderProfile } from "./views/profile/ui";
 import { renderTournament } from "./views/tournament/ui";
 import { initTopBar } from "./views/topbar/ui";
 import { renderOnlineLobby } from "./views/online/ui";
+import "./global.css";
 
 import { initStarfield } from "./rendering/starfield";
 
@@ -16,6 +17,8 @@ const app = document.getElementById("app");
 if (!app) {
   throw new Error("#app container not found in index.html");
 }
+const container = document.getElementById("app")!;
+container.classList.add("page-transition");
 
 initStarfield();    
 

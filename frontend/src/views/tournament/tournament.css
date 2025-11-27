@@ -1,0 +1,198 @@
+
+
+.tournament-screen {
+  width: 100%;
+  height: 100vh;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background: rgba(0,0,0,0.35);
+
+  font-family: Orbitron, sans-serif;
+  color: #ff6bff;
+}
+
+
+
+.tournament-box {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+
+  width: 620px;          /* Same visual width as menu buttons row */
+  padding: 40px;
+
+  border-radius: 12px;
+  border: 2px solid #ff2cfb33;
+
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(6px);
+
+  box-shadow:
+    inset 0 0 18px #ff2cfb22,
+    0 0 22px #ff6bff33;
+}
+
+/* ==========================================================
+   Header 
+========================================================== */
+
+.tournament-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 24px;
+}
+
+.tournament-title {
+  font-size: 42px;
+  font-weight: 700;
+
+  color: #ff2cfb;
+  text-shadow:
+    0 0 10px #ff6bff,
+    0 0 20px #ff2cfb77,
+    0 0 36px #ff2cfb33;
+}
+
+.tournament-back-btn {
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: bold;
+
+  border: 2px solid #ff2cfb;
+  border-radius: 6px;
+
+  color: #ff6bff;
+
+  background: rgba(10,10,10,0.55);
+  backdrop-filter: blur(5px);
+
+  cursor: pointer;
+
+  transition: background-color 0.25s ease,
+              box-shadow 0.25s ease,
+              transform 0.1s ease;
+}
+
+.tournament-back-btn:hover {
+  background-color: rgba(255,44,251,0.15);
+  box-shadow:
+    0 0 14px #ff6bff,
+    0 0 22px #ff2cfb55;
+}
+
+.tournament-back-btn:active {
+  transform: scale(0.96);
+}
+
+/* ==========================================================
+   Content container
+========================================================== */
+
+.tournament-status {
+  font-size: 17px;
+  margin-bottom: 16px;
+}
+
+.tournament-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ==========================================================
+   Tournament entry rows
+========================================================== */
+
+.tournament-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 12px 14px;
+
+  border: 1px solid #ff2cfb44;
+  border-radius: 6px;
+
+  background: rgba(10,10,10,0.45);
+  backdrop-filter: blur(6px);
+  transition: background-color 0.2s ease, box-shadow 0.25s ease;
+}
+
+.tournament-row:hover {
+  background-color: rgba(255,44,251,0.12);
+  box-shadow:
+    0 0 12px #ff6bff66,
+    0 0 16px #ff2cfb66;
+}
+
+/* Buttons inside list */
+
+.tournament-row-btn {
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: bold;
+
+  border: 1px solid #ff2cfb;
+  border-radius: 6px;
+
+  background: rgba(255,44,251,0.1);
+  color: #ff6bff;
+
+  cursor: pointer;
+
+  transition: background-color 0.25s ease,
+              box-shadow 0.25s ease,
+              transform 0.1s ease;
+}
+
+.tournament-row-btn:hover {
+  background-color: rgba(255,44,251,0.22);
+  box-shadow:
+    0 0 10px #ff6bff,
+    0 0 14px #ff2cfb66;
+}
+
+.tournament-row-btn:active {
+  transform: scale(0.95);
+}
+
+/* ==========================================================
+   Create button (same style as menu buttons)
+========================================================== */
+
+.tournament-create-btn {
+  margin-top: 26px;
+
+  padding: 12px 20px;
+  font-size: 18px;
+  font-weight: bold;
+
+  border: 2px solid #ff2cfb;
+  border-radius: 6px;
+
+  background: rgba(10,10,10,0.55);
+  backdrop-filter: blur(5px);
+  color: #ff6bff;
+
+  cursor: pointer;
+
+  transition: background-color 0.25s ease,
+              box-shadow 0.25s ease,
+              transform 0.12s ease;
+}
+
+.tournament-create-btn:hover {
+  background-color: rgba(255,44,251,0.15);
+  box-shadow:
+    0 0 14px #ff6bff,
+    0 0 22px #ff2cfb55;
+}
+
+.tournament-create-btn:active {
+  transform: scale(0.97);
+}
