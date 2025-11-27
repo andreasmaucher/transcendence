@@ -113,24 +113,48 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			if (checkMatchFull(match)) {
 				console.log("[gameWS] Match already full");
 				socket.close(1008, "Match is already full");
+				return;
 			}
 
+<<<<<<< HEAD
 			// Add the current game info to the userOnline struct
 			addGameToUser(socket.username, socket, singleGame.id);
 
 			addPlayerToMatch(match, socket.username);
+=======
+			// ANDY: add socket to clients BEFORE addPlayerToMatch so it receives countdown messages
+			// reason is that addPlayerToMatch triggers startGameCountdown as soon as the second player joins but the new socket was not in match.clients yet
+			// so it missed the entire countdown process and stayed in waiting for opponent mode
+>>>>>>> tournament_logic
 			match.clients.add(socket);
+
+			// determine which side this player will be assigned to before calling addPlayerToMatch
+			const playerSide = !match.players.left ? "left" : "right";
 
 			socket.send(
 				buildPayload("match-assigned", {
 					matchId: match.id,
-					playerSide: match.players.left === payload.username ? "left" : "right",
+					playerSide: playerSide,
 				})
 			);
 
 			socket.send(buildPayload("state", match.state));
 
+<<<<<<< HEAD
 			socket.on("message", (raw: RawData) => handleGameMessages(raw, match));
+=======
+			// if the match is not full yet, send "waiting" message to all clients
+			if (!checkMatchFull(match)) {
+				for (const client of match.clients) {
+					client.send(buildPayload("waiting", undefined));
+				}
+			}
+
+			// add player to match (this may trigger countdown if match becomes full)
+			addPlayerToMatch(match, socket.username);
+
+			socket.on("message", (raw: RawData) => handleSocketMessages(raw, match));
+>>>>>>> tournament_logic
 
 			socket.on("close", () => {
 				match.clients.delete(socket);
@@ -166,11 +190,31 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			else console.log(`[gameWS] Websocket for Tournament: ${tournamentId} and User: ${payload.username} connected`);
 			socket.username = payload.username;
 
-			const tournament = getOrCreateTournament(tournamentId, tournamentName, tournamentSize);
-			const match = addPlayerToTournament(tournament, socket.username, socket);
-			if (match) {
-				match.clients.add(socket);
+		const tournament = getOrCreateTournament(tournamentId, tournamentName, tournamentSize);
+		// ANDY: added this part to ensure that in the second round of the tournament the sides are correctly assigned to the players
+		// Find which match this player will join and determine their side BEFORE adding them
+		let playerSide: "left" | "right" = "left";
+		const matches = tournament.matches.get(tournament.state.round);
+		// scan the matches to find one with an open slot and then determine the side the player will be assigned to
+		if (matches) {
+			for (const m of matches) {
+				if (!m.players.left || !m.players.right) {
+					// this is the match the player will join
+					playerSide = !m.players.left ? "left" : "right";
+					console.log(`[WS] Player ${payload.username} will be assigned to match ${m.id} as ${playerSide}`);
+					break;
+				}
+			}
+		}
+		
+		const match = addPlayerToTournament(tournament, socket.username, socket);
+		if (match) {
+			match.clients.add(socket);
+			// ANDY: store reference for Round 2 reassignment so we can pick a socket up after a match is over and drop it into the next match
+			socket.currentTournamentMatch = match; // track wich match the socket belongs to
+			socket.tournamentId = tournament.id; // tracks the tournament this socket belongs to
 
+<<<<<<< HEAD
 				// Create the tournament player row in the database
 				createTournamentPlayerDB(tournament.id, socket.username, userDisplayName);
 
@@ -183,9 +227,26 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 						playerSide: match.players.left === payload.username ? "left" : "right",
 					})
 				);
+=======
+			socket.send(
+				buildPayload("match-assigned", {
+					matchId: match.id,
+					playerSide: playerSide,
+					tournamentMatchType: match.tournament?.type,
+					round: tournament.state.round,
+				} as any)
+			);
+>>>>>>> tournament_logic
 
-				socket.send(buildPayload("state", match.state));
+			socket.send(buildPayload("state", match.state));
+            // ANDY: for tournaments using socket.currentMatch which will be updated between rounds
+			// wrapper ensures every incoming message (player input, reset, etc.) is routed to whichever match the socket is currently assigned to
+			socket.on("message", (raw: RawData) => {
+				const currentMatch = socket.currentTournamentMatch || match;
+				handleSocketMessages(raw, currentMatch);
+			});
 
+<<<<<<< HEAD
 				socket.on("message", (raw: RawData) => handleGameMessages(raw, match));
 
 				socket.on("close", () => {
@@ -198,6 +259,17 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 					removeGameFromUser(socket.username);
 				});
 				socket.on("error", (err: any) => console.error(`[gameWS] match=${match.id}`, err));
+=======
+			socket.on("close", () => {
+				const currentMatch = socket.currentTournamentMatch || match;
+				currentMatch.clients.delete(socket);
+				forfeitMatch(currentMatch, socket.username);
+			});
+			socket.on("error", (err: any) => {
+				const currentMatch = socket.currentTournamentMatch || match;
+				console.error(`[ws error] match=${currentMatch?.id}`, err);
+			});
+>>>>>>> tournament_logic
 			} else {
 				console.log(`[gameWS] Tournament ${tournament.id} is already full`);
 				socket.close(1008, "Tournament is already full");

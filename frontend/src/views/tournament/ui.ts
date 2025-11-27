@@ -1,5 +1,5 @@
 import { navigate } from "../../router/router";
-import { fetchTournamentList, type Tournament } from "../../api/http";
+import { fetchTournamentList, fetchMe, type Tournament } from "../../api/http";
 import { t } from "../../i18n";
 import "./tournament.css";
 
@@ -48,59 +48,85 @@ export async function renderTournament(container: HTMLElement) {
   const createBtn = document.createElement("button");
   createBtn.className = "tournament-create-btn";
   createBtn.textContent = t("tournaments.create");
-  createBtn.onclick = () => alert("Tournament creation coming soon!");
-  box.append(createBtn);
+  createBtn.style.marginTop = "2rem";
+  createBtn.onclick = async () => {
+    // generate a unique tournament ID and name
+    const tournamentId = self.crypto?.randomUUID?.() || Math.random().toString(36).slice(2);
+    const me = await fetchMe();
+    const tournamentName = me ? `${me.username} Tournament` : `Tournament ${tournamentId.slice(0, 8)}`;
+    // navigate to game view in tournament mode (name will be passed via query params)
+    navigate(`#/game?mode=tournament&id=${tournamentId}&name=${encodeURIComponent(tournamentName)}`);
+  };
+  root.append(createBtn);
 
   // LOAD LIST
-  try {
-    const tournaments = await fetchTournamentList();
-    if (cancelled) return;
+  async function loadTournaments() {
+    try {
+      const tournaments = await fetchTournamentList();
+      if (cancelled) return;
 
-    if (!tournaments.length) {
-      status.textContent = t("tournaments.none");
-      return;
-    }
+      list.innerHTML = "";
 
-    status.textContent = t("tournaments.available")(tournaments.length);
+      if (!tournaments.length) {
+        status.textContent = t("tournaments.none");
+        const empty = document.createElement("div");
+        empty.textContent = "No open tournaments";
+        list.append(empty);
+        return;
+      }
+
+      status.textContent = t("tournaments.available")(tournaments.length);
 
     tournaments.forEach((tour: Tournament) => {
       const row = document.createElement("div");
       row.className = "tournament-row";
 
       const left = document.createElement("div");
-      left.textContent = tour.name || `Tournament #${tour.id}`;
+      left.style.display = "flex";
+      left.style.flexDirection = "column";
+      left.style.gap = "0.3rem";
+      
+      const nameLine = document.createElement("div");
+      nameLine.textContent = tour.name || `Tournament #${tour.id}`;
+      nameLine.style.fontWeight = "bold";
+      
+      const statusLine = document.createElement("div");
+      statusLine.textContent = `Players: ${tour.playersJoined}/${tour.state.size}`;
+      statusLine.style.fontSize = "0.9rem";
+      statusLine.style.color = "#aaa";
+      
+      left.append(nameLine, statusLine);
       row.append(left);
 
       const right = document.createElement("div");
       right.style.display = "flex";
-      right.style.gap = "0.6rem";
-
-      const detailsBtn = document.createElement("button");
-      detailsBtn.className = "tournament-row-btn";
-      detailsBtn.textContent = t("tournaments.details");
-      detailsBtn.onclick = () => {
-        alert(`Tournament details coming soon.\nID: ${tour.id}`);
-      };
+      right.style.gap = "0.5rem";
 
       const joinBtn = document.createElement("button");
       joinBtn.className = "tournament-row-btn";
       joinBtn.textContent = t("tournaments.join");
       joinBtn.onclick = () => {
-        alert("Joining tournaments not implemented yet.");
+        navigate(`#/game?mode=tournament&id=${tour.id}`);
       };
 
-      right.append(detailsBtn, joinBtn);
+      right.append(joinBtn);
       row.append(right);
       list.append(row);
-    });
-  } catch (err) {
-    if (!cancelled) {
-      status.textContent = t("tournaments.failed");
+      });
+    } catch (err) {
+      if (!cancelled) {
+        status.textContent = t("tournaments.failed");
+      }
     }
   }
 
+  loadTournaments();
+  // refresh tournament list every 2 seconds
+  const interval = setInterval(() => loadTournaments(), 2000);
+
   return () => {
     cancelled = true;
+    clearInterval(interval);
     backBtn.onclick = null;
   };
 }

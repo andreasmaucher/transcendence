@@ -1,6 +1,6 @@
 import { userData } from "../config/constants";
 import { ROOM_ID, WS_HOST, WS_PORT, WS_PROTOCOL } from "../config/endpoints";
-import { flushInputs, queueInput, setActiveSocket } from "../game/input";
+import { flushInputs, queueInput, setActiveSocket, setAssignedSide } from "../game/input";
 import { applyBackendState } from "../game/state";
 import { MatchState } from "../types/game";
 import { Payload } from "../types/ws_message";
@@ -9,16 +9,19 @@ import { Payload } from "../types/ws_message";
 let waitingForPlayers: () => void = () => {};
 let countdownToGame: (n: number, side?: "left" | "right") => void = () => {};
 let startGame: () => void = () => {};
+let tournamentMatchType: (type: string, round: number) => void = () => {};
 
 // function that registers the UI handlers (replaces the no-op functions above with the actual handlers)
 export function registerGameUiHandlers(handlers: {
 	waitingForPlayers?: () => void;
 	countdownToGame?: (n: number, side?: "left" | "right") => void;
 	startGame?: () => void;
+	tournamentMatchType?: (type: string, round: number) => void;
 }) {
 	if (handlers.waitingForPlayers) waitingForPlayers = handlers.waitingForPlayers;
 	if (handlers.countdownToGame) countdownToGame = handlers.countdownToGame;
 	if (handlers.startGame) startGame = handlers.startGame;
+	if (handlers.tournamentMatchType) tournamentMatchType = handlers.tournamentMatchType;
 }
 
 export function connectToLocalSingleGameWS(state: MatchState): () => void {
@@ -28,6 +31,7 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 	const ws = new WebSocket(wsUrl);
 	userData.gameSock = ws;
 	setActiveSocket(ws);
+	setAssignedSide(null); // Local game: control both paddles
 
 	let resetRequested = false;
 
@@ -109,8 +113,9 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 	return () => ws.close();
 }
 
-export function connectToSingleGameWS(state: MatchState): () => void {
-	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/single-game/${ROOM_ID}/ws`;
+export function connectToSingleGameWS(state: MatchState, roomId?: string): () => void {
+	const targetRoomId = roomId ?? ROOM_ID;
+	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/single-game/${targetRoomId}/ws`;
 
 	const ws = new WebSocket(wsUrl);
 	userData.gameSock = ws;
@@ -138,6 +143,14 @@ export function connectToSingleGameWS(state: MatchState): () => void {
 		const payload = parsed as Payload;
 
 		switch (payload.type) {
+			case "match-assigned": {
+				// server tells us which side we're playing on
+				const data = (payload as any).data;
+				console.log(`[WS] Assigned to match ${data?.matchId} as ${data?.playerSide}`);
+				setAssignedSide(data?.playerSide || null);
+				break;
+			}
+
 			case "state": {
 				const wasOver = state.isOver;
 
@@ -193,8 +206,11 @@ export function connectToSingleGameWS(state: MatchState): () => void {
 	return () => ws.close();
 }
 
-export function connectToTournamentWS(state: MatchState): () => void {
-	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/tournament/${ROOM_ID}/ws`;
+export function connectToTournamentWS(state: MatchState, roomId?: string, tournamentName?: string): () => void {
+	const targetRoomId = roomId ?? ROOM_ID;
+	// add tournament name as query parameter if provided
+	const nameParam = tournamentName ? `?name=${encodeURIComponent(tournamentName)}` : '';
+	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/tournament/${targetRoomId}/ws${nameParam}`;
 
 	const ws = new WebSocket(wsUrl);
 	userData.gameSock = ws;
@@ -222,6 +238,18 @@ export function connectToTournamentWS(state: MatchState): () => void {
 		const payload = parsed as Payload;
 
 		switch (payload.type) {
+			case "match-assigned": {
+				// server tells us which side we're playing on
+				const data = (payload as any).data;
+				setAssignedSide(data?.playerSide || null);
+				
+				// notify UI about tournament match type
+				if (data?.tournamentMatchType) {
+					tournamentMatchType(data.tournamentMatchType, data.round || 1);
+				}
+				break;
+			}
+
 			case "state": {
 				const wasOver = state.isOver;
 

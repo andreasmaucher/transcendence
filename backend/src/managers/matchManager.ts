@@ -91,14 +91,16 @@ export function startMatch(match: Match) {
 
 export function startGameCountdown(match: Match) {
 	let sec = 3;
+	console.log(`[MM] Countdown starting for match ${match.id} with ${match.clients.size} clients`);
 
 	const interval = setInterval(() => {
 		// Broadcast countdown to all players in the match
-		gameBroadcast(buildPayload("countdown", { value: sec }), match);
+		console.log(`[MM] Broadcasting countdown ${sec} to ${match.clients.size} clients`);
+		broadcast(buildPayload("countdown", { value: sec }), match);
 
 		if (sec === 0) {
 			clearInterval(interval);
-
+			console.log(`[MM] Countdown finished, starting match ${match.id}`);
 			startMatch(match);
 			gameBroadcast(buildPayload("start", undefined), match);
 		}
@@ -122,10 +124,20 @@ export function endMatch(match: Match) {
 // Add player to open match
 export function addPlayerToMatch(match: Match, playerId: string) {
 	try {
-		if (!match.players.left) addPlayerMatchDB(match.id, playerId, "left");
-		else if (!match.players.right) addPlayerMatchDB(match.id, playerId, "right");
-		else return; // Temporary error handling, match full
-		if (match.singleGameId && checkMatchFull(match)) startGameCountdown(match);
+		// ANDY: had to update in-memory object here since checkMatchFull was returning undefined 
+		// previously it only updated the database but did not update the in-memory match.players object
+		if (!match.players.left) {
+			addPlayerMatchDB(match.id, playerId, "left");
+			match.players.left = playerId; // Update in-memory object
+		} else if (!match.players.right) {
+			addPlayerMatchDB(match.id, playerId, "right");
+			match.players.right = playerId; // Update in-memory object
+		} else {
+			return; // Temporary error handling, match full
+		}
+		if (match.singleGameId && checkMatchFull(match)) {
+			startGameCountdown(match);
+		}
 	} catch (error: any) {
 		console.error("[MM]", error.message);
 	}
