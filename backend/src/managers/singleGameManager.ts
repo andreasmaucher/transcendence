@@ -31,7 +31,7 @@ export function getOrCreateSingleGame(id: string, userId: string, mode: string):
 				mode: mode,
 				singleGame: singleGame,
 			});
-			if (mode == "remote") {
+			if (mode === "remote") {
 				console.log(`[SGM] Starting 5-minute timeout for match ${singleGame.match.id}`);
 				// Set timer to wait for players
 				singleGame.expirationTimer = setTimeout(
@@ -49,7 +49,7 @@ export function getOrCreateSingleGame(id: string, userId: string, mode: string):
 				); // 5 minutes
 			}
 		} catch (error: any) {
-			console.error("[SGM]" + error.message);
+			console.error("[SGM]", error.message);
 		}
 		singleGames.set(singleGame.id, singleGame);
 	}

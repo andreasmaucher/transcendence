@@ -1,4 +1,4 @@
-// DATABASE STRUCTURES
+// DATABASE TYPES
 
 import { TournamentMatchType } from "./match.js";
 

@@ -4,8 +4,25 @@ import { applyBackendState } from "../game/state";
 import { MatchState } from "../types/game";
 import { Payload } from "../types/ws_message";
 
+// no-op functions to avoid errors as long as the UI has not registered handlers by calling registerGameUiHandlers
+let waitingForPlayers: () => void = () => {};
+let countdownToGame: (n: number, side?: "left" | "right") => void = () => {};
+let startGame: () => void = () => {};
+
+// function that registers the UI handlers (replaces the no-op functions above with the actual handlers)
+export function registerGameUiHandlers(handlers: {
+	waitingForPlayers?: () => void;
+	countdownToGame?: (n: number, side?: "left" | "right") => void;
+	startGame?: () => void;
+}) {
+	if (handlers.waitingForPlayers) waitingForPlayers = handlers.waitingForPlayers;
+	if (handlers.countdownToGame) countdownToGame = handlers.countdownToGame;
+	if (handlers.startGame) startGame = handlers.startGame;
+}
+
 export function connectToLocalSingleGameWS(state: MatchState): () => void {
 	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/local-single-game/${ROOM_ID}/ws`;
+	console.log("URL: ", wsUrl);
 
 	const ws = new WebSocket(wsUrl);
 	setActiveSocket(ws);
@@ -48,24 +65,33 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 				break;
 			}
 
-			/* case "waiting":
+			case "waiting": {
+				// notify UI that we are waiting for other player(s)
 				waitingForPlayers();
 				break;
+			}
 
-			case "countdown":
-				countdownToGame(payload.data.value);
+			case "countdown": {
+				// extract the countdown value
+				const n = (payload as any).data?.value as number | undefined;
+				// extract the side of the player
+				const side = (payload as any).data?.side as "left" | "right" | undefined;
+				countdownToGame(n ?? 0, side);
 				break;
+			}
 
-			case "start":
+			case "start": {
 				startGame();
 				break;
+			}
 
-			case "chat":
+		/* 	case "chat":
 				addChatMessage(payload.data.from, payload.data.message);
-				break;
+				break; */
 
 			default:
-				console.warn("Unknown payload", payload); */
+				console.warn("[WS] Unknown payload:", payload);
+				break;
 		}
 	});
 
@@ -125,24 +151,30 @@ export function connectToSingleGameWS(state: MatchState): () => void {
 				break;
 			}
 
-			/* case "waiting":
+			case "waiting": {
 				waitingForPlayers();
 				break;
+			}
 
-			case "countdown":
-				countdownToGame(payload.data.value);
+			case "countdown": {
+				const n = (payload as any).data?.value as number | undefined;
+				const side = (payload as any).data?.side as "left" | "right" | undefined;
+				countdownToGame(n ?? 0, side);
 				break;
+			}
 
-			case "start":
+			case "start": {
 				startGame();
 				break;
+			}
 
-			case "chat":
+			/* 	case "chat":
 				addChatMessage(payload.data.from, payload.data.message);
-				break;
+				break; */
 
 			default:
-				console.warn("Unknown payload", payload); */
+				console.warn("[WS] Unknown payload:", payload);
+				break;
 		}
 	});
 
@@ -202,24 +234,29 @@ export function connectToTournamentWS(state: MatchState): () => void {
 				break;
 			}
 
-			/* case "waiting":
+			case "waiting": {
 				waitingForPlayers();
 				break;
+			}
 
-			case "countdown":
-				countdownToGame(payload.data.value);
+			case "countdown": {
+				const n = (payload as any).data?.value as number | undefined;
+				const side = (payload as any).data?.side as "left" | "right" | undefined;
+				countdownToGame(n ?? 0, side);
 				break;
+			}
 
-			case "start":
+			case "start": {
 				startGame();
 				break;
-
-			case "chat":
+			}
+			/* 	case "chat":
 				addChatMessage(payload.data.from, payload.data.message);
-				break;
+				break; */
 
 			default:
-				console.warn("Unknown payload", payload); */
+				console.warn("[WS] Unknown payload:", payload);
+				break;
 		}
 	});
 

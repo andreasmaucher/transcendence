@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { buildChatHistory } from "../chat/history.js";
 import { authenticateRequest } from "../auth/verify.js";
+import { buildChatHistory } from "../managers/chatManager.js";
 
 export default async function chatRoutes(fastify: FastifyInstance) {
 	// GET user chat history
@@ -13,7 +13,7 @@ export default async function chatRoutes(fastify: FastifyInstance) {
 			const chatHistory = buildChatHistory(payload.username);
 			return reply.code(200).send({ success: true, data: chatHistory });
 		} catch (error: any) {
-			console.log(error.message);
+			console.error("[chatRT]", error.message);
 			return reply.code(404).send({ success: false, message: "Unable to retrieve chat history" });
 		}
 	});

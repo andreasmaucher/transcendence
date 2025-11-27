@@ -96,8 +96,7 @@ async function render() {
     }
 
     root.replaceChildren();
-    const maybeCleanup = await view(root);  // <--- also important
-
+    const maybeCleanup = await view(root);
     if (typeof maybeCleanup === "function") cleanup = maybeCleanup;
 
   } finally {

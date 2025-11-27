@@ -1,11 +1,14 @@
 // src/views/game/ui.ts
 import { type GameConstants } from "../../constants";
 import { navigate } from "../../router/router";
-import { fetchGameConstants } from "../../api/http";
+import { fetchGameConstants, fetchMe } from "../../api/http";
 import { draw } from "../../rendering/canvas";
 import { setupInputs, setActiveSocket } from "../../game/input";
 import { MatchState } from "../../types/game";
 import { connectToLocalSingleGameWS } from "../../ws/game";
+import { userData } from "../../config/constants";
+import { connectToLocalSingleGameWS, connectToSingleGameWS, connectToTournamentWS, registerGameUiHandlers } from "../../ws/game";
+import { showCountdown } from "../game/countdown";
 
 let GAME_CONSTANTS: GameConstants | null = null;
 
@@ -76,7 +79,16 @@ export async function renderGame(container: HTMLElement) {
 	container.innerHTML = "";
 	let cancelled = false;
 	const hash = location.hash;
-	const mode = hash.includes("mode=online") ? "online" : "local";
+	// determine game mode from the URL hash
+	// - "tournament" -> connect to tournament WS
+	// - "online" -> connect to online single game WS
+	// - otherwise -> local single game WS
+	const mode: "tournament" | "online" | "local" =
+		hash.includes("mode=tournament")
+			? "tournament"
+			: hash.includes("mode=online")
+			? "online"
+			: "local";
 	console.log("GAME MODE =", mode);
 
 	// UI WRAPPER
@@ -133,7 +145,10 @@ export async function renderGame(container: HTMLElement) {
 	exitBtn.style.padding = "4px 8px";
 	exitBtn.style.fontSize = "14px";
 	exitBtn.style.cursor = "pointer";
-	exitBtn.onclick = () => navigate("#/menu");
+	exitBtn.onclick = () => {
+		navigate("#/menu");
+		userData.gameSock?.close();
+	};
 	ui.append(exitBtn);
 
 	//
@@ -173,12 +188,40 @@ export async function renderGame(container: HTMLElement) {
 	canvas.height = GAME_CONSTANTS.fieldHeight;
 	wrapper.append(canvas);
 
+	// Draw a static preview frame so the field, paddles, and ball are visible
+	const previewState = createInitialState();
+	const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+	draw(ctx, previewState);
+
+	// Run countdown after drawing preview
+	if (mode === "local") {
+		await showCountdown(wrapper, canvas);
+	}
+
 	//
 	// 3) Start game
 	//
 	const state = createInitialState();
-	//const cleanupWS = connectToBackend(state);
-	const cleanupWS = connectToLocalSingleGameWS(state); // for now only local single game option
+	// register UI handlers for WS events
+	registerGameUiHandlers({
+		waitingForPlayers: () => {
+			// placeholder: show "Waiting..." overlay here
+		},
+		countdownToGame: (_n, _side) => {
+			// placeholder: show "3,2,1"
+		},
+		startGame: () => {
+			// placeholder: hide overlays here I assume? or just start the game?
+		},
+	});
+
+	// choose the correct WS connector based on mode
+	const cleanupWS =
+		mode === "local"
+			? connectToLocalSingleGameWS(state)
+			: mode === "online"
+			? connectToSingleGameWS(state)
+			: connectToTournamentWS(state);
 	setupInputs();
 
 	const cleanupLoop = startGameLoop(canvas, state);

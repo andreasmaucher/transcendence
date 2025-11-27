@@ -4,7 +4,7 @@ import Fastify, { FastifyInstance } from "fastify";
 import fastifyWebsocket from "@fastify/websocket";
 import { GAME_CONSTANTS } from "./config/constants.js";
 import { stepMatch } from "./game/engine.js";
-import { broadcast, buildPayload } from "./transport/broadcaster.js";
+import { buildPayload, gameBroadcast } from "./transport/broadcaster.js";
 import { registerWebsocketRoute } from "./transport/websocket.js";
 import matchRoutes from "./routes/match.js";
 import tournamentRoutes from "./routes/tournament.js";
@@ -16,7 +16,10 @@ import { forEachSingleGame } from "./managers/singleGameManager.js";
 import { usersOnline } from "./config/structures.js";
 import { removeUserOnline } from "./user/online.js";
 import singleGameRoutes from "./routes/singleGame.js";
+import type WebSocket from "ws";
 import userManagementRoutes from "./routes/userManagement.js";
+import chatRoutes from "./routes/chat.js";
+import gamesRoutes from "./routes/games.js";
 
 const UPDATE_FPS = GAME_CONSTANTS.UPDATE_FPS;
 
@@ -72,10 +75,12 @@ fastify.get("/api/constants", async () => {
 
 await fastify.register(userRoutes);
 await fastify.register(userManagementRoutes);
+await fastify.register(gamesRoutes);
 await fastify.register(singleGameRoutes);
 await fastify.register(tournamentRoutes);
 await fastify.register(matchRoutes);
 await fastify.register(testRoutes);
+await fastify.register(chatRoutes);
 await fastify.register(oauthRoutes);
 
 registerWebsocketRoute(fastify);
@@ -92,8 +97,7 @@ setInterval(() => {
 		const match = singleGame.match;
 		if (match.state.isRunning) {
 			stepMatch(match, dt || 1 / UPDATE_FPS);
-			//broadcast(match);
-			broadcast(buildPayload("state", match.state), match);
+			gameBroadcast(buildPayload("state", match.state), match);
 		}
 	});
 	// Tournaments loop
@@ -107,8 +111,7 @@ setInterval(() => {
 			for (const match of matches) {
 				if (match.state.isRunning) {
 					stepMatch(match, dt || 1 / UPDATE_FPS);
-					//broadcast(match);
-					broadcast(buildPayload("state", match.state), match);
+					gameBroadcast(buildPayload("state", match.state), match);
 				}
 			}
 		}
@@ -119,7 +122,7 @@ setInterval(() => {
 setInterval(() => {
 	// Loop through all the online users
 	for (const [username, user] of usersOnline.entries()) {
-		const socket = user.socket;
+		const socket: WebSocket = user.userWS;
 
 		// If socket is already not alive terminates it
 		if (user.isAlive === false) {

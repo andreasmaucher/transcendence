@@ -1,102 +1,114 @@
 // src/views/menu/ui.ts
 import { navigate } from "../../router/router";
 import { t } from "../../i18n";
+import { sendMessage } from "../../chat/chatHandler";
+import { initChat } from "../../chat/chatView";
 
-export function renderMenu(container: HTMLElement) {
-  container.innerHTML = "";
+export let disposeChat: (() => void | Promise<void>) | null = null;
 
-  const root = document.createElement("div");
-  root.className = "menu-screen";
-  container.append(root);
+export function teardownChat() {
+	disposeChat?.();
+	disposeChat = null;
+}
 
-  // Title
-  const title = document.createElement("h1");
-  title.textContent = t("menu.title");
-  title.style.textAlign = "center";
-  title.style.width = "100%";
-  root.append(title);
+export async function renderMenu(container: HTMLElement) {
+	container.innerHTML = "";
 
-  // Buttons
-  const btns = document.createElement("div");
-  btns.className = "menu-buttons";
-  btns.style.justifyContent = "center";
-  root.append(btns);
+	const root = document.createElement("div");
+	root.className = "menu-screen";
+	container.append(root);
 
-  const playBtn = document.createElement("button");
-  playBtn.textContent = t("menu.playGame");
+	// Title
+	const title = document.createElement("h1");
+	title.textContent = t("menu.title");
+	title.style.textAlign = "center";
+	title.style.width = "100%";
+	root.append(title);
 
-  const tournamentBtn = document.createElement("button");
-  tournamentBtn.textContent = t("menu.tournaments");
+	// Buttons
+	const btns = document.createElement("div");
+	btns.className = "menu-buttons";
+	btns.style.justifyContent = "center";
+	root.append(btns);
 
-  btns.append(playBtn, tournamentBtn);
+	const playBtn = document.createElement("button");
+	playBtn.textContent = t("menu.playGame");
 
-  // Shared floating submenu 
-  const submenu = document.createElement("div");
-  submenu.className = "submenu";
-  submenu.style.position = "absolute";
-  submenu.style.display = "none";
-  submenu.style.flexDirection = "column";
-  submenu.style.gap = "8px";
-  submenu.style.padding = "10px";
-  submenu.style.background = "rgba(0,0,0,0.7)";
-  submenu.style.border = "1px solid #777";
-  submenu.style.borderRadius = "6px";
-  submenu.style.zIndex = "9999";
-  root.append(submenu);
+	const tournamentBtn = document.createElement("button");
+	tournamentBtn.textContent = t("menu.tournaments");
 
-  function showSubmenu(content: HTMLElement, anchor: HTMLElement) {
-    submenu.innerHTML = "";
-    submenu.append(content);
+	btns.append(playBtn, tournamentBtn);
 
-    const rect = anchor.getBoundingClientRect();
-    submenu.style.left = rect.left + "px";
-    submenu.style.top = rect.bottom + "px";
-    submenu.style.display = "flex";
-  }
+	// Shared floating submenu
+	const submenu = document.createElement("div");
+	submenu.className = "submenu";
+	submenu.style.position = "absolute";
+	submenu.style.display = "none";
+	submenu.style.flexDirection = "column";
+	submenu.style.gap = "8px";
+	submenu.style.padding = "10px";
+	submenu.style.background = "rgba(0,0,0,0.7)";
+	submenu.style.border = "1px solid #777";
+	submenu.style.borderRadius = "6px";
+	submenu.style.zIndex = "9999";
+	root.append(submenu);
 
-  function hideSubmenu() {
-    submenu.style.display = "none";
-  }
+	function showSubmenu(content: HTMLElement, anchor: HTMLElement) {
+		submenu.innerHTML = "";
+		submenu.append(content);
 
-  // PLAY GAME Hover submenu (Local / Online)
-  playBtn.onmouseenter = () => {
-    const box = document.createElement("div");
-    box.style.display = "flex";
-    box.style.flexDirection = "column";
-    box.style.gap = "6px";
+		const rect = anchor.getBoundingClientRect();
+		submenu.style.left = rect.left + "px";
+		submenu.style.top = rect.bottom + "px";
+		submenu.style.display = "flex";
+	}
 
-    const localBtn = document.createElement("button");
-    localBtn.textContent = t("menu.localMatch");
-    localBtn.onclick = () => navigate("#/game?mode=local");
+	function hideSubmenu() {
+		submenu.style.display = "none";
+	}
 
-    const onlineBtn = document.createElement("button");
-    onlineBtn.textContent = t("menu.onlineMatch");
-    onlineBtn.onclick = () => navigate("#/online");
+	// PLAY GAME Hover submenu (Local / Online)
+	playBtn.onmouseenter = () => {
+		const box = document.createElement("div");
+		box.style.display = "flex";
+		box.style.flexDirection = "column";
+		box.style.gap = "6px";
 
-    box.append(localBtn, onlineBtn);
-    showSubmenu(box, playBtn);
-  };
+		const localBtn = document.createElement("button");
+		localBtn.textContent = t("menu.localMatch");
+		localBtn.onclick = () => navigate("#/game?mode=local");
 
-  // TOURNAMENT: direct navigation, no submenu
-  tournamentBtn.onclick = () => navigate("#/tournament");
+		const onlineBtn = document.createElement("button");
+		onlineBtn.textContent = t("menu.onlineMatch");
+		onlineBtn.onclick = () => navigate("#/game?mode=online");
 
-  // Hide submenu when mouse leaves the region
-  root.addEventListener("mousemove", (e) => {
-    const target = e.target as Node;
-    const inside = submenu.contains(target) || playBtn.contains(target);
-    if (!inside) hideSubmenu();
-  });
+		box.append(localBtn, onlineBtn);
+		showSubmenu(box, playBtn);
+	};
 
-  submenu.addEventListener("mouseleave", () => {
-    hideSubmenu();
-  });
+	// TOURNAMENT: direct navigation, no submenu
+	tournamentBtn.onclick = () => navigate("#/tournament");
 
-  playBtn.addEventListener("mouseleave", (e) => {
-    if (!submenu.contains(e.relatedTarget as Node)) {
-      hideSubmenu();
-    }
-  });
+	// Hide submenu when mouse leaves the region
+	root.addEventListener("mousemove", (e) => {
+		const target = e.target as Node;
+		const inside = submenu.contains(target) || playBtn.contains(target);
+		if (!inside) hideSubmenu();
+	});
 
-  return () => {
-  };
+	submenu.addEventListener("mouseleave", () => {
+		hideSubmenu();
+	});
+
+	playBtn.addEventListener("mouseleave", (e) => {
+		if (!submenu.contains(e.relatedTarget as Node)) {
+			hideSubmenu();
+		}
+	});
+
+	disposeChat = await initChat();
+
+	return () => {
+		teardownChat();
+	};
 }
