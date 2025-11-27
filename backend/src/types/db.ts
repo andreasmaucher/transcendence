@@ -45,9 +45,9 @@ export type MatchDB = {
 	internal_id: number;
 	id: string;
 	mode: string;
-	player_left_id: string | null; //Reference to user table
-	player_right_id: string | null; //Reference to user table
-	tournament_id: string | null; //Reference to tournament table
+	player_left: string | null; // Reference to user table
+	player_right: string | null; // Reference to user table
+	tournament_id: string | null; // Reference to tournament table
 	round: number;
 	in_tournament_type: TournamentMatchType | null;
 	in_tournament_placement_range: string | null;
@@ -65,7 +65,7 @@ export type MessageDB = {
 	sender: string; // Reference to the user table
 	receiver: string | null; // Reference to the user table
 	type: string;
-	content?: string;
-	game_id?: string;
+	content: string | null;
+	game_id: string | null;
 	sent_at: string;
 };

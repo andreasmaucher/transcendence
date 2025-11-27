@@ -5,9 +5,13 @@ import { fetchGameConstants, fetchMe } from "../../api/http";
 import { draw } from "../../rendering/canvas";
 import { setupInputs, setActiveSocket } from "../../game/input";
 import { MatchState } from "../../types/game";
-import { connectToLocalSingleGameWS } from "../../ws/game";
 import { userData } from "../../config/constants";
-import { connectToLocalSingleGameWS, connectToSingleGameWS, connectToTournamentWS, registerGameUiHandlers } from "../../ws/game";
+import {
+	connectToLocalSingleGameWS,
+	connectToSingleGameWS,
+	connectToTournamentWS,
+	registerGameUiHandlers,
+} from "../../ws/game";
 
 let GAME_CONSTANTS: GameConstants | null = null;
 
@@ -82,12 +86,11 @@ export async function renderGame(container: HTMLElement) {
 	// - "tournament" -> connect to tournament WS
 	// - "online" -> connect to online single game WS
 	// - otherwise -> local single game WS
-	const mode: "tournament" | "online" | "local" =
-		hash.includes("mode=tournament")
-			? "tournament"
-			: hash.includes("mode=online")
-			? "online"
-			: "local";
+	const mode: "tournament" | "online" | "local" = hash.includes("mode=tournament")
+		? "tournament"
+		: hash.includes("mode=online")
+		? "online"
+		: "local";
 	console.log("GAME MODE =", mode);
 
 	// UI WRAPPER

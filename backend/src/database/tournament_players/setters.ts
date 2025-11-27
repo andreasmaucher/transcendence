@@ -1,0 +1,15 @@
+import db from "../db_init.js";
+
+// Create a new tournament player row
+export function createTournamentPlayerDB(tournamentId: string, username: string, displayName: string): void {
+	const stmt = db.prepare(`
+		INSERT INTO tournament_players (tournament_id, username, display_name)
+		VALUES (?, ?, ?)
+	`);
+
+	const result = stmt.run(tournamentId, username, displayName);
+
+	if (result.changes === 0) throw new Error(`[DB] Failed to create tournament player for tournament ${tournamentId}`);
+	// If DB run fails, throws error
+	else console.log(`[DB] Created new tournament player for tournament ${tournamentId}`);
+}

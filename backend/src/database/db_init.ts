@@ -36,7 +36,7 @@ db.exec(`
 	CREATE TABLE IF NOT EXISTS tournament_players (
 		tournament_id TEXT NOT NULL,
 		username TEXT NOT NULL,
-		display_name TEXT,
+		display_name TEXT NOT NULL,
 
 		PRIMARY KEY (tournament_id, username),
 
