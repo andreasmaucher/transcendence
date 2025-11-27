@@ -1,6 +1,7 @@
 // src/views/online/ui.ts
 import { navigate } from "../../router/router";
 import { t } from "../../i18n";
+import { API_BASE } from "../../config/endpoints";
 
 export function renderOnlineLobby(container: HTMLElement) {
   container.innerHTML = "";
@@ -50,20 +51,26 @@ export function renderOnlineLobby(container: HTMLElement) {
   const createBtn = document.createElement("button");
   createBtn.className = "tournament-create-btn";
   createBtn.textContent = "Create New Game";
+  root.append(createBtn);
+
+  // create new online game via backend + open WS (pin up a unique lobby/room ID whenever a user clicks “Create New Game”)
   createBtn.onclick = () => {
-    alert("Creating room…");
-    console.log("TODO: create new online game via backend + open WS");
+    const newGameId = self.crypto?.randomUUID?.() || Math.random().toString(36).slice(2);
+    navigate(`#/game?mode=online&id=${newGameId}`);
   };
   box.append(createBtn);
 
  
   async function fetchOpenGames() {
     try {
-      const res = await fetch("/api/single-games/open");
+      const res = await fetch(`${API_BASE}/api/single-games/open`, {
+        credentials: "include",
+      });
       const json = await res.json();
       if (!json.success) return [];
       return json.data || [];
-    } catch {
+    } catch (err) {
+      console.error("Failed to fetch open games:", err);
       return [];
     }
   }
@@ -88,16 +95,21 @@ export function renderOnlineLobby(container: HTMLElement) {
         const row = document.createElement("div");
         row.className = "tournament-row";
 
-        // LEFT SIDE (game label)
-        const left = document.createElement("div");
-        left.textContent = `Game #${g.id}  —  Creator: ${g.player1}`;
-        row.append(left);
+        const label = document.createElement("span");
+        // display as "alice Game #1"
+        const gameName = g.creator && g.gameNumber
+          ? `${g.creator} Game #${g.gameNumber}`
+          : `Game #${g.id}`;
+        label.textContent = gameName;
 
         // RIGHT SIDE (buttons) same layout as tournament-right block
         const right = document.createElement("div");
         right.style.display = "flex";
         right.style.gap = "0.6rem";
 
+        row.append(label);
+
+        // "Join" button logic in the online lobby
         const joinBtn = document.createElement("button");
         joinBtn.className = "tournament-row-btn";
         joinBtn.textContent = "Join";
@@ -106,6 +118,7 @@ export function renderOnlineLobby(container: HTMLElement) {
         right.append(joinBtn);
         row.append(right);
 
+        row.append(label, joinBtn);
         listEl.append(row);
       }
     });

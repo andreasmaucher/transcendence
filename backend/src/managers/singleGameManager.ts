@@ -6,8 +6,12 @@ import { checkMatchFull } from "./matchManager.js";
 import { removeMatchDB } from "../database/matches/setters.js";
 import { Match } from "../types/match.js";
 
+// Track game numbers per user
+const userGameCounters = new Map<string, number>();
+
 export function resetSingleGamesForTest(): void {
 	singleGames.clear();
+	userGameCounters.clear();
 }
 
 export function forEachSingleGame(fn: (singleGame: SingleGame) => void): void {
@@ -18,10 +22,17 @@ export function forEachSingleGame(fn: (singleGame: SingleGame) => void): void {
 export function getOrCreateSingleGame(id: string, userId: string, mode: string): SingleGame {
 	let singleGame = singleGames.get(id);
 	if (!singleGame) {
-		let singleGameId = crypto.randomUUID();
+		// increment game counter for this user
+		const currentCount = userGameCounters.get(userId) || 0;
+		const gameNumber = currentCount + 1;
+		userGameCounters.set(userId, gameNumber);
+
+		// Use the URL id as the singleGame id so players can find each other
 		singleGame = {
-			id: singleGameId,
+			id: id,
 			mode: mode,
+			creator: userId,
+			gameNumber: gameNumber,
 		} as SingleGame;
 
 		try {
@@ -51,7 +62,7 @@ export function getOrCreateSingleGame(id: string, userId: string, mode: string):
 		} catch (error: any) {
 			console.error("[SGM]", error.message);
 		}
-		singleGames.set(singleGame.id, singleGame);
+		singleGames.set(id, singleGame);
 	}
 
 	return singleGame;

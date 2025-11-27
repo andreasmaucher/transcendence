@@ -111,26 +111,29 @@ export async function updateUser(params: {
 }
 
 // tournament
-
+// Mirrors the backend `/api/tournaments/open` payload:
+// includes full tournament state plus a precomputed playersJoined count for the lobby
 export type Tournament = {
-	id: number;
-	name: string;
-	status: string;
+  id: string;
+  name: string;
+  state: {
+    size: number;
+    isRunning: boolean;
+    round: number;
+    isOver: boolean;
+  };
+  playersJoined: number;
 };
 
-////////// HARDCODED ##### TEMPORARY
-export async function fetchTournamentList(): Promise<Tournament[]> {
-	const res = await fetch(`${API_BASE}/api/tournament/list`, {
-		credentials: "include",
-	});
 
-	if (res.status === 404) {
-		// hardcoded tournoments *******************************
-		return [
-			{ id: 1, name: "42 League", status: "open" },
-			{ id: 2, name: "Berlin", status: "open" },
-		];
-	}
+export async function fetchTournamentList(): Promise<Tournament[]> {
+  const res = await fetch(`${API_BASE}/api/tournaments/open`, {
+    credentials: "include",
+  });
+
+  if (res.status === 404) {
+    return [];
+  }
 
 	if (!res.ok) {
 		throw new Error("Failed to fetch tournament list");

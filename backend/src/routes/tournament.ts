@@ -23,7 +23,26 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 			console.error("[tournamentRT] No open tournaments");
 			return reply.code(404).send({ success: false, message: "No open tournaments" });
 		} else {
-			return reply.code(200).send({ success: true, data: openTournaments });
+			// ANDY: sanitize tournaments before returning (strip WS clients / non-serializable fields so JSON.stringify succeeds)
+			// this is needed for the tournament list in the frontend
+			// if we would return them as it is API throws "ciruclar structure" error and the frontend can't render it
+			const data = openTournaments.map((t) => ({
+				id: t.id,
+				name: t.name,
+				state: t.state,
+				// count players in first round matches to show in the lobby player x of 4 have joined already
+				playersJoined: (() => {
+					const round1Matches = t.matches.get(1);
+					if (!round1Matches) return 0;
+					let count = 0;
+					for (const match of round1Matches) {
+						if (match.players.left) count++;
+						if (match.players.right) count++;
+					}
+					return count;
+				})(),
+			}));
+			return reply.code(200).send({ success: true, data });
 		}
 	});
 

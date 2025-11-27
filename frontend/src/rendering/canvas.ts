@@ -52,10 +52,19 @@ export function draw(ctx: CanvasRenderingContext2D, s: MatchState): void {
 		// translated winner text
 		const winnerText = s.winner === "left" ? t("gameOver.leftWins") : t("gameOver.rightWins");
 
-		ctx.fillText(winnerText, s.width / 2, s.height / 2);
-		ctx.fillText(t("gameOver.refresh"), s.width / 2, s.height / 2 + 40);
+		// Only show winner text for non-tournament matches
+		if (s.mode !== "tournament") {
+			ctx.fillText(winnerText, s.width / 2, s.height / 2);
+		}
 
-		showSaveMatchPrompt(s, async ({ address, state: gameState }) => {
+		// Only show refresh text for non-tournament matches
+		if (s.mode !== "tournament") {
+			ctx.fillText(t("gameOver.refresh"), s.width / 2, s.height / 2 + 40);
+		}
+
+		// Only show blockchain save prompt for non-tournament matches
+		if (s.mode !== "tournament") {
+			showSaveMatchPrompt(s, async ({ address, state: gameState }) => {
 			// Build the payload for the smart contract.
 			// NOTE: Contract address/ABI/function are placeholders in config/contract.ts
 			// and should be updated when the real contract is provided.
@@ -93,6 +102,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: MatchState): void {
 				txHash,
 			};
 		});
+		} // Close the "if (s.mode !== "tournament")" block
 		ctx.textAlign = "left"; // reset text alignment
 	}
 }

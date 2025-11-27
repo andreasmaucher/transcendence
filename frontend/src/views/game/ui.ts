@@ -92,16 +92,18 @@ export async function renderGame(container: HTMLElement) {
 	let cancelled = false;
 
 	const hash = location.hash;
-	// determine game mode from the URL hash
-	// - "tournament" -> connect to tournament WS
-	// - "online" -> connect to online single game WS
-	// - otherwise -> local single game WS
-	const mode: "tournament" | "online" | "local" = hash.includes("mode=tournament")
-		? "tournament"
-		: hash.includes("mode=online")
-		? "online"
-		: "local";
-	console.log("GAME MODE =", mode);
+	const queryStr = hash.split("?")[1] || "";
+	const params = new URLSearchParams(queryStr);
+	const modeParam = params.get("mode");
+	// properly extracting mode and room id from the URL
+	const mode: "tournament" | "online" | "local" =
+		modeParam === "tournament" || modeParam === "online" || modeParam === "local"
+			? modeParam
+			: "local";
+	const roomId = params.get("id") || undefined;
+	const tournamentName = params.get("name") || undefined;
+
+	console.log("GAME MODE =", mode, "ROOM ID =", roomId, "TOURNAMENT NAME =", tournamentName);
 
 	// ==========================================================
 	// GAME FRAME WRAPPER WITH BORDER INLINE
@@ -126,9 +128,82 @@ export async function renderGame(container: HTMLElement) {
 
 	container.append(wrapper);
 
-	// ==========================================================
-	// CLEAN EXIT BUTTON
-	// ==========================================================
+	// Floating UI (top-right)
+	const ui = document.createElement("div");
+	ui.style.position = "absolute";
+	ui.style.top = "-150px";
+	ui.style.right = "10px";
+	ui.style.display = "flex";
+	ui.style.flexDirection = "column";
+	ui.style.gap = "8px";
+	ui.style.zIndex = "9999";
+	wrapper.append(ui);
+
+	// USER INFO (avatar + name)
+	const userBox = document.createElement("div");
+	userBox.style.display = "flex";
+	userBox.style.alignItems = "center";
+	userBox.style.gap = "8px";
+	userBox.style.background = "rgba(0,0,0,0.5)";
+	userBox.style.padding = "4px 8px";
+	userBox.style.borderRadius = "6px";
+	userBox.style.color = "#fff";
+	ui.append(userBox);
+
+	(async () => {
+		const me = await fetchMe();
+		if (!me) return;
+
+		const avatar = document.createElement("img");
+		avatar.src = me.avatar || "/default-avatar.png";
+		avatar.width = 32;
+		avatar.height = 32;
+		avatar.style.borderRadius = "50%";
+		avatar.style.objectFit = "cover";
+
+		const name = document.createElement("span");
+		name.textContent = me.username;
+
+		userBox.append(avatar, name);
+	})();
+
+	// PLAYER SIDE INDICATOR (for online/tournament modes)
+	const sideIndicator = document.createElement("div");
+	sideIndicator.style.display = "none"; // Hidden by default
+	sideIndicator.style.background = "rgba(0,0,0,0.5)";
+	sideIndicator.style.padding = "4px 8px";
+	sideIndicator.style.borderRadius = "6px";
+	sideIndicator.style.color = "#fff";
+	sideIndicator.style.fontSize = "14px";
+	sideIndicator.style.textAlign = "center";
+	sideIndicator.style.fontWeight = "bold";
+	ui.append(sideIndicator);
+
+	// TOURNAMENT MATCH TYPE INDICATOR (final/3rd place)
+	const tournamentIndicator = document.createElement("div");
+	tournamentIndicator.style.display = "none";
+	tournamentIndicator.style.background = "rgba(255,215,0,0.9)";
+	tournamentIndicator.style.padding = "8px 12px";
+	tournamentIndicator.style.borderRadius = "6px";
+	tournamentIndicator.style.color = "#000";
+	tournamentIndicator.style.fontSize = "16px";
+	tournamentIndicator.style.textAlign = "center";
+	tournamentIndicator.style.fontWeight = "bold";
+	ui.append(tournamentIndicator);
+
+	// Register callback to update side indicator when player is assigned
+	if (mode !== "local") {
+		import("../../game/input.js").then(({ onSideAssigned }) => {
+			onSideAssigned((side) => {
+				sideIndicator.textContent = side === "left" ? "You control: LEFT paddle (W/S)" : "You control: RIGHT paddle (↑/↓)";
+				sideIndicator.style.display = "block";
+			});
+		});
+	}
+
+	//
+	// EXIT BUTTON
+	//
 	const exitBtn = document.createElement("button");
 	exitBtn.textContent = "Exit";
 	exitBtn.style.position = "absolute";
@@ -195,20 +270,52 @@ export async function renderGame(container: HTMLElement) {
 	// 3) Start game
 	//
 	const state = createInitialState();
+	state.mode = mode;
+	
+	// create waiting overlay (only shown for online/tournament modes)
+	const waitingOverlay = document.createElement("div");
+	waitingOverlay.style.position = "absolute";
+	waitingOverlay.style.top = "0";
+	waitingOverlay.style.left = "0";
+	waitingOverlay.style.width = "100%";
+	waitingOverlay.style.height = "100%";
+	waitingOverlay.style.background = "rgba(0,0,0,0.8)";
+	waitingOverlay.style.display = mode === "local" ? "none" : "flex"; // Hide for local games
+	waitingOverlay.style.alignItems = "center";
+	waitingOverlay.style.justifyContent = "center";
+	waitingOverlay.style.color = "white";
+	waitingOverlay.style.fontSize = "24px";
+	waitingOverlay.style.zIndex = "1000";
+	waitingOverlay.textContent = "Waiting for opponent...";
+	wrapper.append(waitingOverlay);
 
+	// register UI handlers for WS events
 	registerGameUiHandlers({
-		waitingForPlayers: () => {},
-		countdownToGame: () => {},
-		startGame: () => {},
+		waitingForPlayers: () => {
+			// Only show for online/tournament games
+			if (mode !== "local") {
+				waitingOverlay.textContent = "Waiting for opponent...";
+				waitingOverlay.style.display = "flex";
+			}
+		},
+		countdownToGame: (n, _side) => {
+			// Only show countdown for online/tournament games
+			if (mode !== "local" && n > 0) {
+				waitingOverlay.textContent = `Starting in ${n}...`;
+				waitingOverlay.style.display = "flex";
+			}
+		},
+		startGame: () => {
+			waitingOverlay.style.display = "none";
+		},
 	});
 
 	const cleanupWS =
 		mode === "local"
 			? connectToLocalSingleGameWS(state)
 			: mode === "online"
-			? connectToSingleGameWS(state)
-			: connectToTournamentWS(state);
-
+			? connectToSingleGameWS(state, roomId)
+			: connectToTournamentWS(state, roomId, tournamentName);
 	setupInputs();
 	const cleanupLoop = startGameLoop(canvas, state);
 
