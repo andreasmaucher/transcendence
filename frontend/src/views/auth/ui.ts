@@ -4,6 +4,8 @@ import { navigate } from "../../router/router";
 import { API_BASE } from "../../config/endpoints";
 import { updateTopBar } from "../topbar/ui";
 import { t } from "../../i18n";
+import "./auth.css";
+
 
 type Mode = "login" | "register";
 
@@ -22,7 +24,7 @@ export function renderAuth(container: HTMLElement) {
 
   // Title
   const title = document.createElement("h2");
-  title.textContent = t("auth.welcome");
+  title.textContent = "PONG";
   title.className = "auth-title";
   card.appendChild(title);
 
@@ -74,7 +76,7 @@ export function renderAuth(container: HTMLElement) {
   const ghBtn = document.createElement("button"); // creates a button element for the GitHub login
   ghBtn.type = "button"; // no form submission, just a button
   ghBtn.className = "auth-submit"; // same style as the login button
-  ghBtn.textContent = "Login with GitHub";
+  ghBtn.textContent = t("auth.loginGitHub");
   // when the button is clicked, the follwowing code is run:
   ghBtn.onclick = () => {
     // Full-page redirect to start the OAuth flow on the backend

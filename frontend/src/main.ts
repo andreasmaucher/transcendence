@@ -1,4 +1,3 @@
-// src/main.ts
 import { startRouter, registerRoutes } from "./router/router";
 import { setupInputs } from "./game/input";
 
@@ -10,10 +9,15 @@ import { renderTournament } from "./views/tournament/ui";
 import { initTopBar } from "./views/topbar/ui";
 import { renderOnlineLobby } from "./views/online/ui";
 
+import { initStarfield } from "./rendering/starfield";
+
+
 const app = document.getElementById("app");
 if (!app) {
   throw new Error("#app container not found in index.html");
 }
+
+initStarfield();    
 
 setupInputs();
 initTopBar();

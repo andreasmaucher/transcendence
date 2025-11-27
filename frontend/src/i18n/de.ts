@@ -41,6 +41,7 @@ export default {
     errFixForm: "Bitte Fehler korrigieren.",
     errAuthFailed: "Authentifizierung fehlgeschlagen.",
     errGeneric: "Fehler",
+    loginGitHub: "Mit GitHub anmelden",
   },
 
   profile: {

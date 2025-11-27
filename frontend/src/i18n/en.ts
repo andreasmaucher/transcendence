@@ -30,7 +30,7 @@ export default {
   },
 
   auth: {
-    welcome: "Welcome Challenger",
+    Pong: "PONG",
     login: "Login",
     register: "Register",
     username: "Username",
@@ -41,6 +41,7 @@ export default {
     errFixForm: "Please fix the errors.",
     errAuthFailed: "Authentication failed.",
     errGeneric: "Error",
+    loginGitHub: "Sign in with GitHub",
   },
 
   profile: {
