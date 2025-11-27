@@ -101,7 +101,7 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 	ws.addEventListener("close", () => {
 		setActiveSocket(null);
 		resetRequested = false;
-		setTimeout(() => connectToLocalSingleGameWS(state), 1000);
+		//setTimeout(() => connectToLocalSingleGameWS(state), 1000);
 	});
 
 	ws.addEventListener("error", () => ws.close());
