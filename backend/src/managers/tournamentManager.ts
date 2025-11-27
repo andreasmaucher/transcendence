@@ -20,6 +20,7 @@ import crypto from "crypto";
 import { Match } from "../types/match.js";
 import { forfeitMatchDB } from "../database/matches/setters.js";
 import { buildPayload } from "../transport/broadcaster.js";
+import { createTournamentPlayerDB } from "../database/tournament_players/setters.js";
 
 // Get or Create a tournament, called only when creating a socket connection
 export function getOrCreateTournament(id: string, name?: string, size?: number): Tournament {
@@ -105,7 +106,6 @@ export function addPlayerToTournament(tournament: Tournament, playerId: string, 
 				}
 			}
 		}
-
 		return undefined; // If all matches already full
 	} catch (error: any) {
 		console.error("[TM]", error.message);

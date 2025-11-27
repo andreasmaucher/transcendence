@@ -33,6 +33,17 @@ db.exec(`
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
 
+	CREATE TABLE IF NOT EXISTS tournament_players (
+		tournament_id TEXT NOT NULL,
+		username TEXT NOT NULL,
+		display_name TEXT NOT NULL,
+
+		PRIMARY KEY (tournament_id, username),
+
+		FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE,
+		FOREIGN KEY (username) REFERENCES users(username)
+	);
+
 	CREATE TABLE IF NOT EXISTS tournaments (
 		internal_id INTEGER PRIMARY KEY AUTOINCREMENT,
 		id TEXT UNIQUE NOT NULL,

@@ -9,7 +9,7 @@ export function getAllMatchesDB(): any[] {
   `);
 
 	const matches = stmt.all();
-	if (!matches) throw new Error(`[DB] No matches found`);
+	if (matches.length === 0) throw new Error(`[DB] No matches found`);
 
 	return matches;
 }
