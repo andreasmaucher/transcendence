@@ -47,6 +47,24 @@ export function renderIncomingMessage(message: Message, chatMessages: HTMLElemen
 	});
 }
 
+export function renderBlockMessage(blockedUser: string, chatMessages: HTMLElement) {
+	const item = document.createElement("div");
+	item.className = "chat-message";
+	item.style.padding = "6px 8px";
+	item.style.marginBottom = "6px";
+	item.style.background = "rgba(255,255,255,0.08)";
+	item.style.borderRadius = "4px";
+	item.style.cursor = "pointer";
+
+	item.innerHTML =
+	`<span>You've blocked ${blockedUser}. No Conversation possible!</span>`;
+
+	chatMessages.append(item);
+	requestAnimationFrame(() => {
+		chatMessages.scrollTop = chatMessages.scrollHeight;
+	});
+}
+
 export function renderChatHeaderButtons(
 	chatHeader: HTMLElement,
 	activeChat: string | null
@@ -113,7 +131,6 @@ export function renderChatHeaderButtons(
 		console.log(`⚔️ Challenge sent to ${activeChat}`);
 	});
 
-	// TODO: Check if this is handed out with the chatHistory (empty?)
 	if (!userData.blockedUsers)
 		userData.blockedUsers = [];
 	const isBlocked = userData.blockedUsers?.includes(activeChat!);
@@ -159,7 +176,7 @@ export function renderOnlineUsers(
 		userItem.style.cursor = "pointer";
 		userItem.classList.add("online-user");
 
-		// Create Friendslist
+		// Create onlineUserList
 		userItem.onclick = () => {
 			if (username === "Global Chat") {
 				activePrivateChat.current = "Global Chat";
@@ -181,7 +198,6 @@ export function renderOnlineUsers(
 export function setupPrivateChathistory(username: string): Message[] {
 	if (!userData.chatHistory!.private.has(username)) {
 		userData.chatHistory!.private.set(username, []);
-		console.log("I have no private Chat");
 	}
 	return userData.chatHistory!.private.get(username)!;
 }
@@ -205,14 +221,19 @@ export function addOnlineUser(username: string) {
 		generalData.allUsers?.push(username);
 }
 
-export function removeOnlineUser(onlineUserList: string[], username: string) {
-	const index = onlineUserList.indexOf(username);
-	if (index !== -1) {
-		onlineUserList.splice(index, 1);
-	}
+export function removeUserFromList(username: string, list: string[]) {
+	if (!list) return;
+
+	list = list.filter(
+		(user) => user !== username
+	);
 }
 
-// TODO Problems with fetching the Message[] from private
+export function addBlockedUser(userToBlock: string){
+	if (!userData.blockedUsers!.includes(userToBlock))
+		userData.blockedUsers!.push(userToBlock);
+}
+
 export function populateChatWindow(
 	chatHistory: chatHistory,
 	chatMessages: HTMLElement,
@@ -223,17 +244,12 @@ export function populateChatWindow(
 
 	let chatHistoryToAdd: Message[] = [];
 	if (activePrivateChat.current === "Global Chat") {
-		chatHistoryToAdd = chatHistory.global.reverse();
+		chatHistoryToAdd = chatHistory.global;
 		console.log("GlobalChatHistory should be loaded!");
 	} else {
 		chatHistoryToAdd = setupPrivateChathistory(username);
-		chatHistoryToAdd.reverse();
 		console.log(`private chatHistory for ${activePrivateChat.current} loaded!`);
 	}
-	// DEBUG
-	chatHistoryToAdd.forEach((msg, idx) => {
-		console.log(`#${idx + 1}: [${msg.sentAt}] ${msg.sender}: ${msg.content}`);
-	});
 	chatHistoryToAdd.forEach((message) => {
 		renderIncomingMessage(message, chatMessages);
 	});
@@ -257,24 +273,6 @@ export function appendMessageToHistory(message: Message): void {
 	}
 }
 
-// FOR DEBUGGING
-export function debugPrintGlobalHistory(chatHistory: chatHistory | undefined) {
-	if (!chatHistory) {
-		console.log("⚠ No chatHistory available yet.");
-		return;
-	}
-
-	if (chatHistory.global.length === 0) {
-		console.log("ℹ Global chat is empty.");
-		return;
-	}
-
-	console.log("🌍 Global Chat History:");
-	chatHistory.global.forEach((msg, idx) => {
-		console.log(`#${idx + 1}: [${msg.sentAt}] ${msg.sender}: ${msg.content}`);
-	});
-}
-
 export function wireIncomingChat(
 	chatMessages: HTMLElement,
 	friendList: HTMLElement,
@@ -284,7 +282,6 @@ export function wireIncomingChat(
 	const ws = userData.userSock;
 	if (!ws) {
 		console.warn("Chat socket not connected");
-		// returns empty function
 		return () => {};
 	}
 
@@ -296,6 +293,7 @@ export function wireIncomingChat(
 
 	ws.onmessage = (event) => {
 		try {
+			
 			const payload = JSON.parse(event.data);
 			if (payload && payload.type === "chat") {
 				const msg: Message = payload.data;
@@ -315,10 +313,22 @@ export function wireIncomingChat(
 						appendMessageToHistory(msg);
 						break;
 					}
+					case "block": {
+						if (activePrivateChat.current === msg.receiver)
+							renderIncomingMessage(msg, chatMessages);
+						appendMessageToHistory(msg);
+						break;
+					}
+					case "unblock": {
+						if (activePrivateChat.current === msg.receiver)
+							renderIncomingMessage(msg, chatMessages);
+						appendMessageToHistory(msg);
+						break;
+					}
 				}
 			}
 
-			if (payload && payload.type == "user-online") {
+			if (payload && payload.type === "user-online") {
 				const newUserOnline = payload.data.username;
 				console.log(`${newUserOnline} entered the realm!`)
 				addOnlineUser(newUserOnline);
@@ -330,10 +340,10 @@ export function wireIncomingChat(
 						);
 					}
 
-			if (payload && payload.type == "user-offline") {
+			if (payload && payload.type === "user-offline") {
 				const newUserOffline = payload.data.username;
 				console.log(`${newUserOffline} left the realm!`)
-				addOnlineUser(newUserOffline);
+				removeUserFromList(newUserOffline, generalData.onlineUsers!);
 				renderOnlineUsers(
 							friendList,
 							chatMessages,
@@ -341,7 +351,31 @@ export function wireIncomingChat(
 							activePrivateChat,
 						);
 					}
-				
+
+			if (payload && payload.type == "block") {
+				const blockedUser = payload.data.username;
+				console.log(`${userData.username} blocked ${blockedUser}`)
+				addBlockedUser(blockedUser);
+				renderOnlineUsers(
+							friendList,
+							chatMessages,
+							chatHeader,
+							activePrivateChat,
+						);
+					}
+
+				if (payload && payload.type == "unblock") {
+				const unblockedUser = payload.data.username;
+				console.log(`${userData.username} unblocked ${unblockedUser}`)
+				removeUserFromList(unblockedUser, userData.blockedUsers!);
+				renderOnlineUsers(
+							friendList,
+							chatMessages,
+							chatHeader,
+							activePrivateChat,
+						);
+					}
+
 		} catch (err) {
 			console.error("Failed to parse incoming payload", err);
 		}
