@@ -116,71 +116,60 @@ export function addPlayerToTournament(tournament: Tournament, playerId: string, 
 export function assignPlayersToRound(tournament: Tournament) {
 	const prevRound = tournament.matches.get(tournament.state.round - 1);
 	const nextRound = tournament.matches.get(tournament.state.round);
-	console.log(`[TM] assignPlayersToRound called for tournament ${tournament.id}, current round: ${tournament.state.round}, prevRound exists: ${!!prevRound}, nextRound exists: ${!!nextRound}`);
 	if (prevRound && nextRound) {
-		//! LOGIC The real issue is: Tournament is progressing to Round 2 when only 1 of the 2 Round 1 matches finished!
-		// Validate all previous round matches have winners
-		console.log(`[TM] Validating Round ${tournament.state.round - 1} matches for winners...`);
-		console.log(`[TM] prevRound has ${prevRound.length} matches:`, prevRound.map(m => m.id));
+		// ANDY: issue is was that Tournament is progressing to Round 2 when only 1 of the 2 Round 1 matches finished!
+		// validate all previous round matches have winners
 		let allHaveWinners = true;
 		for (const match of prevRound) {
-			console.log(`[TM] Match ${match.id} isOver: ${match.state.isOver}, winner: ${match.state.winner}, isRunning: ${match.state.isRunning}`);
 			if (!match.state.winner) {
-				console.error(`[TM] Match ${match.id} has no winner yet! Will skip player assignment.`);
 				allHaveWinners = false;
 			}
 		}
 		
 		if (!allHaveWinners) {
-			console.log(`[TM] Not all Round ${tournament.state.round - 1} matches have winners yet, skipping round advancement`);
 			return;
 		}
 		
-		//! LOGIC for tournaments
-		// Create a map of username -> socket from previous round
+		// ANDY: creates a map of username -> socket from previous round
+		// we need to be able to find the socket for the winner / loser to assign them to the new match
+		// attach to the new match by updating socket.currentTournamentMatch
 		const playerSockets = new Map<string, any>();
 		for (const match of prevRound) {
-			console.log(`[TM] Round ${tournament.state.round - 1} match ${match.id} has ${match.clients.size} clients`);
 			for (const client of match.clients) {
 				if ((client as any).username) {
 					const username = (client as any).username;
 					playerSockets.set(username, client);
-					console.log(`[TM] Mapped socket for player: ${username}`);
 				}
 			}
 		}
-		console.log(`[TM] Total sockets mapped: ${playerSockets.size}`);
-		//! LOGIC for tournaments
-		// Assign winners to new matches
+		
+		// assign winners to new matches
 		for (const match of prevRound) {
 			const winner = extractMatchWinner(match);
-			console.log(`[TM] Match ${match.id} winner: ${winner}, left: ${match.players.left}, right: ${match.players.right}, winner side: ${match.state.winner}`);
+			// "error" means game has no winner yet and "guest" means invalid
 			if (winner === "error" || winner === "guest") {
-				console.error(`[TM] Invalid winner extracted from match ${match.id}: ${winner}`);
 				continue;
 			}
 			
 			const newMatch = addPlayerToTournament(tournament, winner);
 			if (!newMatch) {
-				console.error(`[TM] Failed to assign winner ${winner} to new match`);
 				continue;
 			}
 			
-			// Move the winner's socket to the new match
+			// move the socket of the winning player to the new match
 			const socket = playerSockets.get(winner);
 			if (!socket) {
-				console.error(`[TM] Socket not found for winner ${winner}`);
 				continue;
 			}
 			
-			// Remove from old match
+			// remove the client from old match (semi-final)
 			match.clients.delete(socket);
-			// Add to new match
+			// add the same socket to the new match (final or 3rd place game)
 			newMatch.clients.add(socket);
-			// Update socket's current tournament match reference
+			// update the sockets current tournament match reference so input messages are routed to the new match
 			socket.currentTournamentMatch = newMatch;
 			
-			// Send new match assignment with tournament info
+			// build & send new match assignment with tournament info to the frontend
 			const playerSide = newMatch.players.left === winner ? "left" : "right";
 			socket.send(
 				buildPayload("match-assigned", {
@@ -191,40 +180,34 @@ export function assignPlayersToRound(tournament: Tournament) {
 				} as any)
 			);
 			
-			// Send initial state of new match
+			// send initial state of new match to the frontend so when a player joins the new match the canvas can render the right scene
 			socket.send(buildPayload("state", newMatch.state));
 		}
-		//! LOGIC basically whole file got revamped
-		// Assign losers to new matches
+		
+		// second loop that assigns the losers to the 3rd place game starts from here, basically same logic as the first loop
 		for (const match of prevRound) {
 			const loser = extractMatchLoser(match);
 			if (loser === "error" || loser === "guest") {
-				console.error(`[TM] Invalid loser extracted from match ${match.id}: ${loser}`);
 				continue;
 			}
 			
+			// add the loser to the new match
 			const newMatch = addPlayerToTournament(tournament, loser);
 			if (!newMatch) {
-				console.error(`[TM] Failed to assign loser ${loser} to new match`);
 				continue;
 			}
 			
-			//! LOGIC for tournaments
-			// Move the loser's socket to the new match
+			// move the looser socket to the new match
 			const socket = playerSockets.get(loser);
 			if (!socket) {
-				console.error(`[TM] Socket not found for loser ${loser}`);
 				continue;
 			}
 			
-			// Remove from old match
 			match.clients.delete(socket);
-			// Add to new match
 			newMatch.clients.add(socket);
-			// Update socket's current tournament match reference
 			socket.currentTournamentMatch = newMatch;
 			
-			// Send new match assignment with tournament info
+			// send new match assignment with tournament info
 			const playerSide = newMatch.players.left === loser ? "left" : "right";
 			socket.send(
 				buildPayload("match-assigned", {
@@ -235,7 +218,7 @@ export function assignPlayersToRound(tournament: Tournament) {
 				} as any)
 			);
 			
-			// Send initial state of new match
+			// send initial state of new match
 			socket.send(buildPayload("state", newMatch.state));
 		}
 	}
@@ -275,18 +258,18 @@ export function goToNextRound(tournament: Tournament) {
 	}
 	
 	//! LOGIC for tournaments dont increment the round or create matches until after validation passed
-	// Create matches for next round
+	// pre-build the matches for the next round without assuming that the players are ready yet
 	const matches = initTournamentMatches({ ...tournament, state: { ...tournament.state, round: nextRound } }, tournament.state.size);
 	tournament.matches.set(nextRound, matches);
 	
-	// Temporarily increment round so assignPlayersToRound sees the correct round numbers
+	// temporarily increment round so assignPlayersToRound sees the correct round numbers
 	const originalRound = tournament.state.round;
 	tournament.state.round = nextRound;
 	
-	// Try to assign players - this might fail if winners aren't ready yet
+	// try to assign players (this might fail if winners aren't ready yet)
 	assignPlayersToRound(tournament);
 	
-	// Check if assignment actually succeeded by checking if matches have players
+	// check if assignPlayersToRound succeeded by checking if matches have players
 	let assignmentSucceeded = true;
 	for (const match of matches) {
 		if (!match.players.left || !match.players.right) {
@@ -295,15 +278,15 @@ export function goToNextRound(tournament: Tournament) {
 		}
 	}
 	
+	// if the assignment failed roll back the round increment and wait for all matches to finish
+	// we only advance to the next step when every game of the next round has both players ready
 	if (!assignmentSucceeded) {
-		// Assignment failed - rollback the round increment
 		tournament.state.round = originalRound;
 		console.log(`[TM] Player assignment incomplete, rolling back to Round ${originalRound}, waiting for all matches to finish...`);
 		return;
 	}
 	
-	// Assignment succeeded, round is already incremented, just start the matches
-	console.log(`[TM] Successfully advanced to Round ${nextRound}`);
+	// when the assignment succeeded the round is already incremented so we can just start the matches
 	for (const match of matches) startGameCountdown(match);
 }
 
@@ -312,13 +295,7 @@ export function endTournament(tournament: Tournament) {
 	if (tournament.state.isOver) return;
 
 	const finalRoundMatches = tournament.matches.get(tournament.state.round);
-	console.log(`[TM] endTournament called for ${tournament.id}, round: ${tournament.state.round}, matches in this round: ${finalRoundMatches?.length}`);
 	if (!finalRoundMatches) return;
-	
-	// Log all matches in final round
-	for (const m of finalRoundMatches) {
-		console.log(`[TM] Final round match ${m.id}: type=${m.tournament?.type}, isOver=${m.state.isOver}, winner=${m.state.winner}`);
-	}
 	
 	const finalMatch = finalRoundMatches.find((m) => m.tournament?.type === "final");
 	if (!finalMatch) {
@@ -326,7 +303,6 @@ export function endTournament(tournament: Tournament) {
 		return;
 	}
 
-	console.log(`[TM] Declaring tournament winner: ${finalMatch.state.winner}`);
 	endTournamentDB(tournament.id, finalMatch.state.winner);
 	tournament.state.isRunning = false;
 	tournament.state.isOver = true;

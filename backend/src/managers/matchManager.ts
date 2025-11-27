@@ -124,8 +124,8 @@ export function endMatch(match: Match) {
 // Add player to open match
 export function addPlayerToMatch(match: Match, playerId: string) {
 	try {
-		//! LOGIC had to update in-memory object here since checkMatchFull was returning undefined 
-		//! previously only updated the database but did not update the in-memory match.players object
+		// ANDY: had to update in-memory object here since checkMatchFull was returning undefined 
+		// previously it only updated the database but did not update the in-memory match.players object
 		if (!match.players.left) {
 			addPlayerMatchDB(match.id, playerId, "left");
 			match.players.left = playerId; // Update in-memory object
@@ -135,9 +135,7 @@ export function addPlayerToMatch(match: Match, playerId: string) {
 		} else {
 			return; // Temporary error handling, match full
 		}
-		console.log(`[MM] Player ${playerId} added. Match full: ${checkMatchFull(match)}, singleGameId: ${match.singleGameId}`);
 		if (match.singleGameId && checkMatchFull(match)) {
-			console.log(`[MM] Starting countdown for match ${match.id}`);
 			startGameCountdown(match);
 		}
 	} catch (error: any) {
