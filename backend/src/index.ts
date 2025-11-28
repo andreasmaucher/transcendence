@@ -11,7 +11,12 @@ const ORIGIN = process.env.FRONTEND_ORIGIN ?? "http://localhost:5173";
 
 // USER_MANAGEMENT
 // enable credentials so browsers can send/receive cookies (required for session cookie)
-await fastify.register(cors, { origin: ORIGIN, credentials: true });
+// await fastify.register(cors, { origin: ORIGIN, credentials: true });
+// DEV: allow all origins so multiple LAN frontends can connect
+await fastify.register(cors, {
+  origin: true,          // reflect request Origin
+  credentials: true,     // needed for cookies / sessions
+});
 
 try {
 	// starts the server

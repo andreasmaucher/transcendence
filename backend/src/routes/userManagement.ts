@@ -57,6 +57,9 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 			const secure = process.env.NODE_ENV === "production";
 
 			reply.header("Set-Cookie", makeSessionCookie(token, { secure, maxAgeSec }));
+            const cookieHeader = makeSessionCookie(token, { secure, maxAgeSec });
+            console.log("[register] Set-Cookie:", cookieHeader);   // <‑‑ log cookie string
+
 
 			return reply.code(200).send({ success: true, message: "Registration successful" });
 		} catch (error: any) {
