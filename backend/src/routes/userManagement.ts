@@ -55,6 +55,7 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 			const user = getUserByUsernameDB(username);
 			const { token, maxAgeSec } = createSessionToken(username, 60);
 			const secure = process.env.NODE_ENV === "production";
+			console.log("COOKIE:", token, maxAgeSec);
 
 			reply.header("Set-Cookie", makeSessionCookie(token, { secure, maxAgeSec }));
 

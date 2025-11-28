@@ -45,6 +45,11 @@ export type Match = {
 	state: MatchState;
 	inputs: Record<PaddleSide, PaddleInput>;
 	players: { left: string | undefined; right: string | undefined };
+	players2: {
+		username: string;
+		side: "left" | "right";
+		socket: any;
+	}[];
 	mode: MatchMode;
 	clients: Set<WebSocket>;
 };

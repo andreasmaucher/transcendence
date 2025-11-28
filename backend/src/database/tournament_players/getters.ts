@@ -80,3 +80,48 @@ export function getTournamentWithPlayersDB(tournamentId: string) {
 
 	return tournament;
 }
+
+export function getAllTournamentsWithPlayersDB() {
+	const stmt = db.prepare(`
+		SELECT
+			tournaments.*,
+			tournament_players.username,
+			tournament_players.display_name
+		FROM tournaments
+		LEFT JOIN tournament_players
+			ON tournaments.id = tournament_players.tournament_id
+		ORDER BY tournaments.started_at DESC
+	`);
+
+	const rows: any[] = stmt.all();
+
+	if (rows.length === 0) return [];
+
+	// Group rows by tournament ID
+	const tournamentsMap: Record<string, any> = {};
+
+	for (const r of rows) {
+		if (!tournamentsMap[r.id]) {
+			tournamentsMap[r.id] = {
+				id: r.id,
+				name: r.name,
+				size: r.size,
+				winner: r.winner,
+				started_at: r.started_at,
+				ended_at: r.ended_at,
+				notes: r.notes,
+				players: [],
+			};
+		}
+
+		if (r.username) {
+			tournamentsMap[r.id].players.push({
+				username: r.username,
+				displayName: r.display_name,
+			});
+		}
+	}
+
+	// Convert map to array
+	return Object.values(tournamentsMap);
+}
