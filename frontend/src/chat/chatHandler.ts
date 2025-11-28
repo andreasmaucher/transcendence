@@ -92,7 +92,6 @@ export function renderChatHeaderButtons(
 	chatHeader.style.paddingBottom = "0px";
 	chatHeader.style.marginBottom = "8px";
 
-
 	if (activeChat === "Global Chat") {
 		chatHeader.append(title);
 		return;
@@ -125,11 +124,6 @@ export function renderChatHeaderButtons(
 		btn.style.background = blocked 
 		? "rgba(150, 0, 0, 0.58)"
 		: "rgba(0, 224, 179, 0.08)";
-
-		// glow when blocked
-		/*if (!blocked) {
-			btn.style.textShadow = `0 0 5px ${secondaryNeon}`;
-		}*/
 
 		btn.style.cursor = "pointer";
 		btn.onclick = (e) => {
@@ -236,14 +230,12 @@ export function renderOnlineUsers(
 		};
 
 		userItem.onmouseleave = () => {
-			// Sicherstellen, dass der aktive Chat seinen Style behält, wenn nicht gehovert
 		if (username === userData.activePrivateChat) {
 			userItem.style.backgroundColor = `rgba(0, 255, 200, 0.1)`;
 		} else {
 			userItem.style.backgroundColor = `rgba(0, 255, 200, 0.1)`;
 		}
 	};
-
 		// Create onlineUserList
 		userItem.onclick = () => {
 			userData.activePrivateChat = username;
