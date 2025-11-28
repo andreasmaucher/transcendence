@@ -1,14 +1,19 @@
 import { blockedUsers, generalData, userData } from "../config/constants";
 import { API_BASE } from "../config/endpoints";
-import { populateChatWindow, populateOnlineUserList, renderBlockMessage, sendMessage, setupPrivateChathistory, wireIncomingChat } from "./chatHandler";
+import { populateChatWindow, populateOnlineUserList, renderBlockedByMessage, renderBlockMessage, sendMessage, setupPrivateChathistory, wireIncomingChat } from "./chatHandler";
 import { Message } from "./types";
 
-export function updateBlockState(sender: string, target: string, type: "block" | "unblock") {
-	if (!blockedUsers.has(sender)) {
-		blockedUsers.set(sender, []);
+export function updateLocalBlockState(
+	blockedUserMap: Map<string, string[]>,
+	sender: string,
+	target: string,
+	type: "block" | "unblock"
+) {
+	if (!blockedUserMap.has(sender)) {
+		blockedUserMap.set(sender, []);
 	}
 
-	const list = blockedUsers.get(sender)!;
+	const list = blockedUserMap.get(sender)!;
 
 	if (type === "block") {
 		if (!list.includes(target)) {
@@ -27,6 +32,10 @@ export function updateBlockState(sender: string, target: string, type: "block" |
 
 export function populatePrivateConv(username: string, privateMessages: Message[]): Map<string, Message[]> {
 	const privateConvs = new Map<string, Message[]>();
+	const blockedUsersLocal = new Map<string, string[]>();
+	let blockedByMe: string[] = [];
+	let blockedByThem: string[] = [];
+
 	for (const msg of privateMessages) {
 		const otherUser = msg.sender === username ? msg.receiver : msg.sender;
 		
@@ -37,15 +46,31 @@ export function populatePrivateConv(username: string, privateMessages: Message[]
 		}
 
 		if (msg.type === "block" || msg.type === "unblock") {
-			updateBlockState(msg.sender!, msg.receiver!, msg.type);
+			updateLocalBlockState(blockedUsersLocal, msg.sender!, msg.receiver!, msg.type);
+
+			if (msg.sender === username){
+				const index = blockedByThem.indexOf(msg.receiver!);
+				if (msg.type === "block") {
+					if (index === -1) blockedByThem.push(msg.receiver!);
+				} else {
+					if (index !== -1) blockedByThem.splice(index, 1);
+				}
+			} else if (msg.receiver === username) {
+				const index = blockedByMe.indexOf(msg.sender!);
+				if (msg.type === "block") {
+					if (index === -1) blockedByMe.push(msg.sender!);
+				} else {
+					if (index !== -1) blockedByMe.splice(index, 1);
+				}
+			}
 			continue;
 		}
 
 		const senderBlockedTarget =
-			blockedUsers.get(msg.sender!)?.includes(msg.receiver!) ?? false;
+			blockedUsersLocal.get(msg.sender!)?.includes(msg.receiver!) ?? false;
 
 		const targetBlockedSender =
-			blockedUsers.get(msg.receiver!)?.includes(msg.sender!) ?? false;
+			blockedUsersLocal.get(msg.receiver!)?.includes(msg.sender!) ?? false;
 
 		if (senderBlockedTarget || targetBlockedSender) {
 			continue;
@@ -54,6 +79,8 @@ export function populatePrivateConv(username: string, privateMessages: Message[]
 		privateConvs.get(otherUser)!.push(msg);
 	}
 
+	userData.blockedByUsers = blockedByThem;
+	userData.blockedUsers = blockedByMe;
 	return privateConvs;
 }
 
@@ -74,7 +101,10 @@ export async function fetchUserData() {
 		console.warn("Backend returned an error:", body.message);
 		return;
 	}
-	const { chatHistory, friends, blockedUsers} = body.data;
+	const { blockedByUsers, blockedUsers, chatHistory, friends} = body.data;
+
+	userData.blockedByUsers = blockedByUsers ?? [];
+	userData.blockedUsers = blockedUsers ?? [];
 
 	userData.chatHistory = {
 		user: chatHistory.user,
@@ -83,7 +113,6 @@ export async function fetchUserData() {
 		tournament: chatHistory.tournament,
 	};
 
-	userData.blockedUsers = blockedUsers;
 	userData.friends = friends;
 }
 
@@ -250,30 +279,6 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	channelList.style.padding = "10px";
 	friends.append(channelList);
 
-	// ---- CAN GO -----
-	// ONLINE USER LIST
-	/*onlineUserlist.forEach((n) => {
-		const item = document.createElement("div");
-		item.textContent = n;
-		item.style.padding = "6px 8px";
-		item.style.marginBottom = "6px";
-		
-		item.style.background = "rgba(0, 255, 200, 0.1)";
-		item.style.color = "#66ffc8";
-		
-		item.style.borderRadius = "4px";
-		item.style.cursor = "pointer";
-		
-		item.onmouseenter = () => {
-			item.style.backgroundColor = "rgba(0, 255, 200, 0.25)";
-		};
-		item.onmouseleave = () => {
-			item.style.backgroundColor = "rgba(0, 255, 200, 0.1)";
-		};
-		
-		channelList.append(item);
-	});*/
-	
 	// CHAT EXPANDS AUTOMATICALLY
 	chat.style.flex = "1";
 
@@ -361,6 +366,9 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 			if (userData.blockedUsers?.includes(userData.activePrivateChat!)) {
 				console.log(`Message to ${userData.activePrivateChat} should be blocked`);
 				renderBlockMessage(userData.activePrivateChat!, chatMessages);
+			} else if (userData.blockedByUsers?.includes(userData.activePrivateChat!)) {
+				console.log(`${userData.activePrivateChat} blocked you`);
+				renderBlockedByMessage(userData.activePrivateChat!, chatMessages);
 			}
 			else
 				sendMessage("direct", input.value, userData.activePrivateChat);

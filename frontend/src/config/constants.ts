@@ -14,6 +14,7 @@ export const userData = {
 	chatHistory: null as chatHistory | null,
 	friends: null as string[] | null,
 	blockedUsers: null as string[] | null,
+	blockedByUsers: null as string[] | null,
 	activePrivateChat: "Global Chat" as string
 };
 

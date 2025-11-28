@@ -65,6 +65,26 @@ export function renderBlockMessage(blockedUser: string, chatMessages: HTMLElemen
 	});
 }
 
+export function renderBlockedByMessage(blockedByUser: string, chatMessages: HTMLElement) {
+	const item = document.createElement("div");
+	item.className = "chat-message";
+	item.style.padding = "6px 8px";
+	item.style.marginBottom = "6px";
+	item.style.background = "rgba(255, 170, 0, 0.15)";
+	//OLD RED item.style.background = "rgba(150, 0, 0, 0.4)";
+	item.style.borderRadius = "4px";
+	item.style.cursor = "pointer";
+
+	item.innerHTML =
+	//OLD RED `<span style="color: #ff0000; font-weight: bold;">You've been blocked by ${blockedByUser}. No Conversation possible!</span>`;
+	`<span style="color: #ffaa00; font-weight: bold;">You have been blocked by ${blockedByUser}. Message cannot be sent.</span>`;
+
+	chatMessages.append(item);
+	requestAnimationFrame(() => {
+		chatMessages.scrollTop = chatMessages.scrollHeight;
+	});
+}
+
 export function renderChatHeaderButtons(
 	chatHeader: HTMLElement,
 	activeChat: string | null
@@ -117,7 +137,7 @@ export function renderChatHeaderButtons(
 		btn.style.fontSize = "14px";
 		btn.style.borderRadius = "4px";
 		btn.style.cursor = "pointer";
-		btn.style.transition = "background-color 0.2s ease, box-shadow 0.2s ease"; // Für Hover-Effekt
+		btn.style.transition = "background-color 0.2s ease, box-shadow 0.2s ease"; // hover
 
 		btn.style.color = blocked ? "white" : secondaryNeon
 		btn.style.border = `1px solid ${primaryNeon}`
@@ -204,7 +224,7 @@ export function renderOnlineUsers(
 	const secondaryNeon = "#66ffc8"
 
 	const channelNames = ["Global Chat"].concat(
-		generalData.onlineUsers!.filter(u => u !== userData.username) // Eigene Namen nicht anzeigen
+		generalData.onlineUsers!.filter(u => u !== userData.username)
 	);
 
 	generalData.onlineUsers!.forEach((username) => {
@@ -276,7 +296,7 @@ export function addOnlineUser(username: string) {
 		generalData.allUsers?.push(username);
 }
 
-export function removeUserFromList(username: string, list: string[]): string[] {
+export function removeUserFromList(username: string, list: string[] | null): string[] {
 	if (!list) return [];
 
 	return list.filter(
@@ -284,9 +304,12 @@ export function removeUserFromList(username: string, list: string[]): string[] {
 	);
 }
 
-export function addBlockedUser(userToBlock: string){
-	if (!userData.blockedUsers!.includes(userToBlock))
-		userData.blockedUsers!.push(userToBlock);
+export function addUserToList(userToBlock: string, list: string[] | null): string[] {
+	if (!list)
+		list = [];
+	if (!list.includes(userToBlock))
+		list.push(userToBlock);
+	return list
 }
 
 export function populateChatWindow(
@@ -361,20 +384,24 @@ export function wireIncomingChat(
 					}
 					case "direct": {
 						if ((userData.activePrivateChat === msg.sender || userData.activePrivateChat === msg.receiver)
-						&& !userData.blockedUsers?.includes(msg.sender))
+						&& (!userData.blockedUsers?.includes(msg.sender) && !userData.blockedByUsers?.includes(msg.receiver!)))
 							renderIncomingMessage(msg, chatMessages);
 						appendMessageToHistory(msg);
 						break;
 					}
 					case "block": {
-						if (userData.activePrivateChat === msg.receiver)
-							renderIncomingMessage(msg, chatMessages);
+						if (msg.receiver === userData.username) {
+							if (userData.activePrivateChat === msg.sender)
+								renderBlockedByMessage(msg.sender, chatMessages); 
+							userData.blockedByUsers = addUserToList(msg.sender, userData.blockedByUsers);
+						}
 						appendMessageToHistory(msg);
 						break;
-					}
+						}
 					case "unblock": {
-						if (userData.activePrivateChat === msg.receiver)
-							renderIncomingMessage(msg, chatMessages);
+						if (msg.receiver === userData.username) {
+							userData.blockedByUsers = removeUserFromList(msg.sender, userData.blockedByUsers);
+						}
 						appendMessageToHistory(msg);
 						break;
 					}
@@ -406,7 +433,7 @@ export function wireIncomingChat(
 			if (payload && payload.type == "block") {
 				const blockedUser = payload.data.username;
 				console.log(`${userData.username} blocked ${blockedUser}`)
-				addBlockedUser(blockedUser);
+				userData.blockedUsers = addUserToList(blockedUser, userData.blockedUsers);
 				renderOnlineUsers(
 							friendList,
 							chatMessages,
