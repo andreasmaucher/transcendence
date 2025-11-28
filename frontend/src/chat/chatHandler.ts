@@ -29,16 +29,16 @@ export function renderIncomingMessage(message: Message, chatMessages: HTMLElemen
 	item.className = "chat-message";
 	item.style.padding = "6px 8px";
 	item.style.marginBottom = "6px";
-	item.style.background = "rgba(255,255,255,0.08)";
+	item.style.background = "rgba(0, 255, 200, 0.1)";
 	item.style.borderRadius = "4px";
 	item.style.cursor = "pointer";
 
 	item.innerHTML = `
-	<div style="display:flex; justify-content:space-between; font-size:12px;">
+	<div style="display:flex; justify-content:space-between; font-size:12px; color: #00ffc8;">
 		<strong>${message.sender}</strong>
-		<small>${message.sentAt}</small>
+		<small style="color: #66ffc8;">${message.sentAt}</small>
 	</div>
-	<span>${message.content}</span>
+	<span style="color: #66ffc8;">${message.content}</span>
 	`;
 
 	chatMessages.append(item);
@@ -52,12 +52,12 @@ export function renderBlockMessage(blockedUser: string, chatMessages: HTMLElemen
 	item.className = "chat-message";
 	item.style.padding = "6px 8px";
 	item.style.marginBottom = "6px";
-	item.style.background = "rgba(255,255,255,0.08)";
+	item.style.background = "rgba(150, 0, 0, 0.4)";
 	item.style.borderRadius = "4px";
 	item.style.cursor = "pointer";
 
 	item.innerHTML =
-	`<span>You've blocked ${blockedUser}. No Conversation possible!</span>`;
+	`<span style="color: #ff0000; font-weight: bold;">You've blocked ${blockedUser}. No Conversation possible!</span>`;
 
 	chatMessages.append(item);
 	requestAnimationFrame(() => {
@@ -71,6 +71,9 @@ export function renderChatHeaderButtons(
 ) {
 	chatHeader.innerHTML = "";
 
+	const primaryNeon = "#00ffc8"; // OLD "#00e0b3";
+	const secondaryNeon = "#66ffc8"; // OLD "#33cc99";
+
 	const title = document.createElement("span");
 	title.textContent =
 		activeChat === "Global Chat"
@@ -79,6 +82,9 @@ export function renderChatHeaderButtons(
 
 	title.style.flex = "1";
 	title.style.fontWeight = "bold";
+	title.style.fontSize = "18px";
+	title.style.color = primaryNeon
+	title.style.textShadow = `0 0 5px ${secondaryNeon}`
 
 	chatHeader.style.display = "flex";
 	chatHeader.style.alignItems = "flex-start"; 
@@ -111,15 +117,50 @@ export function renderChatHeaderButtons(
 		btn.style.padding = "4px 6px";
 		btn.style.fontSize = "14px";
 		btn.style.borderRadius = "4px";
-		btn.style.border = "1px solid #666";
+		btn.style.cursor = "pointer";
+		btn.style.transition = "background-color 0.2s ease, box-shadow 0.2s ease"; // Für Hover-Effekt
+
+		btn.style.color = blocked ? "white" : secondaryNeon
+		btn.style.border = `1px solid ${primaryNeon}`
 		btn.style.background = blocked 
-		? "rgba(255, 0, 0, 0.58)"
-		: "rgba(255,255,255,0.12)";
+		? "rgba(150, 0, 0, 0.58)"
+		: "rgba(0, 224, 179, 0.08)";
+
+		// glow when blocked
+		/*if (!blocked) {
+			btn.style.textShadow = `0 0 5px ${secondaryNeon}`;
+		}*/
+
 		btn.style.cursor = "pointer";
 		btn.onclick = (e) => {
 			e.stopPropagation();
 			action();
 		};
+
+		const hoverColor = blocked ? "rgba(255, 0, 0, 0.8)" : "rgba(0, 255, 200, 0.35)";
+		const boxShadowColor = blocked ? "rgba(255, 0, 0, 0.8)" : secondaryNeon;
+
+		// hover
+		btn.onmouseenter = () => {
+			btn.style.backgroundColor = hoverColor;
+			btn.style.boxShadow = `0 0 6px ${boxShadowColor}`;
+			// icon glow
+			if (!blocked) {
+				btn.style.textShadow = `0 0 5px ${secondaryNeon}`;
+			}
+		};
+		btn.onmouseleave = () => {
+			btn.style.backgroundColor = blocked 
+			? "rgba(150, 0, 0, 0.58)" 
+			: "rgba(0, 224, 179, 0.08)";
+			btn.style.boxShadow = "none";
+
+			// text glow
+			if (!blocked) {
+				btn.style.textShadow = "none";
+			}
+		};
+
 		return btn;
 	};
 
@@ -165,26 +206,50 @@ export function renderOnlineUsers(
 	activePrivateChat: { current: string | null },
 ) {
 	friendList.innerHTML = "";
+
+	const primaryNeon = "#00ffc8";
+	const secondaryNeon = "#66ffc8"
+
+	const channelNames = ["Global Chat"].concat(
+		generalData.onlineUsers!.filter(u => u !== userData.username) // Eigene Namen nicht anzeigen
+	);
+
 	generalData.onlineUsers!.forEach((username) => {
 
 		const userItem = document.createElement("div");
 		userItem.textContent = username;
 		userItem.style.padding = "6px 8px";
 		userItem.style.marginBottom = "6px";
-		userItem.style.background = "rgba(255,255,255,0.08)";
+		userItem.style.background = "rgba(0, 255, 200, 0.1)"; 
+		userItem.style.color = "#66ffc8";
 		userItem.style.borderRadius = "4px";
 		userItem.style.cursor = "pointer";
 		userItem.classList.add("online-user");
 
+		// highlight active channel
+		if (username === activePrivateChat.current) {
+				userItem.style.border = `1px solid ${primaryNeon}`
+				userItem.style.boxShadow = `0 0 5px ${primaryNeon}`
+		}
+		
+		// hover
+		userItem.onmouseenter = () => {
+			userItem.style.backgroundColor = "rgba(0, 255, 200, 0.25)";
+		};
+
+		userItem.onmouseleave = () => {
+			// Sicherstellen, dass der aktive Chat seinen Style behält, wenn nicht gehovert
+		if (username === activePrivateChat.current) {
+			userItem.style.backgroundColor = `rgba(0, 255, 200, 0.1)`;
+		} else {
+			userItem.style.backgroundColor = `rgba(0, 255, 200, 0.1)`;
+		}
+	};
+
 		// Create onlineUserList
 		userItem.onclick = () => {
-			if (username === "Global Chat") {
-				activePrivateChat.current = "Global Chat";
-				chatHeader.textContent = `Global Chat`;
-			} else {
-				activePrivateChat.current = username;
-				chatHeader.textContent = `Chat with ${username}`;
-			}
+			activePrivateChat.current = username;
+			renderOnlineUsers(friendList, chatMessages, chatHeader, activePrivateChat);
 			chatMessages.innerHTML = "";
 			populateChatWindow(userData.chatHistory!, chatMessages, username, activePrivateChat!);
 			renderChatHeaderButtons(chatHeader, activePrivateChat.current);
@@ -221,10 +286,10 @@ export function addOnlineUser(username: string) {
 		generalData.allUsers?.push(username);
 }
 
-export function removeUserFromList(username: string, list: string[]) {
-	if (!list) return;
+export function removeUserFromList(username: string, list: string[]): string[] {
+	if (!list) return [];
 
-	list = list.filter(
+	return list.filter(
 		(user) => user !== username
 	);
 }
@@ -343,7 +408,7 @@ export function wireIncomingChat(
 			if (payload && payload.type === "user-offline") {
 				const newUserOffline = payload.data.username;
 				console.log(`${newUserOffline} left the realm!`)
-				removeUserFromList(newUserOffline, generalData.onlineUsers!);
+				generalData.onlineUsers = removeUserFromList(newUserOffline, generalData.onlineUsers!);
 				renderOnlineUsers(
 							friendList,
 							chatMessages,
@@ -367,7 +432,7 @@ export function wireIncomingChat(
 				if (payload && payload.type == "unblock") {
 				const unblockedUser = payload.data.username;
 				console.log(`${userData.username} unblocked ${unblockedUser}`)
-				removeUserFromList(unblockedUser, userData.blockedUsers!);
+				userData.blockedUsers = removeUserFromList(unblockedUser, userData.blockedUsers!);
 				renderOnlineUsers(
 							friendList,
 							chatMessages,
