@@ -131,9 +131,8 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	await fetchOnlineUsers();
 	if (!userData.chatHistory) console.log("[CHAT] Error retrieving chat history");
 
-	const onlineUserlist: string[] = ["Global Chat"];
-	let activePrivateChat: { current: string | null } = { current: "Global Chat" };
-
+	//const onlineUserlist: string[] = ["Global Chat"];
+	userData.activePrivateChat
 	// LIVE CHAT /; ///////////////////////////////////////////////////////////////
 	// MAIN CHAT PANEL (Container für Chat + Friends)
 	const panel = document.createElement("div");
@@ -170,7 +169,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 
 	// Chat Header
 	const chatHeader = document.createElement("div");
-	chatHeader.textContent = "Live Chat";
+	chatHeader.textContent = "Global Chat";
 	chatHeader.style.fontWeight = "600";
 	chatHeader.style.marginBottom = "8px";
 	chatHeader.style.color = "#00ffc8";
@@ -326,7 +325,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	};
 
 	// EVENTS //////
-	const cleanupWire = wireIncomingChat(chatMessages, channelList, chatHeader, activePrivateChat);
+	const cleanupWire = wireIncomingChat(chatMessages, channelList, chatHeader);
 
 	// SEND MESSAGE ONE CLICK
 	sendBtn.onclick = () => {
@@ -334,15 +333,15 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 		sendBtn.style.transform = "scale(0.97)";
 		setTimeout(() => sendBtn.style.transform = "scale(1)", 120);
 
-		if (activePrivateChat.current === "Global Chat")
+		if (userData.activePrivateChat === "Global Chat")
 			sendMessage("broadcast", input.value);
 		else {
-			if (userData.blockedUsers?.includes(activePrivateChat.current!)) {
-				console.log(`Message to ${activePrivateChat.current} should be blocked`);
-				renderBlockMessage(activePrivateChat.current!, chatMessages);
+			if (userData.blockedUsers?.includes(userData.activePrivateChat!)) {
+				console.log(`Message to ${userData.activePrivateChat} should be blocked`);
+				renderBlockMessage(userData.activePrivateChat!, chatMessages);
 			}
 			else
-				sendMessage("direct", input.value, activePrivateChat.current);
+				sendMessage("direct", input.value, userData.activePrivateChat);
 		}
 
 		input.value = "";
@@ -356,15 +355,15 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 		sendBtn.style.transform = "scale(0.97)";
 		setTimeout(() => sendBtn.style.transform = "scale(1)", 120);
 
-		if (activePrivateChat.current === "Global Chat")
+		if (userData.activePrivateChat === "Global Chat")
 			sendMessage("broadcast", input.value);
 		else {
-			if (userData.blockedUsers?.includes(activePrivateChat.current!)) {
-				console.log(`Message to ${activePrivateChat.current} should be blocked`);
-				renderBlockMessage(activePrivateChat.current!, chatMessages);
+			if (userData.blockedUsers?.includes(userData.activePrivateChat!)) {
+				console.log(`Message to ${userData.activePrivateChat} should be blocked`);
+				renderBlockMessage(userData.activePrivateChat!, chatMessages);
 			}
 			else
-				sendMessage("direct", input.value, activePrivateChat.current);
+				sendMessage("direct", input.value, userData.activePrivateChat);
 		}
 
 		input.value = "";

@@ -81,8 +81,7 @@ export function renderChatHeaderButtons(
 			: `Chat with ${activeChat}`;
 
 	title.style.flex = "1";
-	title.style.fontWeight = "bold";
-	title.style.fontSize = "18px";
+	title.style.fontWeight = "600";
 	title.style.color = primaryNeon
 	title.style.textShadow = `0 0 5px ${secondaryNeon}`
 
@@ -90,7 +89,8 @@ export function renderChatHeaderButtons(
 	chatHeader.style.alignItems = "flex-start"; 
 	chatHeader.style.justifyContent = "space-between";
 	chatHeader.style.paddingTop = "0px";
-	chatHeader.style.paddingBottom = "2px";
+	chatHeader.style.paddingBottom = "0px";
+	chatHeader.style.marginBottom = "8px";
 
 
 	if (activeChat === "Global Chat") {
@@ -203,7 +203,6 @@ export function renderOnlineUsers(
 	friendList: HTMLElement,
 	chatMessages: HTMLElement,
 	chatHeader: HTMLElement,
-	activePrivateChat: { current: string | null },
 ) {
 	friendList.innerHTML = "";
 
@@ -215,7 +214,6 @@ export function renderOnlineUsers(
 	);
 
 	generalData.onlineUsers!.forEach((username) => {
-
 		const userItem = document.createElement("div");
 		userItem.textContent = username;
 		userItem.style.padding = "6px 8px";
@@ -227,7 +225,7 @@ export function renderOnlineUsers(
 		userItem.classList.add("online-user");
 
 		// highlight active channel
-		if (username === activePrivateChat.current) {
+		if (username === userData.activePrivateChat) {
 				userItem.style.border = `1px solid ${primaryNeon}`
 				userItem.style.boxShadow = `0 0 5px ${primaryNeon}`
 		}
@@ -239,7 +237,7 @@ export function renderOnlineUsers(
 
 		userItem.onmouseleave = () => {
 			// Sicherstellen, dass der aktive Chat seinen Style behält, wenn nicht gehovert
-		if (username === activePrivateChat.current) {
+		if (username === userData.activePrivateChat) {
 			userItem.style.backgroundColor = `rgba(0, 255, 200, 0.1)`;
 		} else {
 			userItem.style.backgroundColor = `rgba(0, 255, 200, 0.1)`;
@@ -248,11 +246,11 @@ export function renderOnlineUsers(
 
 		// Create onlineUserList
 		userItem.onclick = () => {
-			activePrivateChat.current = username;
-			renderOnlineUsers(friendList, chatMessages, chatHeader, activePrivateChat);
+			userData.activePrivateChat = username;
+			renderOnlineUsers(friendList, chatMessages, chatHeader);
 			chatMessages.innerHTML = "";
-			populateChatWindow(userData.chatHistory!, chatMessages, username, activePrivateChat!);
-			renderChatHeaderButtons(chatHeader, activePrivateChat.current);
+			populateChatWindow(userData.chatHistory!, chatMessages, username);
+			renderChatHeaderButtons(chatHeader, userData.activePrivateChat);
 		};
 		friendList.append(userItem);
 	});
@@ -302,18 +300,17 @@ export function addBlockedUser(userToBlock: string){
 export function populateChatWindow(
 	chatHistory: chatHistory,
 	chatMessages: HTMLElement,
-	username: string,
-	activePrivateChat: { current: string | null }
+	username: string
 ) {
 	chatMessages.innerHTML = "";
 
 	let chatHistoryToAdd: Message[] = [];
-	if (activePrivateChat.current === "Global Chat") {
+	if (userData.activePrivateChat === "Global Chat") {
 		chatHistoryToAdd = chatHistory.global;
 		console.log("GlobalChatHistory should be loaded!");
 	} else {
 		chatHistoryToAdd = setupPrivateChathistory(username);
-		console.log(`private chatHistory for ${activePrivateChat.current} loaded!`);
+		console.log(`private chatHistory for ${userData.activePrivateChat} loaded!`);
 	}
 	chatHistoryToAdd.forEach((message) => {
 		renderIncomingMessage(message, chatMessages);
@@ -342,7 +339,6 @@ export function wireIncomingChat(
 	chatMessages: HTMLElement,
 	friendList: HTMLElement,
 	chatHeader: HTMLElement,
-	activePrivateChat: { current: string | null }
 ): () => void {
 	const ws = userData.userSock;
 	if (!ws) {
@@ -353,8 +349,8 @@ export function wireIncomingChat(
 	const previousHandler = ws.onmessage;
 
 	generalData.onlineUsers = populateOnlineUserList(userData.username);
-	populateChatWindow(userData.chatHistory!, chatMessages, userData.username!, activePrivateChat);
-	renderOnlineUsers(friendList, chatMessages, chatHeader, activePrivateChat);
+	populateChatWindow(userData.chatHistory!, chatMessages, userData.username!);
+	renderOnlineUsers(friendList, chatMessages, chatHeader);
 
 	ws.onmessage = (event) => {
 		try {
@@ -366,26 +362,26 @@ export function wireIncomingChat(
 
 				switch (msg.type) {
 					case "broadcast": {
-						if (activePrivateChat.current === "Global Chat")
+						if (userData.activePrivateChat === "Global Chat")
 							renderIncomingMessage(msg, chatMessages);
 						appendMessageToHistory(msg);
 						break;
 					}
 					case "direct": {
-						if ((activePrivateChat.current === msg.sender || activePrivateChat.current === msg.receiver)
+						if ((userData.activePrivateChat === msg.sender || userData.activePrivateChat === msg.receiver)
 						&& !userData.blockedUsers?.includes(msg.sender))
 							renderIncomingMessage(msg, chatMessages);
 						appendMessageToHistory(msg);
 						break;
 					}
 					case "block": {
-						if (activePrivateChat.current === msg.receiver)
+						if (userData.activePrivateChat === msg.receiver)
 							renderIncomingMessage(msg, chatMessages);
 						appendMessageToHistory(msg);
 						break;
 					}
 					case "unblock": {
-						if (activePrivateChat.current === msg.receiver)
+						if (userData.activePrivateChat === msg.receiver)
 							renderIncomingMessage(msg, chatMessages);
 						appendMessageToHistory(msg);
 						break;
@@ -400,8 +396,7 @@ export function wireIncomingChat(
 				renderOnlineUsers(
 							friendList,
 							chatMessages,
-							chatHeader,
-							activePrivateChat,
+							chatHeader
 						);
 					}
 
@@ -412,8 +407,7 @@ export function wireIncomingChat(
 				renderOnlineUsers(
 							friendList,
 							chatMessages,
-							chatHeader,
-							activePrivateChat,
+							chatHeader
 						);
 					}
 
@@ -424,8 +418,7 @@ export function wireIncomingChat(
 				renderOnlineUsers(
 							friendList,
 							chatMessages,
-							chatHeader,
-							activePrivateChat,
+							chatHeader
 						);
 					}
 
@@ -436,8 +429,7 @@ export function wireIncomingChat(
 				renderOnlineUsers(
 							friendList,
 							chatMessages,
-							chatHeader,
-							activePrivateChat,
+							chatHeader
 						);
 					}
 
