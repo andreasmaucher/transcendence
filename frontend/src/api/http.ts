@@ -142,3 +142,62 @@ export async function fetchTournamentList(): Promise<Tournament[]> {
 	const body = await res.json();
 	return (body.data as Tournament[]) ?? [];
 }
+
+
+// ============================================================================
+// PUBLIC USER PROFILE API
+// ============================================================================
+
+// Basic public user info (username, avatar)
+export async function fetchUserPublic(username: string) {
+  const res = await fetch(`${API_BASE}/api/user/${username}`, {
+    credentials: "include",
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch user");
+
+  const body = await res.json();
+  if (!body.success) throw new Error(body.message || "User not found");
+
+  return body.data; // { username, avatar, ... }
+}
+
+// Online status (boolean)
+export async function fetchUserOnline(username: string) {
+  const res = await fetch(`${API_BASE}/api/user/online/${username}`, {
+    credentials: "include",
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch online status");
+
+  const body = await res.json();
+  return Boolean(body.data); // backend returns actual boolean
+}
+
+// Match history (requires backend support)
+export async function fetchUserMatches(username: string) {
+  const res = await fetch(`${API_BASE}/api/user/${username}/matches`, {
+    credentials: "include",
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch match history");
+
+  const body = await res.json();
+  if (!body.success) throw new Error(body.message || "Could not load matches");
+
+  return body.data; // list of matches
+}
+
+// Stats (wins, losses, etc)
+export async function fetchUserStats(username: string) {
+  const res = await fetch(`${API_BASE}/api/user/${username}/stats`, {
+    credentials: "include",
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch stats");
+
+  const body = await res.json();
+  if (!body.success) throw new Error(body.message || "Could not load stats");
+
+  return body.data; // {wins, losses, totalMatches}
+}
