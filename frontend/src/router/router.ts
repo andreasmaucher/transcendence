@@ -1,9 +1,9 @@
 // src/router/router.ts
 import { fetchMe } from "../api/http";
 
-export type View =
-  | ((container: HTMLElement) => void | (() => void) | Promise<void | (() => void)>)
-  | ((container: HTMLElement, username: string) => void | (() => void) | Promise<void | (() => void)>);
+export type View = (
+  container: HTMLElement,
+  username?: string ) => void | (() => void) | Promise<void | (() => void)>;
 
 export type Routes = Record<string, View>;
 
@@ -66,7 +66,7 @@ async function render() {
     const hash = fullHash.split("?")[0];
 
     // ===========================================================
-    // NEW: Dynamic user profile route: #/user/<username>
+    //  Dynamic user profile route: #/user/<username>
     // ===========================================================
     if (hash.startsWith("#/user/")) {
       const username = hash.replace("#/user/", "").trim();
