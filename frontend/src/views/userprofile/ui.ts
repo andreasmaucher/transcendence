@@ -11,13 +11,14 @@ import {
 
 import { userData } from "../../config/constants";
 import { API_BASE } from "../../config/endpoints";
+import { sendMessage } from "../../chat/chatHandler";
 
 export async function renderUserProfile(container: HTMLElement, username: string) {
   container.innerHTML = "";
   let cancelled = false;
 
   // ============================================================
-  // Normalize nullable arrays so TypeScript STOPs complaining
+  // Normalize nullable arrays so TypeScript stops complaining
   // ============================================================
   if (!Array.isArray(userData.friends)) userData.friends = [];
   if (!Array.isArray(userData.blockedUsers)) userData.blockedUsers = [];
@@ -111,12 +112,13 @@ export async function renderUserProfile(container: HTMLElement, username: string
     content.append(headerRow);
 
     // =============================================================================
-    // FRIEND + CHALLENGE BUTTONS
+    // FRIEND + CHALLENGE + BLOCK BUTTONS
     // =============================================================================
     if (user.username !== userData.username) {
       const actionRow = document.createElement("div");
       actionRow.style.display = "flex";
       actionRow.style.gap = "10px";
+      actionRow.style.flexWrap = "wrap";
       actionRow.style.justifyContent = "center";
       actionRow.style.marginBottom = "1rem";
 
@@ -131,7 +133,6 @@ export async function renderUserProfile(container: HTMLElement, username: string
 
       friendBtn.onclick = async () => {
         friendBtn.disabled = true;
-
         try {
           if (isFriend) {
             await fetch(`${API_BASE}/api/user/remove-friend`, {
@@ -143,11 +144,8 @@ export async function renderUserProfile(container: HTMLElement, username: string
                 friend: user.username,
               }),
             });
-
-            // Remove friend
             const idx = friends.indexOf(user.username);
             if (idx !== -1) friends.splice(idx, 1);
-
           } else {
             await fetch(`${API_BASE}/api/user/add-friend`, {
               method: "POST",
@@ -158,18 +156,15 @@ export async function renderUserProfile(container: HTMLElement, username: string
                 friend: user.username,
               }),
             });
-
-            // Add friend
             friends.push(user.username);
           }
 
-          const updated = friends.includes(user.username);
-          friendBtn.textContent = updated ? "Remove Friend" : "Add Friend";
-
+          friendBtn.textContent = friends.includes(user.username)
+            ? "Remove Friend"
+            : "Add Friend";
         } catch (err) {
           console.error(err);
         }
-
         friendBtn.disabled = false;
       };
 
@@ -181,12 +176,40 @@ export async function renderUserProfile(container: HTMLElement, username: string
       const challengeBtn = document.createElement("button");
       challengeBtn.className = "tournament-row-btn";
       challengeBtn.textContent = "⚔ Challenge";
-
       challengeBtn.onclick = () => {
         alert(`Challenge sent to ${user.username}!`);
       };
-
       actionRow.append(challengeBtn);
+
+      // --------------------------
+      // BLOCK / UNBLOCK BUTTON
+      // --------------------------
+      const isBlocked = blocked.includes(user.username);
+
+      const blockBtn = document.createElement("button");
+      blockBtn.className = "tournament-row-btn";
+      blockBtn.textContent = isBlocked ? "Unblock" : "Block";
+
+      blockBtn.onclick = () => {
+        if (isBlocked) {
+          // UNBLOCK
+          const idx = blocked.indexOf(user.username);
+          if (idx !== -1) blocked.splice(idx, 1);
+
+          sendMessage("unblock", `You've unblocked ${user.username}`, user.username);
+
+          blockBtn.textContent = "Block";
+        } else {
+          // BLOCK
+          blocked.push(user.username);
+
+          sendMessage("block", `You've blocked ${user.username}`, user.username);
+
+          blockBtn.textContent = "Unblock";
+        }
+      };
+
+      actionRow.append(blockBtn);
 
       content.append(actionRow);
     }
@@ -245,7 +268,7 @@ export async function renderUserProfile(container: HTMLElement, username: string
 
     content.append(matchesBox);
 
-  } catch (err: any) {
+  } catch (err) {
     status.textContent = "Failed to load profile.";
     console.error(err);
   }
