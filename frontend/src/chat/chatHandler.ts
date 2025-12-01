@@ -59,7 +59,7 @@ export function renderIncomingMessage(message: Message, chatMessages: HTMLElemen
 	});
 }
 
-/*export function renderBlockMessage(blockedUser: string, chatMessages: HTMLElement) {
+export function renderBlockMessage(blockedUser: string, chatMessages: HTMLElement) {
 	const item = document.createElement("div");
 	item.className = "chat-message";
 	item.style.padding = "6px 8px";
@@ -75,7 +75,7 @@ export function renderIncomingMessage(message: Message, chatMessages: HTMLElemen
 	requestAnimationFrame(() => {
 		chatMessages.scrollTop = chatMessages.scrollHeight;
 	});
-}*/
+}
 
 export function renderBlockedByMessage(blockedByUser: string, chatMessages: HTMLElement) {
 	const item = document.createElement("div");
@@ -349,7 +349,9 @@ export function appendMessageToHistory(message: Message): void {
 		userData.chatHistory!.global.push(message);
 		return;
 	}
-	if (message.type === "direct") {
+	if (message.type === "direct" || 
+		(message.type === "blockedByMeMessage" && message.sender === userData.username) || 
+		(message.type === "blockedByOthersMessage" && message.sender === userData.username)) {
 		const otherUser = message.sender === userData.chatHistory!.user ? message.receiver : message.sender;
 		if (!otherUser) return;
 		if (!userData.chatHistory!.private.has(otherUser)) userData.chatHistory!.private.set(otherUser, []);

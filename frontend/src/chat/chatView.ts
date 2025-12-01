@@ -1,6 +1,6 @@
 import { blockedUsers, generalData, userData } from "../config/constants";
 import { API_BASE } from "../config/endpoints";
-import { populateChatWindow, populateOnlineUserList, sendMessage, setupPrivateChathistory, wireIncomingChat } from "./chatHandler";
+import { populateChatWindow, populateOnlineUserList, renderBlockMessage, sendMessage, setupPrivateChathistory, wireIncomingChat } from "./chatHandler";
 import { Message } from "./types";
 
 export function updateLocalBlockState(
