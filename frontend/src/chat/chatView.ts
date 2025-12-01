@@ -1,6 +1,6 @@
 import { blockedUsers, generalData, userData } from "../config/constants";
 import { API_BASE } from "../config/endpoints";
-import { populateChatWindow, populateOnlineUserList, renderBlockedByMessage, renderBlockMessage, sendMessage, setupPrivateChathistory, wireIncomingChat } from "./chatHandler";
+import { populateChatWindow, populateOnlineUserList, sendMessage, setupPrivateChathistory, wireIncomingChat } from "./chatHandler";
 import { Message } from "./types";
 
 export function updateLocalBlockState(
@@ -47,7 +47,7 @@ export function populatePrivateConv(username: string, privateMessages: Message[]
 
 		if (msg.type === "block" || msg.type === "unblock") {
 			updateLocalBlockState(blockedUsersLocal, msg.sender!, msg.receiver!, msg.type);
-
+			
 			if (msg.sender === username){
 				const index = blockedByThem.indexOf(msg.receiver!);
 				if (msg.type === "block") {
@@ -71,6 +71,9 @@ export function populatePrivateConv(username: string, privateMessages: Message[]
 
 		const targetBlockedSender =
 			blockedUsersLocal.get(msg.receiver!)?.includes(msg.sender!) ?? false;
+
+		if ((msg.type === "blockedByMeMessage" || msg.type === "blockedByOthersMessage") && msg.sender === userData.username)
+			privateConvs.get(otherUser)!.push(msg);
 
 		if (senderBlockedTarget || targetBlockedSender) {
 			continue;
@@ -109,7 +112,7 @@ export async function fetchUserData() {
 	userData.chatHistory = {
 		user: chatHistory.user,
 		global: chatHistory.global,
-		private: populatePrivateConv(chatHistory.user, chatHistory.private),
+		private: await populatePrivateConv(chatHistory.user, chatHistory.private),
 		tournament: chatHistory.tournament,
 	};
 
@@ -160,10 +163,9 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	await fetchOnlineUsers();
 	if (!userData.chatHistory) console.log("[CHAT] Error retrieving chat history");
 
-	//const onlineUserlist: string[] = ["Global Chat"];
-	userData.activePrivateChat
 	// LIVE CHAT /; ///////////////////////////////////////////////////////////////
 	// MAIN CHAT PANEL (Container für Chat + Friends)
+
 	const panel = document.createElement("div");
 	panel.id = "chat-panel";
 	panel.style.position = "fixed";
@@ -312,9 +314,9 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	// MINIMIZE CHAT
 	// Minimize button
 	const toggleBtn = document.createElement("div");
-	toggleBtn.textContent = "–";
+	toggleBtn.textContent = "+";
 	toggleBtn.style.position = "absolute";
-	toggleBtn.style.top = "5px";
+	toggleBtn.style.top = "5px"
 	toggleBtn.style.right = "8px";
 	toggleBtn.style.cursor = "pointer";
 	toggleBtn.style.fontSize = "22px";
@@ -365,10 +367,10 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 		else {
 			if (userData.blockedUsers?.includes(userData.activePrivateChat!)) {
 				console.log(`Message to ${userData.activePrivateChat} should be blocked`);
-				renderBlockMessage(userData.activePrivateChat!, chatMessages);
+				sendMessage("blockedByMeMessage", '', userData.activePrivateChat);
 			} else if (userData.blockedByUsers?.includes(userData.activePrivateChat!)) {
 				console.log(`${userData.activePrivateChat} blocked you`);
-				renderBlockedByMessage(userData.activePrivateChat!, chatMessages);
+				sendMessage("blockedByOthersMessage", '', userData.activePrivateChat);
 			}
 			else
 				sendMessage("direct", input.value, userData.activePrivateChat);

@@ -33,13 +33,25 @@ export function renderIncomingMessage(message: Message, chatMessages: HTMLElemen
 	item.style.borderRadius = "4px";
 	item.style.cursor = "pointer";
 
-	item.innerHTML = `
-	<div style="display:flex; justify-content:space-between; font-size:12px; color: #00ffc8;">
-		<strong>${message.sender}</strong>
-		<small style="color: #66ffc8;">${message.sentAt}</small>
-	</div>
-	<span style="color: #66ffc8;">${message.content}</span>
-	`;
+	if (message.type === "blockedByMeMessage") {
+		item.style.background = "rgba(150, 0, 0, 0.4)";
+		item.innerHTML =
+			`<span style="color: #ff0000; font-weight: bold;">You've blocked ${message.receiver}. No Conversation possible!</span>`;
+	}
+	else if (message.type === "blockedByOthersMessage"){
+		item.style.background = "rgba(255, 170, 0, 0.15)";
+		item.innerHTML =
+			//OLD RED `<span style="color: #ff0000; font-weight: bold;">You've been blocked by ${blockedByUser}. No Conversation possible!</span>`;
+			`<span style="color: #ffaa00; font-weight: bold;">You have been blocked by ${message.receiver}. Message cannot be sent.</span>`;
+	} else {
+		item.innerHTML = `
+			<div style="display:flex; justify-content:space-between; font-size:12px; color: #00ffc8;">
+				<strong>${message.sender}</strong>
+				<small style="color: #66ffc8;">${message.sentAt}</small>
+			</div>
+			<span style="color: #66ffc8;">${message.content}</span>
+			`;
+	}
 
 	chatMessages.append(item);
 	requestAnimationFrame(() => {
@@ -47,7 +59,7 @@ export function renderIncomingMessage(message: Message, chatMessages: HTMLElemen
 	});
 }
 
-export function renderBlockMessage(blockedUser: string, chatMessages: HTMLElement) {
+/*export function renderBlockMessage(blockedUser: string, chatMessages: HTMLElement) {
 	const item = document.createElement("div");
 	item.className = "chat-message";
 	item.style.padding = "6px 8px";
@@ -63,7 +75,7 @@ export function renderBlockMessage(blockedUser: string, chatMessages: HTMLElemen
 	requestAnimationFrame(() => {
 		chatMessages.scrollTop = chatMessages.scrollHeight;
 	});
-}
+}*/
 
 export function renderBlockedByMessage(blockedByUser: string, chatMessages: HTMLElement) {
 	const item = document.createElement("div");
@@ -391,8 +403,6 @@ export function wireIncomingChat(
 					}
 					case "block": {
 						if (msg.receiver === userData.username) {
-							if (userData.activePrivateChat === msg.sender)
-								renderBlockedByMessage(msg.sender, chatMessages); 
 							userData.blockedByUsers = addUserToList(msg.sender, userData.blockedByUsers);
 						}
 						appendMessageToHistory(msg);
@@ -405,6 +415,34 @@ export function wireIncomingChat(
 						appendMessageToHistory(msg);
 						break;
 					}
+					case "blockedByMeMessage": {
+						if (userData.activePrivateChat === msg.receiver) {
+								console.log(`blockedByMeMessage from ${msg.sender} for ${msg.receiver}`);
+								renderIncomingMessage(msg, chatMessages);
+						}
+						/*if (msg.sender === userData.username) {
+							if (userData.activePrivateChat === msg.receiver) {
+								console.log(`blockedByMeMessage from ${msg.sender} for ${msg.receiver}`);
+								renderIncomingMessage(msg, chatMessages);
+							}
+						}*/
+						appendMessageToHistory(msg);
+						break;
+						}
+					case "blockedByOthersMessage": {
+						if (userData.activePrivateChat === msg.receiver){
+								console.log(`blockedByOthersMessage from ${msg.sender} for ${msg.receiver}`);
+								renderIncomingMessage(msg, chatMessages);
+							}
+						/*if (msg.sender === userData.username) {
+							if (userData.activePrivateChat === msg.receiver){
+								console.log(`blockedByOthersMessage from ${msg.sender} for ${msg.receiver}`);
+								renderIncomingMessage(msg, chatMessages);
+							}
+						}*/
+						appendMessageToHistory(msg);
+						break;
+						}
 				}
 			}
 

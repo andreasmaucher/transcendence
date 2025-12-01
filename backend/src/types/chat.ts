@@ -7,7 +7,10 @@ export type ChatEvent =
 	| "tournament"
 	| "profile-link"
 	| "block"
-	| "unblock";
+	| "unblock"
+	| "blockedByMeMessage"
+	| "blockedByOthersMessage"
+;
 
 export type ChatMessage = {
 	id: string;
