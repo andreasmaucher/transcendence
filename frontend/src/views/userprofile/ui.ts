@@ -16,6 +16,15 @@ export async function renderUserProfile(container: HTMLElement, username: string
   container.innerHTML = "";
   let cancelled = false;
 
+  // ============================================================
+  // Normalize nullable arrays so TypeScript STOPs complaining
+  // ============================================================
+  if (!Array.isArray(userData.friends)) userData.friends = [];
+  if (!Array.isArray(userData.blockedUsers)) userData.blockedUsers = [];
+
+  const friends = userData.friends;          // guaranteed string[]
+  const blocked = userData.blockedUsers;     // guaranteed string[]
+
   // SCREEN
   const root = document.createElement("div");
   root.className = "tournament-screen";
@@ -102,15 +111,19 @@ export async function renderUserProfile(container: HTMLElement, username: string
     content.append(headerRow);
 
     // =============================================================================
-    // FRIENDSHIP BUTTONS
+    // FRIEND + CHALLENGE BUTTONS
     // =============================================================================
     if (user.username !== userData.username) {
-      const friendRow = document.createElement("div");
-      friendRow.style.display = "flex";
-      friendRow.style.justifyContent = "center";
-      friendRow.style.marginBottom = "1rem";
+      const actionRow = document.createElement("div");
+      actionRow.style.display = "flex";
+      actionRow.style.gap = "10px";
+      actionRow.style.justifyContent = "center";
+      actionRow.style.marginBottom = "1rem";
 
-      const isFriend = userData.friends?.includes(user.username);
+      // --------------------------
+      // FRIEND BUTTON
+      // --------------------------
+      const isFriend = friends.includes(user.username);
 
       const friendBtn = document.createElement("button");
       friendBtn.className = "tournament-row-btn";
@@ -131,7 +144,10 @@ export async function renderUserProfile(container: HTMLElement, username: string
               }),
             });
 
-            userData.friends = userData.friends.filter((f) => f !== user.username);
+            // Remove friend
+            const idx = friends.indexOf(user.username);
+            if (idx !== -1) friends.splice(idx, 1);
+
           } else {
             await fetch(`${API_BASE}/api/user/add-friend`, {
               method: "POST",
@@ -143,11 +159,12 @@ export async function renderUserProfile(container: HTMLElement, username: string
               }),
             });
 
-            userData.friends.push(user.username);
+            // Add friend
+            friends.push(user.username);
           }
 
-          const nowFriend = userData.friends.includes(user.username);
-          friendBtn.textContent = nowFriend ? "Remove Friend" : "Add Friend";
+          const updated = friends.includes(user.username);
+          friendBtn.textContent = updated ? "Remove Friend" : "Add Friend";
 
         } catch (err) {
           console.error(err);
@@ -156,8 +173,22 @@ export async function renderUserProfile(container: HTMLElement, username: string
         friendBtn.disabled = false;
       };
 
-      friendRow.append(friendBtn);
-      content.append(friendRow);
+      actionRow.append(friendBtn);
+
+      // --------------------------
+      // CHALLENGE BUTTON
+      // --------------------------
+      const challengeBtn = document.createElement("button");
+      challengeBtn.className = "tournament-row-btn";
+      challengeBtn.textContent = "⚔ Challenge";
+
+      challengeBtn.onclick = () => {
+        alert(`Challenge sent to ${user.username}!`);
+      };
+
+      actionRow.append(challengeBtn);
+
+      content.append(actionRow);
     }
 
     // =============================================================================
