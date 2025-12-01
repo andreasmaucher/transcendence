@@ -41,7 +41,6 @@ export function renderIncomingMessage(message: Message, chatMessages: HTMLElemen
 	else if (message.type === "blockedByOthersMessage"){
 		item.style.background = "rgba(255, 170, 0, 0.15)";
 		item.innerHTML =
-			//OLD RED `<span style="color: #ff0000; font-weight: bold;">You've been blocked by ${blockedByUser}. No Conversation possible!</span>`;
 			`<span style="color: #ffaa00; font-weight: bold;">You have been blocked by ${message.receiver}. Message cannot be sent.</span>`;
 	} else {
 		item.innerHTML = `
@@ -83,12 +82,10 @@ export function renderBlockedByMessage(blockedByUser: string, chatMessages: HTML
 	item.style.padding = "6px 8px";
 	item.style.marginBottom = "6px";
 	item.style.background = "rgba(255, 170, 0, 0.15)";
-	//OLD RED item.style.background = "rgba(150, 0, 0, 0.4)";
 	item.style.borderRadius = "4px";
 	item.style.cursor = "pointer";
 
 	item.innerHTML =
-	//OLD RED `<span style="color: #ff0000; font-weight: bold;">You've been blocked by ${blockedByUser}. No Conversation possible!</span>`;
 	`<span style="color: #ffaa00; font-weight: bold;">You have been blocked by ${blockedByUser}. Message cannot be sent.</span>`;
 
 	chatMessages.append(item);
@@ -271,9 +268,10 @@ export function renderOnlineUsers(
 		// Create onlineUserList
 		userItem.onclick = () => {
 			userData.activePrivateChat = username;
+			localStorage.setItem('activePrivateChat', username);
 			renderOnlineUsers(friendList, chatMessages, chatHeader);
 			chatMessages.innerHTML = "";
-			populateChatWindow(userData.chatHistory!, chatMessages, username);
+			populateChatWindow(userData.chatHistory!, chatMessages);
 			renderChatHeaderButtons(chatHeader, userData.activePrivateChat);
 		};
 		friendList.append(userItem);
@@ -327,17 +325,18 @@ export function addUserToList(userToBlock: string, list: string[] | null): strin
 export function populateChatWindow(
 	chatHistory: chatHistory,
 	chatMessages: HTMLElement,
-	username: string
 ) {
 	chatMessages.innerHTML = "";
 
 	let chatHistoryToAdd: Message[] = [];
-	if (userData.activePrivateChat === "Global Chat") {
+	const activeChat = userData.activePrivateChat;
+
+	if (activeChat === "Global Chat") {
 		chatHistoryToAdd = chatHistory.global;
 		console.log("GlobalChatHistory should be loaded!");
 	} else {
-		chatHistoryToAdd = setupPrivateChathistory(username);
-		console.log(`private chatHistory for ${userData.activePrivateChat} loaded!`);
+		chatHistoryToAdd = setupPrivateChathistory(activeChat!);
+		console.log(`private chatHistory for ${activeChat} loaded!`);
 	}
 	chatHistoryToAdd.forEach((message) => {
 		renderIncomingMessage(message, chatMessages);
@@ -377,9 +376,18 @@ export function wireIncomingChat(
 
 	const previousHandler = ws.onmessage;
 
+	const savedChatPartner = localStorage.getItem('activeChatPartner');
+	if (savedChatPartner) {
+		userData.activePrivateChat = savedChatPartner;
+	} else if (!userData.activePrivateChat){
+		userData.activePrivateChat = "Global Chat";
+	}
+
+
 	generalData.onlineUsers = populateOnlineUserList(userData.username);
-	populateChatWindow(userData.chatHistory!, chatMessages, userData.username!);
+	populateChatWindow(userData.chatHistory!, chatMessages);
 	renderOnlineUsers(friendList, chatMessages, chatHeader);
+	renderChatHeaderButtons(chatHeader, userData.activePrivateChat);
 
 	ws.onmessage = (event) => {
 		try {
@@ -422,12 +430,6 @@ export function wireIncomingChat(
 								console.log(`blockedByMeMessage from ${msg.sender} for ${msg.receiver}`);
 								renderIncomingMessage(msg, chatMessages);
 						}
-						/*if (msg.sender === userData.username) {
-							if (userData.activePrivateChat === msg.receiver) {
-								console.log(`blockedByMeMessage from ${msg.sender} for ${msg.receiver}`);
-								renderIncomingMessage(msg, chatMessages);
-							}
-						}*/
 						appendMessageToHistory(msg);
 						break;
 						}
@@ -436,12 +438,6 @@ export function wireIncomingChat(
 								console.log(`blockedByOthersMessage from ${msg.sender} for ${msg.receiver}`);
 								renderIncomingMessage(msg, chatMessages);
 							}
-						/*if (msg.sender === userData.username) {
-							if (userData.activePrivateChat === msg.receiver){
-								console.log(`blockedByOthersMessage from ${msg.sender} for ${msg.receiver}`);
-								renderIncomingMessage(msg, chatMessages);
-							}
-						}*/
 						appendMessageToHistory(msg);
 						break;
 						}
