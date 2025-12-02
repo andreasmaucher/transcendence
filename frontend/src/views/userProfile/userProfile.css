@@ -23,7 +23,8 @@
 
 /* Push the whole profile downward */
 .user-profile-root {
-  margin-top: 6rem;   
+  margin-top: 6rem; 
+}
 
 
 .user-profile-root {
@@ -195,7 +196,8 @@
     0 0 22px rgba(134,107,255,0.45);
 }
 
-
+/* Add/Remove Friend (NOT secondary)
+   → GREEN glow on hover */
 .profile-actions .profile-action-btn:not(.secondary):hover {
   background-color: var(--green-bg);
   border-color: var(--green-border);
@@ -204,7 +206,8 @@
     0 0 22px rgba(0,255,120,0.35);
 }
 
-
+/* Block/Unblock (secondary)
+   → RED glow on hover */
 .profile-action-btn.secondary {
   border-color: rgba(134,107,255,0.55);
   background: rgba(134,107,255,0.08);

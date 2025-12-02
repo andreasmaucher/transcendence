@@ -1,49 +1,45 @@
-// src/views/profile/ui.ts
+import "./profile.css";
 import { fetchMe, updateUser } from "../../api/http";
 import { navigate } from "../../router/router";
 import { updateTopBar } from "../topbar/ui";
 import { t } from "../../i18n";
+import { userData } from "../../config/constants";
+import { API_BASE } from "../../config/endpoints";
 
-export function renderProfile(container: HTMLElement) {
+export async function renderProfile(container: HTMLElement) {
   container.innerHTML = "";
   let cancelled = false;
 
-  // SCREEN
   const root = document.createElement("div");
-  root.className = "tournament-screen";
+  root.className = "profile-screen";
   container.append(root);
 
-  // BOX
-  const box = document.createElement("div");
-  box.className = "tournament-box";
-  root.append(box);
+  const panel = document.createElement("div");
+  panel.className = "profile-panel";
+  root.append(panel);
 
-  // HEADER
   const header = document.createElement("div");
-  header.className = "tournament-header";
-  box.append(header);
+  header.className = "profile-header";
+  panel.append(header);
 
   const title = document.createElement("h1");
-  title.className = "tournament-title";
   title.textContent = t("profile.title");
   header.append(title);
 
   const back = document.createElement("button");
-  back.className = "tournament-back-btn";
+  back.className = "profile-back-btn";
   back.textContent = t("profile.backToMenu");
   back.onclick = () => navigate("#/menu");
   header.append(back);
 
-  // STATUS
   const status = document.createElement("div");
-  status.className = "tournament-status";
+  status.className = "profile-status";
   status.textContent = t("profile.loading");
-  box.append(status);
+  panel.append(status);
 
-  // CONTENT LIST
   const content = document.createElement("div");
-  content.className = "tournament-list";
-  box.append(content);
+  content.className = "profile-content";
+  panel.append(content);
 
   (async () => {
     const me = await fetchMe();
@@ -53,170 +49,179 @@ export function renderProfile(container: HTMLElement) {
     }
 
     status.textContent = "";
-    let username = me.username;
-    let avatarSrc = me.avatar || "/default-avatar.png";
     content.innerHTML = "";
 
-    //
-    // AVATAR ROW
-    //
-    const avatarRow = document.createElement("div");
-    avatarRow.className = "tournament-row";
-    avatarRow.style.flexDirection = "column";
-    avatarRow.style.alignItems = "center";
+    let username = me.username;
+    let avatarSrc = me.avatar || "/default-avatar.png";
+
+    // ============================================================
+    // CARD: AVATAR + BASIC INFO
+    // ============================================================
+    const avatarCard = document.createElement("div");
+    avatarCard.className = "profile-card";
+    content.append(avatarCard);
+
+    const avatarWrapper = document.createElement("div");
+    avatarWrapper.className = "profile-avatar-wrapper";
 
     const avatar = document.createElement("img");
     avatar.src = avatarSrc;
-    avatar.width = 140;
-    avatar.height = 140;
-    avatar.style.borderRadius = "50%";
-    avatar.style.objectFit = "cover";
-    avatar.style.border = "2px solid #ff2ea6";
-    avatar.style.marginBottom = "1rem";
+    avatar.className = "profile-avatar";
 
-    // Hidden file input
     const avatarInput = document.createElement("input");
     avatarInput.type = "file";
     avatarInput.accept = "image/*";
     avatarInput.style.display = "none";
 
-    // Pretty upload button
-    const uploadBtn = document.createElement("button");
-    uploadBtn.className = "tournament-row-btn";
-    uploadBtn.textContent = t("profile.changeAvatar");
-    uploadBtn.style.marginTop = "0.6rem";
+    const overlayBtn = document.createElement("div");
+    overlayBtn.className = "profile-avatar-edit";
+    overlayBtn.textContent = "✎";
+    overlayBtn.onclick = () => avatarInput.click();
 
-    uploadBtn.onclick = () => avatarInput.click();
-
-    avatarInput.onchange = () => {
+    avatarInput.onchange = async () => {
       const file = avatarInput.files?.[0];
       if (!file) return;
+
       const reader = new FileReader();
-      reader.onload = () => {
+      reader.onload = async () => {
         avatarSrc = reader.result as string;
         avatar.src = avatarSrc;
+
+        try {
+          await updateUser({ username, newAvatar: avatarSrc });
+          await updateTopBar();
+        } catch (e) {
+          console.error("Failed to update avatar", e);
+        }
       };
       reader.readAsDataURL(file);
     };
 
-    avatarRow.append(avatar, uploadBtn, avatarInput);
-    content.append(avatarRow);
+    avatarWrapper.append(avatar, overlayBtn, avatarInput);
 
-    //
-    // USERNAME ROW
-    //
-    const userRow = document.createElement("div");
-    userRow.className = "tournament-row";
-    userRow.style.flexDirection = "column";
+    const uname = document.createElement("div");
+    uname.className = "profile-username";
+    uname.textContent = username;
 
-    const userInput = document.createElement("input");
-    userInput.type = "text";
-    userInput.value = username;
+    const joined = document.createElement("div");
+    joined.className = "profile-subtext";
+    joined.textContent =
+      t("profile.joined") + new Date(me.created_at).toLocaleDateString();
 
-    userInput.style.padding = "8px";
-    userInput.style.borderRadius = "6px";
-    userInput.style.border = "1px solid #ff2cfb55";
-    userInput.style.background = "rgba(0,0,0,0.35)";
-    userInput.style.color = "#ff6bff";
+    avatarCard.append(avatarWrapper, uname, joined);
 
-    userRow.append(userInput);
-    content.append(userRow);
+    // ============================================================
+    // CARD: CHANGE PASSWORD
+    // ============================================================
+    const passCard = document.createElement("div");
+    passCard.className = "profile-card";
+    content.append(passCard);
 
-    //
-    // PASSWORD ROW
-    //
-    const passRow = document.createElement("div");
-    passRow.className = "tournament-row";
-    passRow.style.flexDirection = "column";
+    const passHeader = document.createElement("div");
+    passHeader.className = "profile-section-title";
+    passHeader.textContent = t("profile.changePassword");
+    passCard.append(passHeader);
+
+    const passSection = document.createElement("div");
+    passSection.style.display = "flex";
+    passSection.style.flexDirection = "column";
+    passCard.append(passSection);
 
     const newPass = document.createElement("input");
     newPass.type = "password";
     newPass.placeholder = t("profile.newPassword");
-
-    Object.assign(newPass.style, {
-      padding: "8px",
-      borderRadius: "6px",
-      border: "1px solid #ff2cfb55",
-      background: "rgba(0,0,0,0.35)",
-      color: "#ff6bff",
-      marginBottom: "0.6rem",
-    });
+    newPass.className = "profile-input";
 
     const confirmPass = document.createElement("input");
     confirmPass.type = "password";
     confirmPass.placeholder = t("profile.confirmPassword");
+    confirmPass.className = "profile-input";
 
-    Object.assign(confirmPass.style, {
-      padding: "8px",
-      borderRadius: "6px",
-      border: "1px solid #ff2cfb55",
-      background: "rgba(0,0,0,0.35)",
-      color: "#ff6bff",
-    });
+    const passSave = document.createElement("button");
+    passSave.className = "profile-btn";
+    passSave.textContent = t("profile.savePassword");
 
-    passRow.append(newPass, confirmPass);
-    content.append(passRow);
+    const passMsg = document.createElement("div");
+    passMsg.className = "profile-message";
 
-    //
-    // MESSAGE AREA
-    //
-    const message = document.createElement("div");
-    message.style.marginTop = "0.5rem";
-    message.style.textAlign = "center";
-    box.append(message);
-
-    //
-    // SAVE BUTTON
-    //
-    const save = document.createElement("button");
-    save.className = "tournament-create-btn";
-    save.textContent = t("profile.saveChanges");
-
-    save.onclick = async () => {
-      save.disabled = true;
-      message.textContent = "";
+    passSave.onclick = async () => {
+      passSave.disabled = true;
+      passMsg.textContent = "";
 
       try {
-        const newName = userInput.value.trim();
-
-        if (newName && newName !== username) {
-          await updateUser({ username, newUsername: newName });
-          username = newName;
+        if (newPass.value !== confirmPass.value) {
+          passMsg.textContent = t("profile.passwordsNoMatch");
+          passSave.disabled = false;
+          return;
         }
 
-        if (avatarSrc !== me.avatar) {
-          await updateUser({ username, newAvatar: avatarSrc });
+        if (newPass.value.length < 4) {
+          passMsg.textContent = t("profile.passwordTooShort");
+          passSave.disabled = false;
+          return;
         }
 
-        if (newPass.value || confirmPass.value) {
-          if (newPass.value !== confirmPass.value) {
-            message.textContent = t("profile.passwordsNoMatch");
-            save.disabled = false;
-            return;
-          }
-
-          if (newPass.value.length < 4) {
-            message.textContent = t("profile.passwordTooShort");
-            save.disabled = false;
-            return;
-          }
-
-          await updateUser({ username, newPassword: newPass.value });
-        }
-
-        await updateTopBar();
-        message.textContent = t("profile.saved");
-
+        await updateUser({ username, newPassword: newPass.value });
+        passMsg.textContent = t("profile.saved");
         newPass.value = "";
         confirmPass.value = "";
-      } catch (err: any) {
-        message.textContent = err?.message || t("profile.updateFailed");
-      } finally {
-        save.disabled = false;
+      } catch (e) {
+        passMsg.textContent = t("profile.updateFailed");
       }
+
+      passSave.disabled = false;
     };
 
-    box.append(save);
+    passSection.append(newPass, confirmPass, passSave, passMsg);
+
+    // ============================================================
+    // CARD: FRIEND LIST
+    // ============================================================
+    const friendsCard = document.createElement("div");
+    friendsCard.className = "profile-card";
+    content.append(friendsCard);
+
+    const fTitle = document.createElement("div");
+    fTitle.className = "profile-section-title";
+    fTitle.textContent = t("profile.friends");
+    friendsCard.append(fTitle);
+
+    if (!userData.friends?.length) {
+      const none = document.createElement("div");
+      none.textContent = t("profile.noFriends");
+      none.className = "profile-subtext";
+      friendsCard.append(none);
+    } else {
+      const list = document.createElement("div");
+      list.className = "profile-friend-list";
+
+      for (const friend of userData.friends) {
+        const row = document.createElement("div");
+        row.className = "profile-friend-row";
+        row.onclick = () => navigate(`#/user/${friend}`);
+
+        const fav = document.createElement("img");
+        fav.className = "profile-friend-avatar";
+        fav.src = "/default-avatar.png";
+
+        fetch(`${API_BASE}/api/user/${friend}`, { credentials: "include" })
+          .then(r => r.json())
+          .then(b => {
+            if (b.success && b.data.avatar) fav.src = b.data.avatar;
+          })
+          .catch(() => {});
+
+        const fn = document.createElement("span");
+        fn.textContent = friend;
+        fn.className = "profile-friend-name";
+
+        row.append(fav, fn);
+        list.append(row);
+      }
+
+      friendsCard.append(list);
+    }
+
   })();
 
   return () => {
