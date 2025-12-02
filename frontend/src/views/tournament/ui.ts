@@ -4,129 +4,129 @@ import { t } from "../../i18n";
 import "./tournament.css";
 
 export async function renderTournament(container: HTMLElement) {
-  container.innerHTML = "";
-  let cancelled = false;
+	container.innerHTML = "";
+	let cancelled = false;
 
-  // SCREEN 
-  const root = document.createElement("div");
-  root.className = "tournament-screen";
-  container.append(root);
+	// SCREEN
+	const root = document.createElement("div");
+	root.className = "tournament-screen";
+	container.append(root);
 
-  // BOX 
-  const box = document.createElement("div");
-  box.className = "tournament-box";
-  root.append(box);
+	// BOX
+	const box = document.createElement("div");
+	box.className = "tournament-box";
+	root.append(box);
 
-  // HEADER
-  const header = document.createElement("div");
-  header.className = "tournament-header";
-  box.append(header);
+	// HEADER
+	const header = document.createElement("div");
+	header.className = "tournament-header";
+	box.append(header);
 
-  const title = document.createElement("h1");
-  title.className = "tournament-title";
-  title.textContent = t("tournaments.title");
-  header.append(title);
+	const title = document.createElement("h1");
+	title.className = "tournament-title";
+	title.textContent = t("tournaments.title");
+	header.append(title);
 
-  const backBtn = document.createElement("button");
-  backBtn.className = "tournament-back-btn";
-  backBtn.textContent = t("tournaments.back");
-  backBtn.onclick = () => navigate("#/menu");
-  header.append(backBtn);
+	const backBtn = document.createElement("button");
+	backBtn.className = "tournament-back-btn";
+	backBtn.textContent = t("tournaments.back");
+	backBtn.onclick = () => navigate("#/menu");
+	header.append(backBtn);
 
-  // STATUS
-  const status = document.createElement("div");
-  status.className = "tournament-status";
-  status.textContent = t("tournaments.loading");
-  box.append(status);
+	// STATUS
+	const status = document.createElement("div");
+	status.className = "tournament-status";
+	status.textContent = t("tournaments.loading");
+	box.append(status);
 
-  // LIST
-  const list = document.createElement("div");
-  list.className = "tournament-list";
-  box.append(list);
+	// LIST
+	const list = document.createElement("div");
+	list.className = "tournament-list";
+	box.append(list);
 
-  // CREATE BUTTON
-  const createBtn = document.createElement("button");
-  createBtn.className = "tournament-create-btn";
-  createBtn.textContent = t("tournaments.create");
-  createBtn.style.marginTop = "2rem";
-  createBtn.onclick = async () => {
-    // generate a unique tournament ID and name
-    const tournamentId = self.crypto?.randomUUID?.() || Math.random().toString(36).slice(2);
-    const me = await fetchMe();
-    const tournamentName = me ? `${me.username} Tournament` : `Tournament ${tournamentId.slice(0, 8)}`;
-    // navigate to game view in tournament mode (name will be passed via query params)
-    navigate(`#/game?mode=tournament&id=${tournamentId}&name=${encodeURIComponent(tournamentName)}`);
-  };
-  root.append(createBtn);
+	// CREATE BUTTON
+	const createBtn = document.createElement("button");
+	createBtn.className = "tournament-create-btn";
+	createBtn.textContent = t("tournaments.create");
+	createBtn.style.marginTop = "2rem";
+	createBtn.onclick = async () => {
+		// generate a unique tournament ID and name
+		const tournamentId = self.crypto?.randomUUID?.() || Math.random().toString(36).slice(2);
+		const me = await fetchMe();
+		const tournamentName = me ? `${me.username} Tournament` : `Tournament ${tournamentId.slice(0, 8)}`;
+		// navigate to game view in tournament mode (name will be passed via query params)
+		navigate(`#/game?mode=tournament&id=${tournamentId}&name=${encodeURIComponent(tournamentName)}`);
+	};
+	root.append(createBtn);
 
-  // LOAD LIST
-  async function loadTournaments() {
-    try {
-      const tournaments = await fetchTournamentList();
-      if (cancelled) return;
+	// LOAD LIST
+	async function loadTournaments() {
+		try {
+			const tournaments = await fetchTournamentList();
+			if (cancelled) return;
 
-      list.innerHTML = "";
+			list.innerHTML = "";
 
-      if (!tournaments.length) {
-        status.textContent = t("tournaments.none");
-        const empty = document.createElement("div");
-        empty.textContent = "No open tournaments";
-        list.append(empty);
-        return;
-      }
+			if (!tournaments.length) {
+				status.textContent = t("tournaments.none");
+				const empty = document.createElement("div");
+				empty.textContent = "No open tournaments";
+				list.append(empty);
+				return;
+			}
 
-      status.textContent = t("tournaments.available")(tournaments.length);
+			status.textContent = t("tournaments.available")(tournaments.length);
 
-    tournaments.forEach((tour: Tournament) => {
-      const row = document.createElement("div");
-      row.className = "tournament-row";
+			tournaments.forEach((tour: Tournament) => {
+				const row = document.createElement("div");
+				row.className = "tournament-row";
 
-      const left = document.createElement("div");
-      left.style.display = "flex";
-      left.style.flexDirection = "column";
-      left.style.gap = "0.3rem";
-      
-      const nameLine = document.createElement("div");
-      nameLine.textContent = tour.name || `Tournament #${tour.id}`;
-      nameLine.style.fontWeight = "bold";
-      
-      const statusLine = document.createElement("div");
-      statusLine.textContent = `Players: ${tour.playersJoined}/${tour.state.size}`;
-      statusLine.style.fontSize = "0.9rem";
-      statusLine.style.color = "#aaa";
-      
-      left.append(nameLine, statusLine);
-      row.append(left);
+				const left = document.createElement("div");
+				left.style.display = "flex";
+				left.style.flexDirection = "column";
+				left.style.gap = "0.3rem";
 
-      const right = document.createElement("div");
-      right.style.display = "flex";
-      right.style.gap = "0.5rem";
+				const nameLine = document.createElement("div");
+				nameLine.textContent = tour.name || `Tournament #${tour.id}`;
+				nameLine.style.fontWeight = "bold";
 
-      const joinBtn = document.createElement("button");
-      joinBtn.className = "tournament-row-btn";
-      joinBtn.textContent = t("tournaments.join");
-      joinBtn.onclick = () => {
-        navigate(`#/game?mode=tournament&id=${tour.id}`);
-      };
+				const statusLine = document.createElement("div");
+				statusLine.textContent = `Players: ${tour.playersJoined}/${tour.state.size}`;
+				statusLine.style.fontSize = "0.9rem";
+				statusLine.style.color = "#aaa";
 
-      right.append(joinBtn);
-      row.append(right);
-      list.append(row);
-      });
-    } catch (err) {
-      if (!cancelled) {
-        status.textContent = t("tournaments.failed");
-      }
-    }
-  }
+				left.append(nameLine, statusLine);
+				row.append(left);
 
-  loadTournaments();
-  // refresh tournament list every 2 seconds
-  const interval = setInterval(() => loadTournaments(), 2000);
+				const right = document.createElement("div");
+				right.style.display = "flex";
+				right.style.gap = "0.5rem";
 
-  return () => {
-    cancelled = true;
-    clearInterval(interval);
-    backBtn.onclick = null;
-  };
+				const joinBtn = document.createElement("button");
+				joinBtn.className = "tournament-row-btn";
+				joinBtn.textContent = t("tournaments.join");
+				joinBtn.onclick = () => {
+					navigate(`#/game?mode=tournament&id=${tour.id}`);
+				};
+
+				right.append(joinBtn);
+				row.append(right);
+				list.append(row);
+			});
+		} catch (err) {
+			if (!cancelled) {
+				status.textContent = t("tournaments.failed");
+			}
+		}
+	}
+
+	loadTournaments();
+	// refresh tournament list every 2 seconds
+	const interval = setInterval(() => loadTournaments(), 2000);
+
+	return () => {
+		cancelled = true;
+		clearInterval(interval);
+		backBtn.onclick = null;
+	};
 }

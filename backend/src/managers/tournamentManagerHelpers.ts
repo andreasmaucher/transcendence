@@ -1,7 +1,7 @@
 import type { Tournament } from "../types/game.js";
 import { tournaments } from "../config/structures.js";
 import { checkMatchFull, createMatch } from "./matchManager.js";
-import { Match, TournamentMatchType } from "../types/match.js";
+import { Match, Player, TournamentMatchType } from "../types/match.js";
 
 export function resetTournamentsForTest(): void {
 	tournaments.clear();
@@ -60,12 +60,12 @@ export function extractMatchWinner(match: Match): string {
 	const { players, state } = match;
 
 	if (state.winner === "left") {
-		if (players.left) return players.left;
+		if (players.left) return players.left?.username;
 		return "error";
 	}
 
 	if (state.winner === "right") {
-		if (players.right) return players.right;
+		if (players.right) return players.right?.username;
 		// If there is no right player, then it's guest
 		return "guest";
 	}
@@ -78,11 +78,11 @@ export function extractMatchLoser(match: Match): string {
 	const { players, state } = match;
 
 	if (state.winner === "left") {
-		if (players.right) return players.right;
+		if (players.right) return players.right?.username;
 		// If there is no right player, then it's guest
 		return "guest";
 	} else if (state.winner === "right") {
-		if (players.left) return players.left;
+		if (players.left) return players.left?.username;
 		return "error";
 	}
 

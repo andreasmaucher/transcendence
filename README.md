@@ -152,6 +152,7 @@ All backend endpoints return JSON format. All POST request expect the data to be
 | Method | Path                             | Description                            | Params                      | Return                        |
 |--------|----------------------------------|----------------------------------------|-----------------------------|-------------------------------|
 | `GET`  | `/api/single-games/open`         | GET req                                | None                        | All open single games         |
+| `GET`  | `/api/single-games/is-open/:id`  | Check if single game is open           | Id (single game)            | True or false                 |
 
 ## TOURNAMENT
 
@@ -161,6 +162,7 @@ All backend endpoints return JSON format. All POST request expect the data to be
 | `GET`  | `/api/tournaments/open`          | GET req                                | None                        | All open tournaments          |
 |--------|----------------------------------|----------------------------------------|-----------------------------|-------------------------------|
 | `GET`  | `/api/tournament/:id`            | GET req                                | Id (tournament)             | The tournament (if exists)    |
+| `GET`  | `/api/tournament/is-open/:id`    | Check if tournament is open            | Id (tournament)             | True or false                 |
 
 ## MATCH
 
@@ -177,6 +179,9 @@ All backend endpoints return JSON format. All POST request expect the data to be
 | `GET`  | `/api/test/print-users`          | Prints data in backend logs            | None                        | All users in database         |
 | `GET`  | `/api/test/print-matches`        | Prints data in backend logs            | None                        | All matches in database       |
 | `GET`  | `/api/test/print-tournaments`    | Prints data in backend logs            | None                        | All tournaments in database   |
+| `GET`  | `/api/test/print-tournaments2`   | With tournament player struct          | None                        | All tournaments in database   |
+| `GET`  | `/api/test/create-tournaments`   | Creates 5 test tournaments             | None                        | True or false                 |
+| `GET`  | `/api/test/create-single-games`  | Creates 5 test single games            | None                        | True or false                 |
 
 WebSocket commands from the frontend:
 

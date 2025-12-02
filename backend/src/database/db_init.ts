@@ -47,12 +47,14 @@ db.exec(`
 	CREATE TABLE IF NOT EXISTS tournaments (
 		internal_id INTEGER PRIMARY KEY AUTOINCREMENT,
 		id TEXT UNIQUE NOT NULL,
-		name TEXT UNIQUE NOT NULL,
+		name TEXT NOT NULL,
 		size INTEGER,
 		winner TEXT,
 		started_at DATETIME,
 		ended_at DATETIME,
-		notes TEXT
+		notes TEXT,
+
+		FOREIGN KEY (winner) REFERENCES users (username)
 	);
 
 	CREATE TABLE IF NOT EXISTS matches (

@@ -1,6 +1,13 @@
 import { blockedUsers, generalData, userData } from "../config/constants";
 import { API_BASE } from "../config/endpoints";
-import { populateChatWindow, populateOnlineUserList, renderBlockMessage, sendMessage, setupPrivateChathistory, wireIncomingChat } from "./chatHandler";
+import {
+	populateChatWindow,
+	populateOnlineUserList,
+	renderBlockMessage,
+	sendMessage,
+	setupPrivateChathistory,
+	wireIncomingChat,
+} from "./chatHandler";
 import { Message } from "./types";
 
 export function updateBlockState(sender: string, target: string, type: "block" | "unblock") {
@@ -24,12 +31,11 @@ export function updateBlockState(sender: string, target: string, type: "block" |
 	}
 }
 
-
 export function populatePrivateConv(username: string, privateMessages: Message[]): Map<string, Message[]> {
 	const privateConvs = new Map<string, Message[]>();
 	for (const msg of privateMessages) {
 		const otherUser = msg.sender === username ? msg.receiver : msg.sender;
-		
+
 		if (!otherUser) continue;
 
 		if (!privateConvs.has(otherUser)) {
@@ -41,11 +47,9 @@ export function populatePrivateConv(username: string, privateMessages: Message[]
 			continue;
 		}
 
-		const senderBlockedTarget =
-			blockedUsers.get(msg.sender!)?.includes(msg.receiver!) ?? false;
+		const senderBlockedTarget = blockedUsers.get(msg.sender!)?.includes(msg.receiver!) ?? false;
 
-		const targetBlockedSender =
-			blockedUsers.get(msg.receiver!)?.includes(msg.sender!) ?? false;
+		const targetBlockedSender = blockedUsers.get(msg.receiver!)?.includes(msg.sender!) ?? false;
 
 		if (senderBlockedTarget || targetBlockedSender) {
 			continue;
@@ -57,8 +61,6 @@ export function populatePrivateConv(username: string, privateMessages: Message[]
 	return privateConvs;
 }
 
-
-
 export async function fetchUserData() {
 	const response = await fetch(`${API_BASE}/api/user/data`, {
 		credentials: "include",
@@ -68,13 +70,13 @@ export async function fetchUserData() {
 		return;
 	}
 	const body: any = await response.json();
-	console.log("Raw user data response:", body);
+	//console.log("Raw user data response:", body);
 
 	if (!body.success) {
 		console.warn("Backend returned an error:", body.message);
 		return;
 	}
-	const { chatHistory, friends, blockedUsers} = body.data;
+	const { chatHistory, friends, blockedUsers } = body.data;
 
 	userData.chatHistory = {
 		user: chatHistory.user,
@@ -96,7 +98,7 @@ export async function fetchAllUsers() {
 		return;
 	}
 	const body: any = await response.json();
-	console.log("Raw all users response:", body);
+	//console.log("Raw all users response:", body);
 
 	if (!body.success) {
 		console.warn("Backend returned an error:", body.message);
@@ -115,7 +117,7 @@ export async function fetchOnlineUsers() {
 		return;
 	}
 	const body: any = await response.json();
-	console.log("Raw online users response:", body);
+	//console.log("Raw online users response:", body);
 
 	if (!body.success) {
 		console.warn("Backend returned an error:", body.message);
@@ -212,7 +214,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	friends.style.transition = "width 0.25s ease, padding 0.25s ease";
 	panel.append(friends);
 
-	// HEADER 
+	// HEADER
 	const fHeader = document.createElement("div");
 	fHeader.textContent = "Channels";
 	fHeader.style.fontWeight = "600";
@@ -250,7 +252,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 			friends.style.width = "180px";
 			friends.style.padding = "6px";
 			channelList.style.display = "block";
-			
+
 			// Header horizontal
 			fHeader.style.writingMode = "horizontal-tb";
 			fHeader.style.margin = "6px";
@@ -290,16 +292,12 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 
 	// SEND MESSAGE ONE CLICK
 	sendBtn.onclick = () => {
-
-		if (activePrivateChat.current === "Global Chat")
-			sendMessage("broadcast", input.value);
+		if (activePrivateChat.current === "Global Chat") sendMessage("broadcast", input.value);
 		else {
 			if (userData.blockedUsers?.includes(activePrivateChat.current!)) {
 				console.log(`Message to ${activePrivateChat.current} should be blocked`);
 				renderBlockMessage(activePrivateChat.current!, chatMessages);
-			}
-			else
-				sendMessage("direct", input.value, activePrivateChat.current);
+			} else sendMessage("direct", input.value, activePrivateChat.current);
 		}
 
 		input.value = "";
@@ -307,23 +305,20 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 
 	// SEND MESSAGE BY PRESSING ENTER
 	input.addEventListener("keydown", (e) => {
-	if (e.key === "Enter") {
-		e.preventDefault();
+		if (e.key === "Enter") {
+			e.preventDefault();
 
-		if (activePrivateChat.current === "Global Chat")
-			sendMessage("broadcast", input.value);
-		else {
-			if (userData.blockedUsers?.includes(activePrivateChat.current!)) {
-				console.log(`Message to ${activePrivateChat.current} should be blocked`);
-				renderBlockMessage(activePrivateChat.current!, chatMessages);
+			if (activePrivateChat.current === "Global Chat") sendMessage("broadcast", input.value);
+			else {
+				if (userData.blockedUsers?.includes(activePrivateChat.current!)) {
+					console.log(`Message to ${activePrivateChat.current} should be blocked`);
+					renderBlockMessage(activePrivateChat.current!, chatMessages);
+				} else sendMessage("direct", input.value, activePrivateChat.current);
 			}
-			else
-				sendMessage("direct", input.value, activePrivateChat.current);
-		}
 
-		input.value = "";
-	}
-});
+			input.value = "";
+		}
+	});
 
 	root.append(panel);
 
