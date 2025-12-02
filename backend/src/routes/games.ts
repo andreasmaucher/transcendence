@@ -6,15 +6,38 @@ import { getOpenTournaments } from "../managers/tournamentManagerHelpers.js";
 export default async function gamesRoutes(fastify: FastifyInstance) {
 	// GET all open games
 	fastify.get("/api/games/open", async (_request: FastifyRequest, reply: FastifyReply) => {
-		const openGames = {
-			singleGames: getOpenSingleGames(),
-			tournaments: getOpenTournaments(),
+		const openSingleGames = getOpenSingleGames();
+		const openTournaments = getOpenTournaments();
+		const data: any = {
+			openSingleGames: [],
+			openTournaments: [],
 		};
-		if (openGames.singleGames.length === 0 && openGames.tournaments.length === 0) {
-			console.error("[gamesRT] No open games");
-			return reply.code(404).send({ success: false, message: "No open games" });
-		} else {
-			return reply.code(200).send({ success: true, data: openGames });
-		}
+		data.openSingleGames = openSingleGames.map((g) => ({
+			id: g.id,
+			mode: g.mode,
+			match: {
+				id: g.match.id,
+				state: g.match.state,
+				players: g.match.players,
+				mode: g.match.mode,
+			},
+		}));
+		data.openTournaments = openTournaments.map((t) => ({
+			id: t.id,
+			name: t.name,
+			state: t.state,
+			// count players in first round matches to show in the lobby player x of 4 have joined already
+			playersJoined: (() => {
+				const round1Matches = t.matches.get(1);
+				if (!round1Matches) return 0;
+				let count = 0;
+				for (const match of round1Matches) {
+					if (match.players.left) count++;
+					if (match.players.right) count++;
+				}
+				return count;
+			})(),
+		}));
+		return reply.code(200).send({ success: true, data: data });
 	});
 }

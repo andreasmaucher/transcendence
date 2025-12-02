@@ -1,7 +1,7 @@
 // src/views/game/ui.ts
 import { type GameConstants } from "../../constants";
 import { navigate } from "../../router/router";
-import { fetchGameConstants } from "../../api/http";
+import { fetchGameConstants, fetchMe } from "../../api/http";
 import { draw } from "../../rendering/canvas";
 import { setupInputs, setActiveSocket } from "../../game/input";
 import { MatchState } from "../../types/game";
@@ -12,7 +12,6 @@ import {
 	connectToTournamentWS,
 	registerGameUiHandlers,
 } from "../../ws/game";
-import { userData } from "../../config/constants";
 import { showCountdown } from "../game/countdown";
 
 let GAME_CONSTANTS: GameConstants | null = null;
@@ -22,8 +21,7 @@ let GAME_CONSTANTS: GameConstants | null = null;
 // -------------------------------
 function createInitialState(): MatchState {
 	if (!GAME_CONSTANTS) throw new Error("Game constants not loaded");
-	const centerY =
-		(GAME_CONSTANTS.fieldHeight - GAME_CONSTANTS.paddleHeight) / 2;
+	const centerY = (GAME_CONSTANTS.fieldHeight - GAME_CONSTANTS.paddleHeight) / 2;
 
 	const left = {
 		x: GAME_CONSTANTS.paddleMargin,
@@ -34,10 +32,7 @@ function createInitialState(): MatchState {
 	};
 
 	const right = {
-		x:
-			GAME_CONSTANTS.fieldWidth -
-			GAME_CONSTANTS.paddleMargin -
-			GAME_CONSTANTS.paddleWidth,
+		x: GAME_CONSTANTS.fieldWidth - GAME_CONSTANTS.paddleMargin - GAME_CONSTANTS.paddleWidth,
 		y: centerY,
 		w: GAME_CONSTANTS.paddleWidth,
 		h: GAME_CONSTANTS.paddleHeight,
@@ -66,10 +61,7 @@ function createInitialState(): MatchState {
 	};
 }
 
-function startGameLoop(
-	canvas: HTMLCanvasElement,
-	state: MatchState
-): () => void {
+function startGameLoop(canvas: HTMLCanvasElement, state: MatchState): () => void {
 	const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
 	let running = true;
@@ -97,9 +89,7 @@ export async function renderGame(container: HTMLElement) {
 	const modeParam = params.get("mode");
 	// properly extracting mode and room id from the URL
 	const mode: "tournament" | "online" | "local" =
-		modeParam === "tournament" || modeParam === "online" || modeParam === "local"
-			? modeParam
-			: "local";
+		modeParam === "tournament" || modeParam === "online" || modeParam === "local" ? modeParam : "local";
 	const roomId = params.get("id") || undefined;
 	const tournamentName = params.get("name") || undefined;
 
@@ -195,7 +185,8 @@ export async function renderGame(container: HTMLElement) {
 	if (mode !== "local") {
 		import("../../game/input.js").then(({ onSideAssigned }) => {
 			onSideAssigned((side) => {
-				sideIndicator.textContent = side === "left" ? "You control: LEFT paddle (W/S)" : "You control: RIGHT paddle (↑/↓)";
+				sideIndicator.textContent =
+					side === "left" ? "You control: LEFT paddle (W/S)" : "You control: RIGHT paddle (↑/↓)";
 				sideIndicator.style.display = "block";
 			});
 		});
@@ -221,13 +212,11 @@ export async function renderGame(container: HTMLElement) {
 	exitBtn.style.backdropFilter = "blur(5px)";
 	exitBtn.style.cursor = "pointer";
 
-	exitBtn.style.transition =
-		"background-color 0.25s ease, box-shadow 0.25s ease, transform 0.12s ease";
+	exitBtn.style.transition = "background-color 0.25s ease, box-shadow 0.25s ease, transform 0.12s ease";
 
 	exitBtn.onmouseenter = () => {
 		exitBtn.style.backgroundColor = "rgba(255,44,251,0.15)";
-		exitBtn.style.boxShadow =
-			"0 0 14px #ff6bff, 0 0 22px #ff2cfb66";
+		exitBtn.style.boxShadow = "0 0 14px #ff6bff, 0 0 22px #ff2cfb66";
 	};
 
 	exitBtn.onmouseleave = () => {
@@ -271,7 +260,7 @@ export async function renderGame(container: HTMLElement) {
 	//
 	const state = createInitialState();
 	state.mode = mode;
-	
+
 	// create waiting overlay (only shown for online/tournament modes)
 	const waitingOverlay = document.createElement("div");
 	waitingOverlay.style.position = "absolute";

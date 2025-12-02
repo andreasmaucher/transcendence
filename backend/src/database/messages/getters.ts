@@ -9,7 +9,7 @@ export function getAllMessagesDB(): any[] {
     `);
 
 	const messages = stmt.all();
-	if (messages.length === 0) throw new Error(`[DB] No messages found`);
+	//if (messages.length === 0) throw new Error(`[DB] No messages found`);
 
 	return messages;
 }
@@ -24,7 +24,7 @@ export function getAllGlobalMessagesDB(): any[] {
     `);
 
 	const messages = stmt.all("broadcast"); // returns empty array if no messages found
-	if (messages.length === 0) throw new Error(`[DB] No global messages found`);
+	//if (messages.length === 0) throw new Error(`[DB] No global messages found`);
 
 	return messages;
 }
@@ -40,7 +40,7 @@ export function getPrivateUserMessagesDB(username: string): any[] {
     `);
 
 	const messages = stmt.all(username, username); // returns empty array if no messages found
-	if (messages.length === 0) throw new Error(`[DB] No privatemessages found`);
+	//if (messages.length === 0) throw new Error(`[DB] No privatemessages found`);
 
 	return messages;
 }
@@ -55,7 +55,7 @@ export function getUserAsSenderMessagesDB(username: string): any[] {
     `);
 
 	const messages = stmt.all(username); // returns empty array if no messages found
-	if (messages.length === 0) throw new Error(`[DB] No messages found`);
+	//if (messages.length === 0) throw new Error(`[DB] No messages found`);
 
 	return messages;
 }
@@ -70,7 +70,7 @@ export function getUserAsReceiverMessagesDB(username: string): any[] {
     `);
 
 	const messages = stmt.all(username); // returns empty array if no messages found
-	if (messages.length === 0) throw new Error(`[DB] No messages found`);
+	//if (messages.length === 0) throw new Error(`[DB] No messages found`);
 
 	return messages;
 }
@@ -106,7 +106,7 @@ export function getTournamentMessagesDB(tournamentId: string): any[] {
     `);
 
 	const messages = stmt.all("tournament", tournamentId); // returns empty array if no messages found
-	if (messages.length === 0) throw new Error(`[DB] No tournament messages found`);
+	//if (messages.length === 0) throw new Error(`[DB] No tournament messages found`);
 
 	return messages;
 }
