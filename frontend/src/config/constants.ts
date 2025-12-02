@@ -18,4 +18,4 @@ export const userData = {
 	activePrivateChat: "Global Chat" as string
 };
 
-export const blockedUsers = new Map<string, string[]>();
+//export const blockedUsers = new Map<string, string[]>();

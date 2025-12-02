@@ -18,7 +18,7 @@ export type Message = {
 	content?: string;
 	gameId?: string;
 	username?: string;
-	onlineUser?: string[];
+	//onlineUser?: string[];
 	chatHistory?: chatHistory;
 };
 

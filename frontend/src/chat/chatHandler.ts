@@ -94,6 +94,127 @@ export function renderBlockedByMessage(blockedByUser: string, chatMessages: HTML
 	});
 }
 
+async function fetchOpenGames() {
+	try {
+		const response = await fetch("/api/games/open");
+
+		if (response.status !== 200 && response.status !== 404) {
+			// Wenn der Server einen Fehler-Code sendet (z.B. 500), lesen wir den Text
+			const errorText = await response.text(); 
+			console.error("Server returned non-OK status. Response:", errorText);
+			throw new Error(`Server error: Status ${response.status}`);
+		}
+		if (response.status === 404) {
+			return { singleGames: [], tournaments: [] };
+		}
+		if(!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+
+		const result = await response.json();
+		return result.data;
+	} catch (error) {
+		console.error("Error fetching open games:", error);
+		return { singleGames: [], tournaments: [] };
+	}
+}
+
+export function removeModal() {
+	const existingModal = document.getElementById('challenge-modal-overlay');
+	if (existingModal) {
+		existingModal.remove();
+	}
+}
+
+async function handleDuelChallenge() {
+		removeModal();
+
+		const openGames = await fetchOpenGames();
+
+		const availableGames = [];
+
+		openGames.singleGames.forEach(g => {
+			availableGames.push({
+				type: 'single', 
+				id: g.id, 
+				creator: g.creator,
+				name: `Single Game #${g.gameNumber} (created by: ${g.creator})` 
+			});
+		});
+
+		openGames.tournaments.forEach(t => {
+			availableGames.push({	
+				type: 'tournament', 
+				id: t.id,
+				name: `Tournament: ${t.name}`
+			});
+		});
+
+		if (availableGames.length === 0) {
+			alert(`No open games or tournaments available to challenge ${userData.activePrivateChat}`);
+			return;
+		}
+
+		console.log(`Open Single Games: `, openGames.singleGames);
+		console.log(`Open Tournaments: `, openGames.tournaments);
+
+		const modalOverlay = document.createElement('div');
+		modalOverlay.id = 'challenge-modal-overlay';
+		modalOverlay.style.cssText = `
+		position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+		background-color: rgba(0, 0, 0, 0.75); z-index: 1000;
+		display: flex; justify-content: center; align-items: center;
+		`;
+		//close by clicking outside of the modal
+		modalOverlay.onclick = removeModal;
+
+		const modalContent = document.createElement('div');
+		modalContent.style.cssText = `
+		background: #111; padding: 20px; border-radius: 8px;
+		border: 1px solid #00ffc8; box-shadow: 0 0 10px #00ffc8;
+		max-width: 400px; width: 90%; color: #fff;
+		`;
+		// prevents the closing of the modal by clicking somewhere inside the modal
+		modalContent.onclick = (e) => e.stopPropagation();
+
+		const header = document.createElement('h3');
+		header.textContent = `Choose a match/tournament for ${userData.activePrivateChat}` //DE: `Wähle eine Herausforderung für ${targetUser}`;
+		header.style.color = '#00ffc8';
+		modalContent.appendChild(header);
+
+		const listContainer = document.createElement('ul');
+		listContainer.style.cssText = `
+			list-style: none; padding: 0; max-height: 250px; overflow-y: auto;
+		`;
+
+		availableGames.forEach(game => {
+			const listItem = document.createElement('li');
+			listItem.textContent = `[${game.type.toUpperCase()}] ${game.name}`;
+			listItem.style.cssText = `
+				padding: 10px; margin-bottom: 5px; cursor: pointer;
+				background: rgba(0, 224, 179, 0.1); border-radius: 4px;
+			`;
+			
+			// hover
+			listItem.onmouseenter = () => listItem.style.background = 'rgba(0, 255, 200, 0.35)';
+			listItem.onmouseleave = () => listItem.style.background = 'rgba(0, 224, 179, 0.1)';
+
+			// send invitation
+			listItem.onclick = () => {
+				sendMessage('invite', 'I\'ll crush you', userData.activePrivateChat, game.id);
+				console.log(`[WS] Sending challenge to ${userData.activePrivateChat} for game: ${game.id}`);
+				//sendChallengeInvite(targetUser, game.type, game.id, game.name);
+				removeModal(); // Schließe das Modal nach dem Senden
+			};
+			
+			listContainer.appendChild(listItem);
+		});
+
+	modalContent.appendChild(listContainer);
+	modalOverlay.appendChild(modalContent);
+	document.body.appendChild(modalOverlay);
+}
+
 export function renderChatHeaderButtons(
 	chatHeader: HTMLElement,
 	activeChat: string | null
@@ -192,7 +313,8 @@ export function renderChatHeaderButtons(
 	});
 
 	const btnDuel = createIconBtn("⚔️", "Challenge to match", () => {
-		console.log(`⚔️ Challenge sent to ${activeChat}`);
+		//console.log(`⚔️ Challenge sent to ${activeChat}`);
+		handleDuelChallenge();
 	});
 
 	if (!userData.blockedUsers)

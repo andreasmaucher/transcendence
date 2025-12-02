@@ -1,6 +1,6 @@
-import { blockedUsers, generalData, userData } from "../config/constants";
+import { generalData, userData } from "../config/constants";
 import { API_BASE } from "../config/endpoints";
-import { populateChatWindow, populateOnlineUserList, renderBlockMessage, sendMessage, setupPrivateChathistory, wireIncomingChat } from "./chatHandler";
+import { renderBlockMessage, sendMessage, wireIncomingChat } from "./chatHandler";
 import { Message } from "./types";
 
 export function updateLocalBlockState(
@@ -334,7 +334,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	// EVENTS //////
 	const cleanupWire = wireIncomingChat(chatMessages, channelList, chatHeader);
 
-	// SEND MESSAGE ONE CLICK
+	// SEND MESSAGE ON CLICK
 	sendBtn.onclick = () => {
 
 		sendBtn.style.transform = "scale(0.97)";
