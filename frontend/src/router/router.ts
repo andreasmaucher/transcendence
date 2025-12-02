@@ -1,8 +1,10 @@
 // src/router/router.ts
 import { fetchMe } from "../api/http";
 
+export type View = (
+  container: HTMLElement,
+  username?: string ) => void | (() => void) | Promise<void | (() => void)>;
 
-export type View = (container: HTMLElement) => void | (() => void) | Promise<void | (() => void)>;
 export type Routes = Record<string, View>;
 
 let routes: Routes = {};
@@ -63,32 +65,64 @@ async function render() {
     const fullHash = location.hash || "#/login";
     const hash = fullHash.split("?")[0];
 
+    // ===========================================================
+    //  Dynamic user profile route: #/user/<username>
+    // ===========================================================
+    if (hash.startsWith("#/user/")) {
+      const username = hash.replace("#/user/", "").trim();
+
+      const view = routes["#/user"];
+      if (!view) {
+        navigate("#/menu");
+        return;
+      }
+
+      const ok = await isAuthenticated();
+      if (!ok) {
+        navigate("#/login");
+        return;
+      }
+
+      if (cleanup) {
+        cleanup();
+        cleanup = null;
+      }
+
+      root.replaceChildren();
+      const maybeCleanup = await (view as any)(root, username);
+      if (typeof maybeCleanup === "function") cleanup = maybeCleanup;
+
+      return;
+    }
+
+    // ===========================================================
+    // Normal static routes
+    // ===========================================================
     let view = routes[hash];
 
-  if (!view) {
-    const authenticated = await isAuthenticated();
-    navigate(authenticated ? "#/menu" : "#/login");
-    return;
-  }
-
-  // NEW: redirect away from login if logged in
-  if (hash === "#/login") {
-    const authenticated = await isAuthenticated();
-    if (authenticated) {
-      navigate("#/menu");
+    if (!view) {
+      const authenticated = await isAuthenticated();
+      navigate(authenticated ? "#/menu" : "#/login");
       return;
     }
-  }
 
-  // existing rule: protect all other routes
-  if (hash !== "#/login") {
-    const ok = await isAuthenticated();
-    if (!ok) {
-      navigate("#/login");
-      return;
+    // redirect away from login if logged in
+    if (hash === "#/login") {
+      const authenticated = await isAuthenticated();
+      if (authenticated) {
+        navigate("#/menu");
+        return;
+      }
     }
-  }
 
+    // protect all other routes
+    if (hash !== "#/login") {
+      const ok = await isAuthenticated();
+      if (!ok) {
+        navigate("#/login");
+        return;
+      }
+    }
 
     if (cleanup) {
       cleanup();

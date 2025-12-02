@@ -45,18 +45,21 @@ export default {
   },
 
   profile: {
-    title: "Profil Bearbeiten",
-    backToMenu: "← Zurück zum Menü",
-    loading: "Laden…",
-    notLoggedIn: "Nicht eingeloggt.",
+    title: "Profil",
+    backToMenu: "Zurück zum Menü",
+    loading: "Profil wird geladen…",
+    notLoggedIn: "Du bist nicht eingeloggt.",
+    joined: "Beigetreten am: ",
+    changePassword: "Passwort ändern",
     newPassword: "Neues Passwort",
     confirmPassword: "Passwort bestätigen",
-    saveChanges: "Speichern",
+    savePassword: "Passwort speichern",
     passwordsNoMatch: "Passwörter stimmen nicht überein.",
-    passwordTooShort: "Passwort zu kurz.",
+    passwordTooShort: "Das Passwort muss mindestens 4 Zeichen haben.",
     saved: "Gespeichert!",
-    updateFailed: "Speichern fehlgeschlagen.",
-    changeAvatar: "Avatar Hochladen",
+    updateFailed: "Aktualisierung fehlgeschlagen.",
+    friends: "Freunde",
+    noFriends: "Keine Freunde hinzugefügt."
   },
 
   gameOver: {
@@ -66,4 +69,28 @@ export default {
   replay: "Match wiederholen",
 },
 
+  online: {
+    title: "Online-Spiele",
+    loading: "Offene Spiele werden geladen…",
+    createGame: "Neues Spiel erstellen",
+    none: "Keine offenen Spiele",
+    available: "Verfügbare Spiele: ",
+    join: "Beitreten",
+    game: "Spiel"
+  },
+  
+  userProfile: {
+    title: "Benutzerprofil",
+    loading: "Profil wird geladen...",
+    joined: "Beigetreten am: ",
+    addFriend: "Als Freund hinzufügen",
+    removeFriend: "Freund entfernen",
+    block: "Blockieren",
+    unblock: "Entblocken",
+    youBlocked: "Du hast blockiert: ",
+    youUnblocked: "Du hast entblockt: ",
+    friends: "Freunde",
+    noFriends: "Keine Freunde.",
+    failedLoad: "Profil konnte nicht geladen werden."
+  },
 };

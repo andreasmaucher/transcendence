@@ -1,5 +1,7 @@
 import { generalData, userData } from "../config/constants";
 import { ChatEvent, chatHistory, Message } from "./types";
+import { navigate } from "../router/router"; 
+
 
 export function sendMessage(
 	type: ChatEvent,
@@ -123,8 +125,9 @@ export function renderChatHeaderButtons(
 		return btn;
 	};
 
+	// navigates to the profile of the other user :)
 	const btnProfile = createIconBtn("👤", "Open profile", () => {
-		window.location.href = `/profile/${activeChat}`;
+		navigate(`#/user/${activeChat}`);
 	});
 
 	const btnDuel = createIconBtn("⚔️", "Challenge to match", () => {

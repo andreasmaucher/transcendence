@@ -99,12 +99,15 @@ export function startGameCountdown(match: Match) {
 		console.log(`[MM] Broadcasting countdown ${sec} to ${match.clients.size} clients`);
 		gameBroadcast(buildPayload("countdown", { value: sec }), match);
 
-		if (sec === 0) {
-			clearInterval(interval);
-			console.log(`[MM] Countdown finished, starting match ${match.id}`);
+	if (sec === 0) {
+		clearInterval(interval);
+		console.log(`[MM] Countdown finished, starting match ${match.id}`);
+
+		setTimeout(() => {
 			startMatch(match);
 			gameBroadcast(buildPayload("start", undefined), match);
-		}
+		}, 1000);
+	}
 
 		sec--;
 	}, 1000);

@@ -44,22 +44,26 @@ export async function renderTournament(container: HTMLElement) {
 	list.className = "tournament-list";
 	box.append(list);
 
-	// CREATE BUTTON
+	// CREATE BUTTON INSIDE BOX
 	const createBtn = document.createElement("button");
 	createBtn.className = "tournament-create-btn";
 	createBtn.textContent = t("tournaments.create");
-	createBtn.style.marginTop = "2rem";
 	createBtn.onclick = async () => {
-		// generate a unique tournament ID and name
-		const tournamentId = self.crypto?.randomUUID?.() || Math.random().toString(36).slice(2);
+		const tournamentId = crypto.randomUUID?.() || Math.random().toString(36).slice(2);
 		const me = await fetchMe();
-		const tournamentName = me ? `${me.username} Tournament` : `Tournament ${tournamentId.slice(0, 8)}`;
-		// navigate to game view in tournament mode (name will be passed via query params)
-		navigate(`#/game?mode=tournament&id=${tournamentId}&name=${encodeURIComponent(tournamentName)}`);
-	};
-	root.append(createBtn);
+		const tournamentName = me
+			? `${me.username} Tournament`
+			: `Tournament ${tournamentId.slice(0, 8)}`;
 
-	// LOAD LIST
+		navigate(
+			`#/game?mode=tournament&id=${tournamentId}&name=${encodeURIComponent(
+				tournamentName
+			)}`
+		);
+	};
+	box.append(createBtn);
+
+	// LOAD FUNCTION
 	async function loadTournaments() {
 		try {
 			const tournaments = await fetchTournamentList();
@@ -69,9 +73,12 @@ export async function renderTournament(container: HTMLElement) {
 
 			if (!tournaments.length) {
 				status.textContent = t("tournaments.none");
+
 				const empty = document.createElement("div");
-				empty.textContent = "No open tournaments";
+				empty.style.opacity = "0.8";
+				empty.textContent = "";
 				list.append(empty);
+
 				return;
 			}
 
@@ -111,6 +118,7 @@ export async function renderTournament(container: HTMLElement) {
 
 				right.append(joinBtn);
 				row.append(right);
+
 				list.append(row);
 			});
 		} catch (err) {
@@ -121,7 +129,8 @@ export async function renderTournament(container: HTMLElement) {
 	}
 
 	loadTournaments();
-	// refresh tournament list every 2 seconds
+
+	// AUTO REFRESH
 	const interval = setInterval(() => loadTournaments(), 2000);
 
 	return () => {

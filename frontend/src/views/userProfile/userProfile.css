@@ -1,0 +1,302 @@
+/* ==========================================================
+   COLOR PALETTE
+========================================================== */
+:root {
+  --primary: #866bff;
+  --primary-light: #a995ff;
+  --primary-dark: #6a4dff;
+  --primary-border: rgba(134,107,255,0.35);
+  --primary-glow: rgba(134,107,255,0.55);
+
+  --green-glow: rgba(0, 255, 120, 0.55);
+  --green-bg: rgba(0, 255, 120, 0.12);
+  --green-border: rgba(0, 255, 120, 0.45);
+
+  --red-glow: rgba(255, 40, 40, 0.55);
+  --red-bg: rgba(255, 40, 40, 0.16);
+  --red-border: rgba(255, 40, 40, 0.45);
+}
+
+/* ==========================================================
+   ROOT LAYOUT
+========================================================== */
+
+/* Push the whole profile downward */
+.user-profile-root {
+  margin-top: 6rem; 
+}
+
+
+.user-profile-root {
+  width: 100%;
+  min-height: 100vh;
+
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+
+  padding: 40px 0;
+
+  background: rgba(0,0,0,0.35);
+
+  font-family: Orbitron, sans-serif;
+  color: var(--primary-light);
+}
+
+/* ==========================================================
+   MAIN CARD
+========================================================== */
+
+.user-profile-card {
+  width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  padding: 40px;
+
+  border-radius: 12px;
+  border: 2px solid var(--primary-border);
+
+  background: rgba(0, 0, 0, 0.40);
+  backdrop-filter: blur(6px);
+
+  box-shadow:
+    inset 0 0 18px rgba(134,107,255,0.22),
+    0 0 22px rgba(134,107,255,0.33);
+}
+
+/* ==========================================================
+   HEADER
+========================================================== */
+
+.user-profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.user-profile-title {
+  font-size: 42px;
+  font-weight: 700;
+
+  color: var(--primary);
+
+  text-shadow:
+    0 0 10px var(--primary-glow),
+    0 0 20px rgba(134,107,255,0.45),
+    0 0 36px rgba(134,107,255,0.32);
+}
+
+/* Back Button */
+.user-profile-back {
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: bold;
+
+  border: 2px solid var(--primary);
+  border-radius: 6px;
+
+  background: rgba(10,10,10,0.55);
+  backdrop-filter: blur(5px);
+
+  color: var(--primary-light);
+  cursor: pointer;
+
+  transition: 0.25s ease;
+}
+
+.user-profile-back:hover {
+  background-color: rgba(134,107,255,0.18);
+  box-shadow:
+    0 0 14px var(--primary-glow),
+    0 0 22px rgba(134,107,255,0.45);
+}
+
+.user-profile-back:active {
+  transform: scale(0.96);
+}
+
+/* ==========================================================
+   TOP PROFILE CARD
+========================================================== */
+
+.profile-top-card {
+  padding: 30px 20px;
+  border: 1px solid var(--primary-border);
+  border-radius: 10px;
+
+  background: rgba(10,10,10,0.45);
+  backdrop-filter: blur(6px);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+
+  box-shadow:
+    inset 0 0 12px rgba(134,107,255,0.22),
+    0 0 16px rgba(134,107,255,0.22);
+}
+
+.profile-avatar {
+  width: 140px;
+  height: 140px;
+  border-radius: 100%;
+  object-fit: cover;
+
+  border: 3px solid var(--primary);
+  box-shadow: 0 0 14px var(--primary-glow);
+}
+
+.profile-name {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary-light);
+}
+
+.profile-joined {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* ==========================================================
+   ACTION BUTTONS
+========================================================== */
+
+.profile-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* Shared style */
+.profile-action-btn {
+  padding: 10px 18px;
+  font-size: 16px;
+  font-weight: bold;
+
+  border: 2px solid var(--primary);
+  border-radius: 6px;
+
+  background: rgba(10,10,10,0.55);
+  backdrop-filter: blur(5px);
+  color: var(--primary-light);
+
+  cursor: pointer;
+
+  transition: 0.25s ease;
+}
+
+/* Default hover: purple */
+.profile-action-btn:hover {
+  background-color: rgba(134,107,255,0.20);
+  box-shadow:
+    0 0 14px var(--primary-glow),
+    0 0 22px rgba(134,107,255,0.45);
+}
+
+/* Add/Remove Friend (NOT secondary)
+   → GREEN glow on hover */
+.profile-actions .profile-action-btn:not(.secondary):hover {
+  background-color: var(--green-bg);
+  border-color: var(--green-border);
+  box-shadow:
+    0 0 14px var(--green-glow),
+    0 0 22px rgba(0,255,120,0.35);
+}
+
+/* Block/Unblock (secondary)
+   → RED glow on hover */
+.profile-action-btn.secondary {
+  border-color: rgba(134,107,255,0.55);
+  background: rgba(134,107,255,0.08);
+}
+
+.profile-action-btn.secondary:hover {
+  background-color: var(--red-bg) !important;
+  border-color: var(--red-border) !important;
+  box-shadow:
+    0 0 14px var(--red-glow),
+    0 0 22px rgba(255,40,40,0.35);
+}
+
+/* ==========================================================
+   FRIEND LIST
+========================================================== */
+
+.profile-section-card {
+  padding: 24px;
+  border: 1px solid var(--primary-border);
+  border-radius: 10px;
+
+  background: rgba(10,10,10,0.45);
+  backdrop-filter: blur(6px);
+
+  box-shadow:
+    inset 0 0 12px rgba(134,107,255,0.22),
+    0 0 16px rgba(134,107,255,0.22);
+}
+
+.profile-section-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 12px;
+
+  color: var(--primary);
+
+  text-shadow:
+    0 0 10px rgba(134,107,255,0.44),
+    0 0 20px rgba(134,107,255,0.28);
+}
+
+.profile-friends-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profile-friend-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  padding: 10px 14px;
+
+  border: 1px solid var(--primary-border);
+  border-radius: 6px;
+
+  background: rgba(10,10,10,0.45);
+  backdrop-filter: blur(6px);
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+.profile-friend-row:hover {
+  background-color: rgba(134,107,255,0.15);
+  box-shadow:
+    0 0 12px var(--primary-glow),
+    0 0 16px rgba(134,107,255,0.45);
+}
+
+.profile-friend-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 100%;
+  object-fit: cover;
+
+  border: 2px solid var(--primary);
+}
+
+.profile-friend-name {
+  font-size: 16px;
+  color: var(--primary-light);
+}
+
+.profile-no-friends {
+  font-size: 14px;
+  opacity: 0.8;
+}
+

@@ -1,4 +1,3 @@
-// src/views/online/ui.ts
 import { navigate } from "../../router/router";
 import { t } from "../../i18n";
 import { API_BASE } from "../../config/endpoints";
@@ -12,13 +11,10 @@ export function renderOnlineLobby(container: HTMLElement) {
   root.className = "tournament-screen";
   container.append(root);
 
-
   // BOX
-
   const box = document.createElement("div");
   box.className = "tournament-box";
   root.append(box);
-
 
   const header = document.createElement("div");
   header.className = "tournament-header";
@@ -26,7 +22,7 @@ export function renderOnlineLobby(container: HTMLElement) {
 
   const title = document.createElement("h1");
   title.className = "tournament-title";
-  title.textContent = "Online Games";
+  title.textContent = t("online.title");
   header.append(title);
 
   const backBtn = document.createElement("button");
@@ -35,32 +31,27 @@ export function renderOnlineLobby(container: HTMLElement) {
   backBtn.onclick = () => navigate("#/menu");
   header.append(backBtn);
 
-
   const status = document.createElement("div");
   status.className = "tournament-status";
-  status.textContent = "Loading open games…";
+  status.textContent = t("online.loading");
   box.append(status);
-
 
   const list = document.createElement("div");
   list.className = "tournament-list";
   list.id = "online-game-list";
   box.append(list);
 
-
   const createBtn = document.createElement("button");
   createBtn.className = "tournament-create-btn";
-  createBtn.textContent = "Create New Game";
+  createBtn.textContent = t("online.createGame");
   root.append(createBtn);
 
-  // create new online game via backend + open WS (pin up a unique lobby/room ID whenever a user clicks “Create New Game”)
   createBtn.onclick = () => {
     const newGameId = self.crypto?.randomUUID?.() || Math.random().toString(36).slice(2);
     navigate(`#/game?mode=online&id=${newGameId}`);
   };
   box.append(createBtn);
 
- 
   async function fetchOpenGames() {
     try {
       const res = await fetch(`${API_BASE}/api/single-games/open`, {
@@ -82,37 +73,32 @@ export function renderOnlineLobby(container: HTMLElement) {
       listEl.innerHTML = "";
 
       if (!games.length) {
-        status.textContent = "No open games";
+        status.textContent = t("online.none");
         return;
       }
 
-      status.textContent = `Available games: ${games.length}`;
+      status.textContent = `${t("online.available")} ${games.length}`;
 
       for (const g of games) {
-        //
-        // ROW 
-        //
         const row = document.createElement("div");
         row.className = "tournament-row";
 
         const label = document.createElement("span");
-        // display as "alice Game #1"
-        const gameName = g.creator && g.gameNumber
-          ? `${g.creator} Game #${g.gameNumber}`
-          : `Game #${g.id}`;
+        const gameName =
+          g.creator && g.gameNumber
+            ? `${g.creator} ${t("online.game")} #${g.gameNumber}`
+            : `${t("online.game")} #${g.id}`;
         label.textContent = gameName;
 
-        // RIGHT SIDE (buttons) same layout as tournament-right block
         const right = document.createElement("div");
         right.style.display = "flex";
         right.style.gap = "0.6rem";
 
         row.append(label);
 
-        // "Join" button logic in the online lobby
         const joinBtn = document.createElement("button");
         joinBtn.className = "tournament-row-btn";
-        joinBtn.textContent = "Join";
+        joinBtn.textContent = t("online.join");
         joinBtn.onclick = () => navigate(`#/game?mode=online&id=${g.id}`);
 
         right.append(joinBtn);
@@ -127,18 +113,12 @@ export function renderOnlineLobby(container: HTMLElement) {
   refreshList(list);
   const interval = setInterval(() => refreshList(list), 2000);
 
-  //
-  //  WS INIT
-  //
   function setupLobbySocket() {
     console.log("Lobby WS: TODO");
   }
 
   setupLobbySocket();
 
-  //
-  // CLEANUP
-  //
   return () => {
     cancelled = true;
     clearInterval(interval);
