@@ -34,7 +34,7 @@ export function updateTournamentDB(id: string, left: number, right: number): voi
 	else console.log(`[DB] Updated tournament ${id}: ${left}-${right}`);
 }
 
-export function endTournamentDB(id: string, winner?: PaddleSide): void {
+export function endTournamentDB(id: string, winner?: string): void {
 	const stmt = db.prepare(`
 		UPDATE tournaments
 		SET winner = ?, ended_at = CURRENT_TIMESTAMP
@@ -58,6 +58,6 @@ export function forfeitTournamentDB(id: string, playerId: string) {
 }
 
 export function removeTournamentDB(id: string): void {
-	const stmt = db.prepare("DELETE FROM users WHERE id = ?");
+	const stmt = db.prepare("DELETE FROM tournaments WHERE id = ?");
 	stmt.run(id);
 }

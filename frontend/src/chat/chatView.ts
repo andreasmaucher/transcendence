@@ -29,7 +29,6 @@ export function updateLocalBlockState(
 	}
 }
 
-
 export function populatePrivateConv(username: string, privateMessages: Message[]): Map<string, Message[]> {
 	const privateConvs = new Map<string, Message[]>();
 	const blockedUsersLocal = new Map<string, string[]>();
@@ -38,7 +37,7 @@ export function populatePrivateConv(username: string, privateMessages: Message[]
 
 	for (const msg of privateMessages) {
 		const otherUser = msg.sender === username ? msg.receiver : msg.sender;
-		
+
 		if (!otherUser) continue;
 
 		if (!privateConvs.has(otherUser)) {
@@ -87,8 +86,6 @@ export function populatePrivateConv(username: string, privateMessages: Message[]
 	return privateConvs;
 }
 
-
-
 export async function fetchUserData() {
 	const response = await fetch(`${API_BASE}/api/user/data`, {
 		credentials: "include",
@@ -98,7 +95,7 @@ export async function fetchUserData() {
 		return;
 	}
 	const body: any = await response.json();
-	console.log("Raw user data response:", body);
+	//console.log("Raw user data response:", body);
 
 	if (!body.success) {
 		console.warn("Backend returned an error:", body.message);
@@ -128,7 +125,7 @@ export async function fetchAllUsers() {
 		return;
 	}
 	const body: any = await response.json();
-	console.log("Raw all users response:", body);
+	//console.log("Raw all users response:", body);
 
 	if (!body.success) {
 		console.warn("Backend returned an error:", body.message);
@@ -147,7 +144,7 @@ export async function fetchOnlineUsers() {
 		return;
 	}
 	const body: any = await response.json();
-	console.log("Raw online users response:", body);
+	//console.log("Raw online users response:", body);
 
 	if (!body.success) {
 		console.warn("Backend returned an error:", body.message);
@@ -262,7 +259,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	friends.style.transition = "width 0.25s ease, padding 0.25s ease";
 	panel.append(friends);
 
-	// HEADER 
+	// HEADER
 	const fHeader = document.createElement("div");
 	fHeader.textContent = "Channels";
 	fHeader.style.fontWeight = "bold";
@@ -356,8 +353,8 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 
 	// SEND MESSAGE BY PRESSING ENTER
 	input.addEventListener("keydown", (e) => {
-	if (e.key === "Enter") {
-		e.preventDefault();
+		if (e.key === "Enter") {
+			e.preventDefault();
 
 		sendBtn.style.transform = "scale(0.97)";
 		setTimeout(() => sendBtn.style.transform = "scale(1)", 120);

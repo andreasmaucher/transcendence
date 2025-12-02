@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { getAllTournamentsDB, getTournamentByIdDB } from "../database/tournaments/getters.js";
-import { getOpenTournaments } from "../managers/tournamentManagerHelpers.js";
+import { getOpenTournaments, getTournament, isTournamentOpen } from "../managers/tournamentManagerHelpers.js";
 import { Tournament } from "../types/game.js";
 
 export default async function tournamentRoutes(fastify: FastifyInstance) {
@@ -57,6 +57,19 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 		} catch (error: any) {
 			console.error("[tournamentRT]", error.message);
 			return reply.code(404).send({ success: false, message: "Tournament not found" });
+		}
+	});
+	// CHECK if tournament is open
+	fastify.get("/api/tournament/is-open/:id", async (request: FastifyRequest, reply: FastifyReply) => {
+		const { id } = request.params as { id: string };
+		try {
+			const tournament = getTournament(id);
+			if (!tournament) return reply.code(200).send({ success: true, open: false });
+			const open = isTournamentOpen(tournament);
+			return reply.code(200).send({ success: true, open: open });
+		} catch (error: any) {
+			console.error("[tournamentRT]", error.message);
+			return reply.code(400).send({ success: false, message: "Unable to check the tournament" });
 		}
 	});
 }
