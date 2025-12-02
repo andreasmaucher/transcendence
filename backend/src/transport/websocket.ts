@@ -8,7 +8,6 @@ import { Match } from "../types/match.js";
 import { addGameToUser, addUserOnline, removeGameFromUser, removeUserOnline } from "../user/online.js";
 import { handleChatMessages, handleGameMessages } from "./messages.js";
 import { authenticateWebSocket } from "../auth/verify.js";
-import { createTournamentPlayerDB } from "../database/tournament_players/setters.js";
 
 export function registerWebsocketRoute(fastify: FastifyInstance) {
 	// Register user socket
@@ -60,7 +59,8 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			);
 
 			socket.username = payload.username;
-			const singleGame = getOrCreateSingleGame(singleGameId, payload.username, "local");
+			//const singleGame = getOrCreateSingleGame(singleGameId, payload.username, "local");
+			const singleGame = getOrCreateSingleGame(singleGameId, "local");
 			const match: Match = singleGame.match;
 
 			// Add the current game info to the userOnline struct
@@ -107,7 +107,8 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 
 			socket.username = payload.username;
 
-			const singleGame = getOrCreateSingleGame(singleGameId, payload.username, "remote");
+			//const singleGame = getOrCreateSingleGame(singleGameId, payload.username, "remote");
+			const singleGame = getOrCreateSingleGame(singleGameId, "remote");
 			const match: Match = singleGame.match;
 
 			if (checkMatchFull(match)) {

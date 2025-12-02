@@ -16,7 +16,6 @@ import {
 	getTournament,
 	initTournamentMatches,
 } from "./tournamentManagerHelpers.js";
-import crypto from "crypto";
 import { Match } from "../types/match.js";
 import { forfeitMatchDB } from "../database/matches/setters.js";
 import { buildPayload } from "../transport/broadcaster.js";
@@ -34,7 +33,6 @@ export function getOrCreateTournament(id: string, name?: string, size?: number):
 			state: createInitialTournamentState(size || 4),
 			matches: new Map<number, Match[]>(),
 			players: [],
-			//clients: new Set(),
 		} as Tournament;
 
 		try {
@@ -73,7 +71,6 @@ export function getOrCreateTournament(id: string, name?: string, size?: number):
 		}
 		tournaments.set(id, tournament);
 		console.log("NEW OPEN TOURNAMENT:", tournament.id, tournament.name);
-		//console.log("OPEN TOURNAMENTS:", tournaments);
 	}
 	return tournament;
 }
@@ -191,7 +188,7 @@ export function assignPlayersToRound(tournament: Tournament) {
 			socket.currentTournamentMatch = newMatch;
 
 			// build & send new match assignment with tournament info to the frontend
-			const playerSide = newMatch.players.left === winner ? "left" : "right";
+			const playerSide = newMatch.players.left?.username === winner ? "left" : "right";
 			socket.send(
 				buildPayload("match-assigned", {
 					matchId: newMatch.id,
@@ -229,7 +226,7 @@ export function assignPlayersToRound(tournament: Tournament) {
 			socket.currentTournamentMatch = newMatch;
 
 			// send new match assignment with tournament info
-			const playerSide = newMatch.players.left === loser ? "left" : "right";
+			const playerSide = newMatch.players.left?.username === loser ? "left" : "right";
 			socket.send(
 				buildPayload("match-assigned", {
 					matchId: newMatch.id,
@@ -330,7 +327,7 @@ export function endTournament(tournament: Tournament) {
 	}
 
 	const tournamentWinner: string | undefined =
-		finalMatch.state.winner == "left" ? finalMatch.players.left : finalMatch.players.right;
+		finalMatch.state.winner == "left" ? finalMatch.players.left?.username : finalMatch.players.right?.username;
 	endTournamentDB(tournament.id, tournamentWinner);
 	tournament.state.isRunning = false;
 	tournament.state.isOver = true;

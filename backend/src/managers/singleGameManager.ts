@@ -19,20 +19,20 @@ export function forEachSingleGame(fn: (singleGame: SingleGame) => void): void {
 }
 
 // Get or Create a single game, called only when creating a socket connection
-export function getOrCreateSingleGame(id: string, userId: string, mode: string): SingleGame {
+export function getOrCreateSingleGame(id: string, mode: string): SingleGame {
 	let singleGame = singleGames.get(id);
 	if (!singleGame) {
-		// increment game counter for this user
+		/* // increment game counter for this user
 		const currentCount = userGameCounters.get(userId) || 0;
 		const gameNumber = currentCount + 1;
-		userGameCounters.set(userId, gameNumber);
+		userGameCounters.set(userId, gameNumber); */
 
 		// Use the URL id as the singleGame id so players can find each other
 		singleGame = {
 			id: id,
 			mode: mode,
-			creator: userId,
-			gameNumber: gameNumber,
+			//creator: userId,
+			//gameNumber: gameNumber,
 		} as SingleGame;
 
 		try {
@@ -89,12 +89,19 @@ export function getMatchInSingleGame(matchId: string): Match | undefined {
 	return found;
 }
 
+// Check if single game is open (waiting for players)
+export function isSingleGameOpen(singleGame: SingleGame): boolean {
+	if (singleGame.match.state.isOver || singleGame.match.state.isRunning) return false;
+	const { players } = singleGame.match;
+	if (!players.right || !players.left) true;
+	return false;
+}
+
 // Get all open (waiting for players) single games
 export function getOpenSingleGames(): SingleGame[] {
 	const openSingleGames: SingleGame[] = [];
 	for (const singleGame of singleGames.values()) {
-		const { players } = singleGame.match;
-		if (!players.right || !players.left) openSingleGames.push(singleGame);
+		if (isSingleGameOpen(singleGame)) openSingleGames.push(singleGame);
 	}
 	return openSingleGames;
 }

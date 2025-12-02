@@ -52,6 +52,7 @@ export function createMatch({
 		state: createInitialMatchState(),
 		inputs: { left: 0, right: 0 },
 		players: { left: undefined, right: undefined },
+		players2: [],
 		mode: mode,
 		clients: new Set(),
 	} as Match;
@@ -128,22 +129,16 @@ export function addPlayerToMatch(match: Match, playerId: string, socket: any) {
 		// previously it only updated the database but did not update the in-memory match.players object
 		if (!match.players.left) {
 			addPlayerMatchDB(match.id, playerId, "left");
-			match.players.left = playerId; // Update in-memory object
-			match.players2.push({
+			match.players.left = {
 				username: playerId,
-				side: "left",
 				socket: socket,
-			});
+			}; // Update in-memory object
 		} else if (!match.players.right) {
 			addPlayerMatchDB(match.id, playerId, "right");
-			match.players.right = playerId; // Update in-memory object
-			match.players2.push({
+			match.players.right = {
 				username: playerId,
-				side: "right",
 				socket: socket,
-			});
-		} else {
-			return; // Temporary error handling, match full
+			};
 		}
 		if (match.singleGameId && checkMatchFull(match)) {
 			startGameCountdown(match);

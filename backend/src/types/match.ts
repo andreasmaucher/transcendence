@@ -38,18 +38,18 @@ export type TournamentMatchInfo = {
 
 export type MatchMode = "local" | "remote";
 
+export type Player = {
+	username: string;
+	socket: any;
+};
+
 export type Match = {
 	id: string;
 	tournament?: TournamentMatchInfo;
 	singleGameId?: string;
 	state: MatchState;
 	inputs: Record<PaddleSide, PaddleInput>;
-	players: { left: string | undefined; right: string | undefined };
-	players2: {
-		username: string;
-		side: "left" | "right";
-		socket: any;
-	}[];
+	players: { left?: Player; right?: Player };
 	mode: MatchMode;
 	clients: Set<WebSocket>;
 };
