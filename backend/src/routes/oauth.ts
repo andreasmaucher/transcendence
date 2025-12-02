@@ -11,20 +11,25 @@ import { readCookie, setStateCookie } from "../auth/oauth.js";
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN;
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
-const GITHUB_REDIRECT_URI = process.env.GITHUB_REDIRECT_URI; // exact callback URL registered in the GitHub app
 
 export default async function oauthRoutes(fastify: FastifyInstance) {
-	fastify.get("/api/auth/github/start", async (_request: FastifyRequest, reply: FastifyReply) => {
-		if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET || !GITHUB_REDIRECT_URI) {
-			return reply.code(500).send({ success: false, message: "GitHub OAuth not configured in .env" });
+	fastify.get("/api/auth/github/start", async (request, reply) => {
+		if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
+			return reply.code(500).send({ success: false, message: "GitHub OAuth not configured" });
 		}
 
 		const state = crypto.randomUUID();
 		setStateCookie(reply, state);
 
+		const protocol = request.protocol || "http";
+		const host = request.headers.host;
+		const redirectUri = `${protocol}://${host}/api/auth/github/callback`;
+
+		console.log("[OAuth] Starting GitHub OAuth with redirect_uri:", redirectUri);
+
 		const url = new URL("https://github.com/login/oauth/authorize");
 		url.searchParams.set("client_id", GITHUB_CLIENT_ID);
-		url.searchParams.set("redirect_uri", GITHUB_REDIRECT_URI);
+		url.searchParams.set("redirect_uri", redirectUri);
 		url.searchParams.set("scope", "read:user user:email");
 		url.searchParams.set("state", state);
 
@@ -40,6 +45,12 @@ export default async function oauthRoutes(fastify: FastifyInstance) {
 			return reply.code(400).send({ success: false, message: "Invalid OAuth state" });
 		}
 
+		const protocol = request.protocol || "http";
+		const host = request.headers.host;
+		const redirectUri = `${protocol}://${host}/api/auth/github/callback`;
+
+		console.log("[OAuth] Callback received with redirect_uri:", redirectUri);
+
 		const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
 			method: "POST",
 			headers: {
@@ -50,12 +61,13 @@ export default async function oauthRoutes(fastify: FastifyInstance) {
 				client_id: GITHUB_CLIENT_ID,
 				client_secret: GITHUB_CLIENT_SECRET,
 				code,
-				redirect_uri: GITHUB_REDIRECT_URI,
+				redirect_uri: redirectUri,
 			}),
 		});
 
 		const tokenBody = (await tokenRes.json()) as { access_token?: string };
 		if (!tokenBody.access_token) {
+			console.error("[OAuth] Token exchange failed:", tokenBody);
 			return reply.code(400).send({ success: false, message: "OAuth token exchange failed" });
 		}
 
@@ -81,9 +93,7 @@ export default async function oauthRoutes(fastify: FastifyInstance) {
 		if (!username) {
 			let candidate = profile.login;
 			if (isUsernameDB(candidate)) candidate = `${candidate}_${Math.floor(Math.random() * 10000)}`;
-
 			registerGithubUserDB(candidate, providerId, profile.avatar_url);
-
 			username = candidate;
 		}
 

@@ -8,7 +8,6 @@ import { Match } from "../types/match.js";
 import { addGameToUser, addUserOnline, removeGameFromUser, removeUserOnline } from "../user/online.js";
 import { handleChatMessages, handleGameMessages } from "./messages.js";
 import { authenticateWebSocket } from "../auth/verify.js";
-import { createTournamentPlayerDB } from "../database/tournament_players/setters.js";
 
 export function registerWebsocketRoute(fastify: FastifyInstance) {
 	// Register user socket
@@ -60,14 +59,15 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			);
 
 			socket.username = payload.username;
-			const singleGame = getOrCreateSingleGame(singleGameId, payload.username, "local");
+			//const singleGame = getOrCreateSingleGame(singleGameId, payload.username, "local");
+			const singleGame = getOrCreateSingleGame(singleGameId, "local");
 			const match: Match = singleGame.match;
 
 			// Add the current game info to the userOnline struct
 			addGameToUser(socket.username, socket, singleGame.id);
 
 			// Since it's a local game add user and start the game
-			addPlayerToMatch(match, socket.username);
+			addPlayerToMatch(match, socket.username, socket);
 			match.clients.add(socket);
 			startMatch(match);
 
@@ -107,7 +107,8 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 
 			socket.username = payload.username;
 
-			const singleGame = getOrCreateSingleGame(singleGameId, payload.username, "remote");
+			//const singleGame = getOrCreateSingleGame(singleGameId, payload.username, "remote");
+			const singleGame = getOrCreateSingleGame(singleGameId, "remote");
 			const match: Match = singleGame.match;
 
 			if (checkMatchFull(match)) {
@@ -141,7 +142,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			}
 
 			// add player to match (this may trigger countdown if match becomes full)
-			addPlayerToMatch(match, socket.username);
+			addPlayerToMatch(match, socket.username, socket);
 
 			socket.on("message", (raw: RawData) => handleGameMessages(raw, match));
 
@@ -179,56 +180,61 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			else console.log(`[gameWS] Websocket for Tournament: ${tournamentId} and User: ${payload.username} connected`);
 			socket.username = payload.username;
 
-		const tournament = getOrCreateTournament(tournamentId, tournamentName, tournamentSize);
-		// ANDY: added this part to ensure that in the second round of the tournament the sides are correctly assigned to the players
-		// Find which match this player will join and determine their side BEFORE adding them
-		let playerSide: "left" | "right" = "left";
-		const matches = tournament.matches.get(tournament.state.round);
-		// scan the matches to find one with an open slot and then determine the side the player will be assigned to
-		if (matches) {
-			for (const m of matches) {
-				if (!m.players.left || !m.players.right) {
-					// this is the match the player will join
-					playerSide = !m.players.left ? "left" : "right";
-					console.log(`[WS] Player ${payload.username} will be assigned to match ${m.id} as ${playerSide}`);
-					break;
+			const tournament = getOrCreateTournament(tournamentId, tournamentName, tournamentSize);
+			// ANDY: added this part to ensure that in the second round of the tournament the sides are correctly assigned to the players
+			// Find which match this player will join and determine their side BEFORE adding them
+			let playerSide: "left" | "right" = "left";
+			const matches = tournament.matches.get(tournament.state.round);
+			// scan the matches to find one with an open slot and then determine the side the player will be assigned to
+			if (matches) {
+				for (const m of matches) {
+					if (!m.players.left || !m.players.right) {
+						// this is the match the player will join
+						playerSide = !m.players.left ? "left" : "right";
+						console.log(`[WS] Player ${payload.username} will be assigned to match ${m.id} as ${playerSide}`);
+						break;
+					}
 				}
 			}
-		}
-		
-		const match = addPlayerToTournament(tournament, socket.username, socket);
-		if (match) {
-			match.clients.add(socket);
-			// ANDY: store reference for Round 2 reassignment so we can pick a socket up after a match is over and drop it into the next match
-			socket.currentTournamentMatch = match; // track wich match the socket belongs to
-			socket.tournamentId = tournament.id; // tracks the tournament this socket belongs to
 
-			socket.send(
-				buildPayload("match-assigned", {
-					matchId: match.id,
-					playerSide: playerSide,
-					tournamentMatchType: match.tournament?.type,
-					round: tournament.state.round,
-				} as any)
-			);
+			const match = addPlayerToTournament({
+				tournament: tournament,
+				playerId: socket.username,
+				playerDisplayName: socket.username,
+				socket: socket,
+			});
+			if (match) {
+				match.clients.add(socket);
+				// ANDY: store reference for Round 2 reassignment so we can pick a socket up after a match is over and drop it into the next match
+				socket.currentTournamentMatch = match; // track which match the socket belongs to
+				socket.tournamentId = tournament.id; // tracks the tournament this socket belongs to
 
-			socket.send(buildPayload("state", match.state));
-            // ANDY: for tournaments using socket.currentMatch which will be updated between rounds
-			// wrapper ensures every incoming message (player input, reset, etc.) is routed to whichever match the socket is currently assigned to
-			socket.on("message", (raw: RawData) => {
-				const currentMatch = socket.currentTournamentMatch || match;
-				handleGameMessages(raw, currentMatch);
-			});
+				socket.send(
+					buildPayload("match-assigned", {
+						matchId: match.id,
+						playerSide: playerSide,
+						tournamentMatchType: match.tournament?.type,
+						round: tournament.state.round,
+					} as any)
+				);
 
-			socket.on("close", () => {
-				const currentMatch = socket.currentTournamentMatch || match;
-				currentMatch.clients.delete(socket);
-				forfeitMatch(currentMatch, socket.username);
-			});
-			socket.on("error", (err: any) => {
-				const currentMatch = socket.currentTournamentMatch || match;
-				console.error(`[ws error] match=${currentMatch?.id}`, err);
-			});
+				socket.send(buildPayload("state", match.state));
+				// ANDY: for tournaments using socket.currentMatch which will be updated between rounds
+				// wrapper ensures every incoming message (player input, reset, etc.) is routed to whichever match the socket is currently assigned to
+				socket.on("message", (raw: RawData) => {
+					const currentMatch = socket.currentTournamentMatch || match;
+					handleGameMessages(raw, currentMatch);
+				});
+
+				socket.on("close", () => {
+					const currentMatch = socket.currentTournamentMatch || match;
+					currentMatch.clients.delete(socket);
+					forfeitMatch(currentMatch, socket.username);
+				});
+				socket.on("error", (err: any) => {
+					const currentMatch = socket.currentTournamentMatch || match;
+					console.error(`[ws error] match=${currentMatch?.id}`, err);
+				});
 			} else {
 				console.log(`[gameWS] Tournament ${tournament.id} is already full`);
 				socket.close(1008, "Tournament is already full");

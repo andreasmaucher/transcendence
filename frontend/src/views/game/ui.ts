@@ -1,7 +1,7 @@
 // src/views/game/ui.ts
 import { type GameConstants } from "../../constants";
 import { navigate } from "../../router/router";
-import { fetchGameConstants } from "../../api/http";
+import { fetchGameConstants, fetchMe } from "../../api/http";
 import { draw } from "../../rendering/canvas";
 import { setupInputs, setActiveSocket } from "../../game/input";
 import { MatchState } from "../../types/game";
@@ -14,7 +14,6 @@ import {
 } from "../../ws/game";
 import { showCountdown } from "../game/countdown";
 import { t } from "../../i18n";
-import { fetchMe } from "../../api/http";
 
 
 let GAME_CONSTANTS: GameConstants | null = null;
@@ -24,8 +23,7 @@ let GAME_CONSTANTS: GameConstants | null = null;
 // -------------------------------
 function createInitialState(): MatchState {
 	if (!GAME_CONSTANTS) throw new Error("Game constants not loaded");
-	const centerY =
-		(GAME_CONSTANTS.fieldHeight - GAME_CONSTANTS.paddleHeight) / 2;
+	const centerY = (GAME_CONSTANTS.fieldHeight - GAME_CONSTANTS.paddleHeight) / 2;
 
 	const left = {
 		x: GAME_CONSTANTS.paddleMargin,
@@ -36,10 +34,7 @@ function createInitialState(): MatchState {
 	};
 
 	const right = {
-		x:
-			GAME_CONSTANTS.fieldWidth -
-			GAME_CONSTANTS.paddleMargin -
-			GAME_CONSTANTS.paddleWidth,
+		x: GAME_CONSTANTS.fieldWidth - GAME_CONSTANTS.paddleMargin - GAME_CONSTANTS.paddleWidth,
 		y: centerY,
 		w: GAME_CONSTANTS.paddleWidth,
 		h: GAME_CONSTANTS.paddleHeight,
@@ -68,10 +63,7 @@ function createInitialState(): MatchState {
 	};
 }
 
-function startGameLoop(
-	canvas: HTMLCanvasElement,
-	state: MatchState
-): () => void {
+function startGameLoop(canvas: HTMLCanvasElement, state: MatchState): () => void {
 	const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
 	let running = true;
@@ -102,9 +94,7 @@ export async function renderGame(container: HTMLElement) {
 	const params = new URLSearchParams(queryStr);
 	const modeParam = params.get("mode");
 	const mode: "tournament" | "online" | "local" =
-		modeParam === "tournament" || modeParam === "online" || modeParam === "local"
-			? modeParam
-			: "local";
+		modeParam === "tournament" || modeParam === "online" || modeParam === "local" ? modeParam : "local";
 	const roomId = params.get("id") || undefined;
 	const tournamentName = params.get("name") || undefined;
 
@@ -225,8 +215,7 @@ export async function renderGame(container: HTMLElement) {
 	exitBtn.style.backdropFilter = "blur(5px)";
 	exitBtn.style.cursor = "pointer";
 
-	exitBtn.style.transition =
-		"background-color 0.25s ease, box-shadow 0.25s ease, transform 0.12s ease";
+	exitBtn.style.transition = "background-color 0.25s ease, box-shadow 0.25s ease, transform 0.12s ease";
 
 	exitBtn.onmouseenter = () => {
 		exitBtn.style.backgroundColor = "rgba(255,44,251,0.15)";
