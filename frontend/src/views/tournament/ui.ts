@@ -44,22 +44,22 @@ export async function renderTournament(container: HTMLElement) {
   list.className = "tournament-list";
   box.append(list);
 
-  // CREATE BUTTON
+  // CREATE BUTTON (INSIDE THE BOX)
   const createBtn = document.createElement("button");
   createBtn.className = "tournament-create-btn";
   createBtn.textContent = t("tournaments.create");
-  createBtn.style.marginTop = "2rem";
   createBtn.onclick = async () => {
-    // generate a unique tournament ID and name
-    const tournamentId = self.crypto?.randomUUID?.() || Math.random().toString(36).slice(2);
+    const tournamentId = crypto.randomUUID?.() || Math.random().toString(36).slice(2);
     const me = await fetchMe();
-    const tournamentName = me ? `${me.username} Tournament` : `Tournament ${tournamentId.slice(0, 8)}`;
-    // navigate to game view in tournament mode (name will be passed via query params)
+    const tournamentName = me
+      ? `${me.username} Tournament`
+      : `Tournament ${tournamentId.slice(0, 8)}`;
+
     navigate(`#/game?mode=tournament&id=${tournamentId}&name=${encodeURIComponent(tournamentName)}`);
   };
-  root.append(createBtn);
+  box.append(createBtn);
 
-  // LOAD LIST
+  // LOAD FUNCTION
   async function loadTournaments() {
     try {
       const tournaments = await fetchTournamentList();
@@ -69,49 +69,52 @@ export async function renderTournament(container: HTMLElement) {
 
       if (!tournaments.length) {
         status.textContent = t("tournaments.none");
+
         const empty = document.createElement("div");
-        empty.textContent = "No open tournaments";
+        empty.style.opacity = "0.8";
         list.append(empty);
+
         return;
       }
 
       status.textContent = t("tournaments.available")(tournaments.length);
 
-    tournaments.forEach((tour: Tournament) => {
-      const row = document.createElement("div");
-      row.className = "tournament-row";
+      tournaments.forEach((tour: Tournament) => {
+        const row = document.createElement("div");
+        row.className = "tournament-row";
 
-      const left = document.createElement("div");
-      left.style.display = "flex";
-      left.style.flexDirection = "column";
-      left.style.gap = "0.3rem";
-      
-      const nameLine = document.createElement("div");
-      nameLine.textContent = tour.name || `Tournament #${tour.id}`;
-      nameLine.style.fontWeight = "bold";
-      
-      const statusLine = document.createElement("div");
-      statusLine.textContent = `Players: ${tour.playersJoined}/${tour.state.size}`;
-      statusLine.style.fontSize = "0.9rem";
-      statusLine.style.color = "#aaa";
-      
-      left.append(nameLine, statusLine);
-      row.append(left);
+        const left = document.createElement("div");
+        left.style.display = "flex";
+        left.style.flexDirection = "column";
+        left.style.gap = "0.3rem";
 
-      const right = document.createElement("div");
-      right.style.display = "flex";
-      right.style.gap = "0.5rem";
+        const nameLine = document.createElement("div");
+        nameLine.textContent = tour.name || `Tournament #${tour.id}`;
+        nameLine.style.fontWeight = "bold";
 
-      const joinBtn = document.createElement("button");
-      joinBtn.className = "tournament-row-btn";
-      joinBtn.textContent = t("tournaments.join");
-      joinBtn.onclick = () => {
-        navigate(`#/game?mode=tournament&id=${tour.id}`);
-      };
+        const statusLine = document.createElement("div");
+        statusLine.textContent = `Players: ${tour.playersJoined}/${tour.state.size}`;
+        statusLine.style.fontSize = "0.9rem";
+        statusLine.style.color = "#aaa";
 
-      right.append(joinBtn);
-      row.append(right);
-      list.append(row);
+        left.append(nameLine, statusLine);
+        row.append(left);
+
+        const right = document.createElement("div");
+        right.style.display = "flex";
+        right.style.gap = "0.5rem";
+
+        const joinBtn = document.createElement("button");
+        joinBtn.className = "tournament-row-btn";
+        joinBtn.textContent = t("tournaments.join");
+        joinBtn.onclick = () => {
+          navigate(`#/game?mode=tournament&id=${tour.id}`);
+        };
+
+        right.append(joinBtn);
+        row.append(right);
+
+        list.append(row);
       });
     } catch (err) {
       if (!cancelled) {
@@ -121,7 +124,7 @@ export async function renderTournament(container: HTMLElement) {
   }
 
   loadTournaments();
-  // refresh tournament list every 2 seconds
+
   const interval = setInterval(() => loadTournaments(), 2000);
 
   return () => {
