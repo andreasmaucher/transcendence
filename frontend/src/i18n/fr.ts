@@ -45,18 +45,21 @@ export default {
   },
 
   profile: {
-    title: "Modifier Profil",
-    backToMenu: "← Retour Menu",
-    loading: "Chargement…",
-    notLoggedIn: "Non connecté.",
+    title: "Profil",
+    backToMenu: "Retour au menu",
+    loading: "Chargement du profil…",
+    notLoggedIn: "Vous n’êtes pas connecté.",
+    joined: "Inscrit le : ",
+    changePassword: "Changer le mot de passe",
     newPassword: "Nouveau mot de passe",
-    confirmPassword: "Confirmer mot de passe",
-    saveChanges: "Enregistrer",
-    passwordsNoMatch: "Les mots ne correspondent pas.",
-    passwordTooShort: "Mot de passe trop court.",
+    confirmPassword: "Confirmer le mot de passe",
+    savePassword: "Enregistrer le mot de passe",
+    passwordsNoMatch: "Les mots de passe ne correspondent pas.",
+    passwordTooShort: "Le mot de passe doit contenir au moins 4 caractères.",
     saved: "Enregistré !",
-    updateFailed: "Échec de mise à jour.",
-    changeAvatar: "Changer d'Avatar",
+    updateFailed: "Échec de la mise à jour.",
+    friends: "Amis",
+    noFriends: "Aucun ami ajouté."
   },
   
     gameOver: {
@@ -65,5 +68,30 @@ export default {
     refresh: "Match terminé",
     replay: "Rejouer le match",
     },
+
+    online: {
+  title: "Parties en ligne",
+  loading: "Chargement des parties ouvertes…",
+  createGame: "Créer une nouvelle partie",
+  none: "Aucune partie ouverte",
+  available: "Parties disponibles: ",
+  join: "Rejoindre",
+  game: "Partie"
+  },
+
+    userProfile: {
+    title: "Profil utilisateur",
+    loading: "Chargement du profil...",
+    joined: "Inscrit le : ",
+    addFriend: "Ajouter comme ami",
+    removeFriend: "Retirer des amis",
+    block: "Bloquer",
+    unblock: "Débloquer",
+    youBlocked: "Vous avez bloqué ",
+    youUnblocked: "Vous avez débloqué ",
+    friends: "Amis",
+    noFriends: "Aucun ami.",
+    failedLoad: "Échec du chargement du profil."
+  },
 
 };

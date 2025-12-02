@@ -45,18 +45,21 @@ export default {
   },
 
   profile: {
-    title: "Edit Profile",
-    backToMenu: "← Back to Menu",
-    loading: "Loading…",
-    notLoggedIn: "Not logged in.",
-    newPassword: "New Password",
-    confirmPassword: "Confirm Password",
-    saveChanges: "Save Changes",
+    title: "Profile",
+    backToMenu: "Back to menu",
+    loading: "Loading profile…",
+    notLoggedIn: "You are not logged in.",
+    joined: "Joined: ",
+    changePassword: "Change Password",
+    newPassword: "New password",
+    confirmPassword: "Confirm password",
+    savePassword: "Save Password",
     passwordsNoMatch: "Passwords do not match.",
-    passwordTooShort: "Password too short.",
+    passwordTooShort: "Password must be at least 4 characters.",
     saved: "Saved!",
     updateFailed: "Update failed.",
-    changeAvatar: "Upload Avatar",
+    friends: "Friends",
+    noFriends: "No friends added."
   },
 
     gameOver: {
@@ -65,5 +68,30 @@ export default {
     refresh: "Match Over",
     replay: "Replay Match",
     },
+
+  online: {
+    title: "Online Games",
+    loading: "Loading open games…",
+    createGame: "Create New Game",
+    none: "No open games",
+    available: "Available games: ",
+    join: "Join",
+    game: "Game"
+  },
+
+  userProfile: {
+    title: "User Profile",
+    loading: "Loading profile...",
+    joined: "Joined: ",
+    addFriend: "Add Friend",
+    removeFriend: "Remove Friend",
+    block: "Block",
+    unblock: "Unblock",
+    youBlocked: "You have blocked ",
+    youUnblocked: "You have unblocked ",
+    friends: "Friends",
+    noFriends: "No friends.",
+    failedLoad: "Failed to load profile."
+  },
 
 };
