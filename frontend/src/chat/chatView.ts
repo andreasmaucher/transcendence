@@ -1,14 +1,19 @@
-import { blockedUsers, generalData, userData } from "../config/constants";
+import { generalData, userData } from "../config/constants";
 import { API_BASE } from "../config/endpoints";
 import { renderBlockMessage, sendMessage, wireIncomingChat } from "./chatHandler";
 import { Message } from "./types";
 
-export function updateBlockState(sender: string, target: string, type: "block" | "unblock") {
-	if (!blockedUsers.has(sender)) {
-		blockedUsers.set(sender, []);
+export function updateLocalBlockState(
+	blockedUserMap: Map<string, string[]>,
+	sender: string,
+	target: string,
+	type: "block" | "unblock"
+) {
+	if (!blockedUserMap.has(sender)) {
+		blockedUserMap.set(sender, []);
 	}
 
-	const list = blockedUsers.get(sender)!;
+	const list = blockedUserMap.get(sender)!;
 
 	if (type === "block") {
 		if (!list.includes(target)) {
@@ -26,6 +31,10 @@ export function updateBlockState(sender: string, target: string, type: "block" |
 
 export function populatePrivateConv(username: string, privateMessages: Message[]): Map<string, Message[]> {
 	const privateConvs = new Map<string, Message[]>();
+	const blockedUsersLocal = new Map<string, string[]>();
+	let blockedByMe: string[] = [];
+	let blockedByThem: string[] = [];
+
 	for (const msg of privateMessages) {
 		const otherUser = msg.sender === username ? msg.receiver : msg.sender;
 
@@ -36,13 +45,34 @@ export function populatePrivateConv(username: string, privateMessages: Message[]
 		}
 
 		if (msg.type === "block" || msg.type === "unblock") {
-			updateBlockState(msg.sender!, msg.receiver!, msg.type);
+			updateLocalBlockState(blockedUsersLocal, msg.sender!, msg.receiver!, msg.type);
+			
+			if (msg.sender === username){
+				const index = blockedByThem.indexOf(msg.receiver!);
+				if (msg.type === "block") {
+					if (index === -1) blockedByThem.push(msg.receiver!);
+				} else {
+					if (index !== -1) blockedByThem.splice(index, 1);
+				}
+			} else if (msg.receiver === username) {
+				const index = blockedByMe.indexOf(msg.sender!);
+				if (msg.type === "block") {
+					if (index === -1) blockedByMe.push(msg.sender!);
+				} else {
+					if (index !== -1) blockedByMe.splice(index, 1);
+				}
+			}
 			continue;
 		}
 
-		const senderBlockedTarget = blockedUsers.get(msg.sender!)?.includes(msg.receiver!) ?? false;
+		const senderBlockedTarget =
+			blockedUsersLocal.get(msg.sender!)?.includes(msg.receiver!) ?? false;
 
-		const targetBlockedSender = blockedUsers.get(msg.receiver!)?.includes(msg.sender!) ?? false;
+		const targetBlockedSender =
+			blockedUsersLocal.get(msg.receiver!)?.includes(msg.sender!) ?? false;
+
+		if ((msg.type === "blockedByMeMessage" || msg.type === "blockedByOthersMessage") && msg.sender === userData.username)
+			privateConvs.get(otherUser)!.push(msg);
 
 		if (senderBlockedTarget || targetBlockedSender) {
 			continue;
@@ -51,6 +81,8 @@ export function populatePrivateConv(username: string, privateMessages: Message[]
 		privateConvs.get(otherUser)!.push(msg);
 	}
 
+	userData.blockedByUsers = blockedByThem;
+	userData.blockedUsers = blockedByMe;
 	return privateConvs;
 }
 
@@ -68,16 +100,18 @@ export async function fetchUserData() {
 		console.warn("Backend returned an error:", body.message);
 		return;
 	}
-	const { chatHistory, friends, blockedUsers } = body.data;
+	const { blockedByUsers, blockedUsers, chatHistory, friends} = body.data;
+
+	userData.blockedByUsers = blockedByUsers ?? [];
+	userData.blockedUsers = blockedUsers ?? [];
 
 	userData.chatHistory = {
 		user: chatHistory.user,
 		global: chatHistory.global,
-		private: populatePrivateConv(chatHistory.user, chatHistory.private),
+		private: await populatePrivateConv(chatHistory.user, chatHistory.private),
 		tournament: chatHistory.tournament,
 	};
 
-	userData.blockedUsers = blockedUsers;
 	userData.friends = friends;
 }
 
@@ -124,11 +158,9 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	if (!userData.chatHistory || !userData.blockedUsers || !userData.friends)
 		console.log("[CHAT] Error retrieving user data");
 
-	const onlineUserlist: string[] = ["Global Chat"];
-	let activePrivateChat: { current: string | null } = { current: "Global Chat" };
-
 	// LIVE CHAT /; ///////////////////////////////////////////////////////////////
 	// MAIN CHAT PANEL (Container für Chat + Friends)
+
 	const panel = document.createElement("div");
 	panel.id = "chat-panel";
 	panel.style.position = "fixed";
@@ -137,11 +169,16 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	panel.style.width = "520px";
 	panel.style.display = "flex";
 	panel.style.flexDirection = "row";
-	panel.style.background = "rgba(0,0,0,0.75)";
-	panel.style.border = "1px solid #777";
+
+	panel.style.background = "rgba(10,10,10,0.85)";
+	panel.style.backdropFilter = "blur(8px)";
+	panel.style.border = "2px solid #00ffc8";
+	panel.style.boxShadow = "0 0 10px #00ffc866, 0 0 20px #00ffc833";
 	panel.style.borderRadius = "10px";
+
 	panel.style.overflow = "hidden";
-	panel.style.color = "white";
+	panel.style.color = "#66ffc8";
+	panel.style.fontFamily = "Orbitron, sans-serif";
 	panel.style.zIndex = "9999";
 	panel.style.transition = "height 0.25s ease, width 0.25s ease";
 	let minimized = true;
@@ -153,20 +190,26 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	chat.style.display = "flex";
 	chat.style.flexDirection = "column";
 	chat.style.padding = "10px";
+	chat.style.borderRight = "1px solid rgba(0, 255, 200, 0.2)";
 	panel.append(chat);
+
 	// Chat Header
 	const chatHeader = document.createElement("div");
-	chatHeader.textContent = "Live Chat";
+	chatHeader.textContent = "Global Chat";
 	chatHeader.style.fontWeight = "600";
 	chatHeader.style.marginBottom = "8px";
+	chatHeader.style.color = "#00ffc8";
+    chatHeader.style.textShadow = "0 0 5px #66ffc8";
 	chat.append(chatHeader);
+	
 	// Messages
 	const chatMessages = document.createElement("div");
 	chatMessages.style.flex = "1";
 	chatMessages.style.overflowY = "auto";
-	chatMessages.style.background = "rgba(255,255,255,0.05)";
+	chatMessages.style.background = "rgba(0,0,0,0.4)";
 	chatMessages.style.padding = "8px";
 	chatMessages.style.borderRadius = "6px";
+	chatMessages.style.border = "1px solid rgba(0, 255, 200, 0.1)";
 	chat.append(chatMessages);
 
 	// Input row
@@ -175,23 +218,33 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	inputRow.style.gap = "6px";
 	inputRow.style.marginTop = "10px";
 	chat.append(inputRow);
+
 	// Input
 	const input = document.createElement("input");
 	input.type = "text";
 	input.placeholder = "Type a message…";
 	input.style.flex = "1";
+	input.style.border = "1px solid #00ffc8";
+    input.style.background = "rgba(0,0,0,0.6)";
+    input.style.color = "#66ffc8";
+	input.style.padding = "6px 8px";
 	input.style.borderRadius = "4px";
 	input.style.border = "1px solid #444";
 	inputRow.append(input);
+	
 	// Send button
 	const sendBtn = document.createElement("button");
 	sendBtn.textContent = "Send";
-	sendBtn.style.background = "#2563EB";
-	sendBtn.style.color = "white";
-	sendBtn.style.border = "none";
+	
+	sendBtn.style.background = "rgba(10,10,10,0.55)";
+	sendBtn.style.color = "#66ffc8";
+	sendBtn.style.border = "2px solid #00ffc8";
 	sendBtn.style.padding = "6px 10px";
-	sendBtn.style.borderRadius = "4px";
+	sendBtn.style.borderRadius = "6px";
+	sendBtn.style.fontWeight = "bold";
 	sendBtn.style.cursor = "pointer";
+	sendBtn.style.transition = "background-color 0.25s ease, box-shadow 0.25s ease, transform 0.12s ease";
+
 	inputRow.append(sendBtn);
 
 	// CHANNELS - RIGHT SIDE ///////////////////////////////////////////////////
@@ -200,18 +253,20 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	friends.style.width = "180px";
 	friends.style.display = "flex";
 	friends.style.flexDirection = "column";
-	friends.style.background = "rgba(255,255,255,0.05)";
-	friends.style.borderLeft = "1px solid #666";
+	friends.style.background = "rgba(0,0,0,0.4)"; 
 	friends.style.transition = "width 0.25s ease, padding 0.25s ease";
 	panel.append(friends);
 
 	// HEADER
 	const fHeader = document.createElement("div");
 	fHeader.textContent = "Channels";
-	fHeader.style.fontWeight = "600";
+	fHeader.style.fontWeight = "bold";
+	fHeader.style.fontSize = "18px";
 	fHeader.style.margin = "8px";
 	fHeader.style.cursor = "pointer";
 	fHeader.style.whiteSpace = "nowrap";
+	fHeader.style.color = "#00ffc8";
+	fHeader.style.textShadow = "0 0 5px #66ffc8";
 	friends.append(fHeader);
 
 	// CHANNEL LIST CONTENT
@@ -221,19 +276,9 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	channelList.style.padding = "10px";
 	friends.append(channelList);
 
-	// ONLINE USER LIST
-	onlineUserlist.forEach((n) => {
-		const item = document.createElement("div");
-		item.textContent = n;
-		item.style.padding = "6px 8px";
-		item.style.marginBottom = "6px";
-		item.style.background = "rgba(255,255,255,0.08)";
-		item.style.borderRadius = "4px";
-		item.style.cursor = "pointer";
-		channelList.append(item);
-	});
 	// CHAT EXPANDS AUTOMATICALLY
 	chat.style.flex = "1";
+
 	// TOGGLE OPEN/CLOSE FRIEND LIST
 	let channelOpen = true;
 	fHeader.onclick = () => {
@@ -243,22 +288,20 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 			friends.style.width = "180px";
 			friends.style.padding = "6px";
 			channelList.style.display = "block";
-
-			// Header horizontal
+			
 			fHeader.style.writingMode = "horizontal-tb";
-			fHeader.style.margin = "6px";
+			fHeader.style.margin = "8px";
 			fHeader.style.rotate = "0deg";
 			fHeader.textContent = "Channels";
 		} else {
-			// EINGEKLAPPT — nur schmale Leiste sichtbar
-			friends.style.width = "32px"; // genug Platz für vertikale Schrift
+
+			friends.style.width = "32px";
 			friends.style.padding = "0";
 			channelList.style.display = "none";
 
-			// Header senkrecht von oben nach unten
-			fHeader.style.writingMode = "vertical-lr"; // von oben nach unten
-			fHeader.style.rotate = "0deg"; // keine Drehung!
-			fHeader.style.margin = "40px auto 0 auto"; // VERSATZT unter Minimize-Button
+			fHeader.style.writingMode = "vertical-lr";
+			fHeader.style.rotate = "0deg";
+			fHeader.style.margin = "40px auto 0 auto";
 			fHeader.textContent = "Channels";
 		}
 	};
@@ -266,29 +309,41 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	// MINIMIZE CHAT
 	// Minimize button
 	const toggleBtn = document.createElement("div");
-	toggleBtn.textContent = "–";
+	toggleBtn.textContent = "+";
 	toggleBtn.style.position = "absolute";
-	toggleBtn.style.top = "5px";
+	toggleBtn.style.top = "5px"
 	toggleBtn.style.right = "8px";
 	toggleBtn.style.cursor = "pointer";
 	toggleBtn.style.fontSize = "22px";
+	toggleBtn.style.lineHeight = "22px";
+	toggleBtn.style.fontWeight = "bold";
+	toggleBtn.style.color = "#00ffc8";
+	toggleBtn.style.textShadow = "0 0 5px #66ffc8"; // GLOW
 	panel.append(toggleBtn);
 	toggleBtn.onclick = () => {
 		minimized = !minimized;
 		panel.style.height = minimized ? "40px" : "450px";
+		toggleBtn.textContent = minimized ? "+" : "–";
 	};
 
 	// EVENTS //////
-	const cleanupWire = wireIncomingChat(chatMessages, channelList, chatHeader, activePrivateChat);
+	const cleanupWire = wireIncomingChat(chatMessages, channelList, chatHeader);
 
-	// SEND MESSAGE ONE CLICK
+	// SEND MESSAGE ON CLICK
 	sendBtn.onclick = () => {
-		if (activePrivateChat.current === "Global Chat") sendMessage("broadcast", input.value);
+
+		sendBtn.style.transform = "scale(0.97)";
+		setTimeout(() => sendBtn.style.transform = "scale(1)", 120);
+
+		if (userData.activePrivateChat === "Global Chat")
+			sendMessage("broadcast", input.value);
 		else {
-			if (userData.blockedUsers?.includes(activePrivateChat.current!)) {
-				console.log(`Message to ${activePrivateChat.current} should be blocked`);
-				renderBlockMessage(activePrivateChat.current!, chatMessages);
-			} else sendMessage("direct", input.value, activePrivateChat.current);
+			if (userData.blockedUsers?.includes(userData.activePrivateChat!)) {
+				console.log(`Message to ${userData.activePrivateChat} should be blocked`);
+				renderBlockMessage(userData.activePrivateChat!, chatMessages);
+			}
+			else
+				sendMessage("direct", input.value, userData.activePrivateChat);
 		}
 
 		input.value = "";
@@ -299,18 +354,35 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 		if (e.key === "Enter") {
 			e.preventDefault();
 
-			if (activePrivateChat.current === "Global Chat") sendMessage("broadcast", input.value);
-			else {
-				if (userData.blockedUsers?.includes(activePrivateChat.current!)) {
-					console.log(`Message to ${activePrivateChat.current} should be blocked`);
-					renderBlockMessage(activePrivateChat.current!, chatMessages);
-				} else sendMessage("direct", input.value, activePrivateChat.current);
+		sendBtn.style.transform = "scale(0.97)";
+		setTimeout(() => sendBtn.style.transform = "scale(1)", 120);
+
+		if (userData.activePrivateChat === "Global Chat")
+			sendMessage("broadcast", input.value);
+		else {
+			if (userData.blockedUsers?.includes(userData.activePrivateChat!)) {
+				console.log(`Message to ${userData.activePrivateChat} should be blocked`);
+				sendMessage("blockedByMeMessage", '', userData.activePrivateChat);
+			} else if (userData.blockedByUsers?.includes(userData.activePrivateChat!)) {
+				console.log(`${userData.activePrivateChat} blocked you`);
+				sendMessage("blockedByOthersMessage", '', userData.activePrivateChat);
 			}
-
-			input.value = "";
+			else
+				sendMessage("direct", input.value, userData.activePrivateChat);
 		}
-	});
 
+		input.value = "";
+	}
+});
+	// hover
+	sendBtn.onmouseenter = () => {
+		sendBtn.style.backgroundColor = "rgba(0, 255, 200, 0.15)";
+		sendBtn.style.boxShadow = "0 0 14px #66ffc8, 0 0 22px #00ffc866";
+	};
+	sendBtn.onmouseleave = () => {
+		sendBtn.style.backgroundColor = "rgba(10,10,10,0.55)";
+		sendBtn.style.boxShadow = "none";
+	};
 	root.append(panel);
 
 	return () => {

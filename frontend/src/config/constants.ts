@@ -8,15 +8,14 @@ export const generalData = {
 };
 
 export const userData = {
-  username: null as string | null,
-  userSock: null as WebSocket | null,
-  gameSock: null as WebSocket | null,
-  chatHistory: null as chatHistory | null,
-
-  // Always arrays — never null
-  friends: [] as string[],
-  blockedUsers: [] as string[],
+	username: null as string | null,
+	userSock: null as WebSocket | null,
+	gameSock: null as WebSocket | null,
+	chatHistory: null as chatHistory | null,
+	friends: null as string[] | null,
+	blockedUsers: null as string[] | null,
+	blockedByUsers: null as string[] | null,
+	activePrivateChat: "Global Chat" as string
 };
 
-// For chat block logic
-export const blockedUsers = new Map<string, string[]>();
+//export const blockedUsers = new Map<string, string[]>();
