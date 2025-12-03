@@ -5,7 +5,9 @@ export type ChatEvent = "direct"
 | "profile-link" 
 | "block" 
 | "unblock"
-| "onlineUser";
+| "onlineUser"
+| "blockedByMeMessage"
+| "blockedByOthersMessage";
 
 export type Message = {
 	type: ChatEvent;
@@ -16,7 +18,7 @@ export type Message = {
 	content?: string;
 	gameId?: string;
 	username?: string;
-	onlineUser?: string[];
+	//onlineUser?: string[];
 	chatHistory?: chatHistory;
 };
 
