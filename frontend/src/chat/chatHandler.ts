@@ -31,17 +31,28 @@ export function renderIncomingMessage(message: Message, chatMessages: HTMLElemen
 	item.className = "chat-message";
 	item.style.padding = "6px 8px";
 	item.style.marginBottom = "6px";
-	item.style.background = "rgba(255,255,255,0.08)";
+	item.style.background = "rgba(0, 255, 200, 0.1)";
 	item.style.borderRadius = "4px";
 	item.style.cursor = "pointer";
 
-	item.innerHTML = `
-	<div style="display:flex; justify-content:space-between; font-size:12px;">
-		<strong>${message.sender}</strong>
-		<small>${message.sentAt}</small>
-	</div>
-	<span>${message.content}</span>
-	`;
+	if (message.type === "blockedByMeMessage") {
+		item.style.background = "rgba(150, 0, 0, 0.4)";
+		item.innerHTML =
+			`<span style="color: #ff0000; font-weight: bold;">You've blocked ${message.receiver}. No Conversation possible!</span>`;
+	}
+	else if (message.type === "blockedByOthersMessage"){
+		item.style.background = "rgba(255, 170, 0, 0.15)";
+		item.innerHTML =
+			`<span style="color: #ffaa00; font-weight: bold;">You have been blocked by ${message.receiver}. Message cannot be sent.</span>`;
+	} else {
+		item.innerHTML = `
+			<div style="display:flex; justify-content:space-between; font-size:12px; color: #00ffc8;">
+				<strong>${message.sender}</strong>
+				<small style="color: #66ffc8;">${message.sentAt}</small>
+			</div>
+			<span style="color: #66ffc8;">${message.content}</span>
+			`;
+	}
 
 	chatMessages.append(item);
 	requestAnimationFrame(() => {
@@ -54,17 +65,156 @@ export function renderBlockMessage(blockedUser: string, chatMessages: HTMLElemen
 	item.className = "chat-message";
 	item.style.padding = "6px 8px";
 	item.style.marginBottom = "6px";
-	item.style.background = "rgba(255,255,255,0.08)";
+	item.style.background = "rgba(150, 0, 0, 0.4)";
 	item.style.borderRadius = "4px";
 	item.style.cursor = "pointer";
 
 	item.innerHTML =
-	`<span>You've blocked ${blockedUser}. No Conversation possible!</span>`;
+	`<span style="color: #ff0000; font-weight: bold;">You've blocked ${blockedUser}. No Conversation possible!</span>`;
 
 	chatMessages.append(item);
 	requestAnimationFrame(() => {
 		chatMessages.scrollTop = chatMessages.scrollHeight;
 	});
+}
+
+export function renderBlockedByMessage(blockedByUser: string, chatMessages: HTMLElement) {
+	const item = document.createElement("div");
+	item.className = "chat-message";
+	item.style.padding = "6px 8px";
+	item.style.marginBottom = "6px";
+	item.style.background = "rgba(255, 170, 0, 0.15)";
+	item.style.borderRadius = "4px";
+	item.style.cursor = "pointer";
+
+	item.innerHTML =
+	`<span style="color: #ffaa00; font-weight: bold;">You have been blocked by ${blockedByUser}. Message cannot be sent.</span>`;
+
+	chatMessages.append(item);
+	requestAnimationFrame(() => {
+		chatMessages.scrollTop = chatMessages.scrollHeight;
+	});
+}
+
+async function fetchOpenGames() {
+	try {
+		const response = await fetch("/api/games/open");
+
+		if (response.status !== 200 && response.status !== 404) {
+			// Wenn der Server einen Fehler-Code sendet (z.B. 500), lesen wir den Text
+			const errorText = await response.text(); 
+			console.error("Server returned non-OK status. Response:", errorText);
+			throw new Error(`Server error: Status ${response.status}`);
+		}
+		if (response.status === 404) {
+			return { singleGames: [], tournaments: [] };
+		}
+		if(!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+
+		const result = await response.json();
+		return result.data;
+	} catch (error) {
+		console.error("Error fetching open games:", error);
+		return { singleGames: [], tournaments: [] };
+	}
+}
+
+export function removeModal() {
+	const existingModal = document.getElementById('challenge-modal-overlay');
+	if (existingModal) {
+		existingModal.remove();
+	}
+}
+
+async function handleDuelChallenge() {
+		removeModal();
+
+		const openGames = await fetchOpenGames();
+
+		const availableGames = [];
+
+		openGames.singleGames.forEach(g => {
+			availableGames.push({
+				type: 'single', 
+				id: g.id, 
+				creator: g.creator,
+				name: `Single Game #${g.gameNumber} (created by: ${g.creator})` 
+			});
+		});
+
+		openGames.tournaments.forEach(t => {
+			availableGames.push({	
+				type: 'tournament', 
+				id: t.id,
+				name: `Tournament: ${t.name}`
+			});
+		});
+
+		if (availableGames.length === 0) {
+			alert(`No open games or tournaments available to challenge ${userData.activePrivateChat}`);
+			return;
+		}
+
+		console.log(`Open Single Games: `, openGames.singleGames);
+		console.log(`Open Tournaments: `, openGames.tournaments);
+
+		const modalOverlay = document.createElement('div');
+		modalOverlay.id = 'challenge-modal-overlay';
+		modalOverlay.style.cssText = `
+		position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+		background-color: rgba(0, 0, 0, 0.75); z-index: 1000;
+		display: flex; justify-content: center; align-items: center;
+		`;
+		//close by clicking outside of the modal
+		modalOverlay.onclick = removeModal;
+
+		const modalContent = document.createElement('div');
+		modalContent.style.cssText = `
+		background: #111; padding: 20px; border-radius: 8px;
+		border: 1px solid #00ffc8; box-shadow: 0 0 10px #00ffc8;
+		max-width: 400px; width: 90%; color: #fff;
+		`;
+		// prevents the closing of the modal by clicking somewhere inside the modal
+		modalContent.onclick = (e) => e.stopPropagation();
+
+		const header = document.createElement('h3');
+		header.textContent = `Choose a match/tournament for ${userData.activePrivateChat}` //DE: `Wähle eine Herausforderung für ${targetUser}`;
+		header.style.color = '#00ffc8';
+		modalContent.appendChild(header);
+
+		const listContainer = document.createElement('ul');
+		listContainer.style.cssText = `
+			list-style: none; padding: 0; max-height: 250px; overflow-y: auto;
+		`;
+
+		availableGames.forEach(game => {
+			const listItem = document.createElement('li');
+			listItem.textContent = `[${game.type.toUpperCase()}] ${game.name}`;
+			listItem.style.cssText = `
+				padding: 10px; margin-bottom: 5px; cursor: pointer;
+				background: rgba(0, 224, 179, 0.1); border-radius: 4px;
+			`;
+			
+			// hover
+			listItem.onmouseenter = () => listItem.style.background = 'rgba(0, 255, 200, 0.35)';
+			listItem.onmouseleave = () => listItem.style.background = 'rgba(0, 224, 179, 0.1)';
+
+			// send invitation
+			listItem.onclick = () => {
+				sendMessage('invite', 'I\'ll crush you', userData.activePrivateChat, game.id);
+				console.log(`[WS] Sending challenge to ${userData.activePrivateChat} for game: ${game.id}`);
+				//sendChallengeInvite(targetUser, game.type, game.id, game.name);
+				removeModal(); // Schließe das Modal nach dem Senden
+			};
+			
+			listContainer.appendChild(listItem);
+		});
+
+	modalContent.appendChild(listContainer);
+	modalOverlay.appendChild(modalContent);
+	document.body.appendChild(modalOverlay);
 }
 
 export function renderChatHeaderButtons(
@@ -73,6 +223,9 @@ export function renderChatHeaderButtons(
 ) {
 	chatHeader.innerHTML = "";
 
+	const primaryNeon = "#00ffc8"; // OLD "#00e0b3";
+	const secondaryNeon = "#66ffc8"; // OLD "#33cc99";
+
 	const title = document.createElement("span");
 	title.textContent =
 		activeChat === "Global Chat"
@@ -80,14 +233,16 @@ export function renderChatHeaderButtons(
 			: `Chat with ${activeChat}`;
 
 	title.style.flex = "1";
-	title.style.fontWeight = "bold";
+	title.style.fontWeight = "600";
+	title.style.color = primaryNeon
+	title.style.textShadow = `0 0 5px ${secondaryNeon}`
 
 	chatHeader.style.display = "flex";
 	chatHeader.style.alignItems = "flex-start"; 
 	chatHeader.style.justifyContent = "space-between";
 	chatHeader.style.paddingTop = "0px";
-	chatHeader.style.paddingBottom = "2px";
-
+	chatHeader.style.paddingBottom = "0px";
+	chatHeader.style.marginBottom = "8px";
 
 	if (activeChat === "Global Chat") {
 		chatHeader.append(title);
@@ -113,15 +268,45 @@ export function renderChatHeaderButtons(
 		btn.style.padding = "4px 6px";
 		btn.style.fontSize = "14px";
 		btn.style.borderRadius = "4px";
-		btn.style.border = "1px solid #666";
+		btn.style.cursor = "pointer";
+		btn.style.transition = "background-color 0.2s ease, box-shadow 0.2s ease"; // hover
+
+		btn.style.color = blocked ? "white" : secondaryNeon
+		btn.style.border = `1px solid ${primaryNeon}`
 		btn.style.background = blocked 
-		? "rgba(255, 0, 0, 0.58)"
-		: "rgba(255,255,255,0.12)";
+		? "rgba(150, 0, 0, 0.58)"
+		: "rgba(0, 224, 179, 0.08)";
+
 		btn.style.cursor = "pointer";
 		btn.onclick = (e) => {
 			e.stopPropagation();
 			action();
 		};
+
+		const hoverColor = blocked ? "rgba(255, 0, 0, 0.8)" : "rgba(0, 255, 200, 0.35)";
+		const boxShadowColor = blocked ? "rgba(255, 0, 0, 0.8)" : secondaryNeon;
+
+		// hover
+		btn.onmouseenter = () => {
+			btn.style.backgroundColor = hoverColor;
+			btn.style.boxShadow = `0 0 6px ${boxShadowColor}`;
+			// icon glow
+			if (!blocked) {
+				btn.style.textShadow = `0 0 5px ${secondaryNeon}`;
+			}
+		};
+		btn.onmouseleave = () => {
+			btn.style.backgroundColor = blocked 
+			? "rgba(150, 0, 0, 0.58)" 
+			: "rgba(0, 224, 179, 0.08)";
+			btn.style.boxShadow = "none";
+
+			// text glow
+			if (!blocked) {
+				btn.style.textShadow = "none";
+			}
+		};
+
 		return btn;
 	};
 
@@ -131,7 +316,8 @@ export function renderChatHeaderButtons(
 	});
 
 	const btnDuel = createIconBtn("⚔️", "Challenge to match", () => {
-		console.log(`⚔️ Challenge sent to ${activeChat}`);
+		//console.log(`⚔️ Challenge sent to ${activeChat}`);
+		handleDuelChallenge();
 	});
 
 	if (!userData.blockedUsers)
@@ -165,32 +351,53 @@ export function renderOnlineUsers(
 	friendList: HTMLElement,
 	chatMessages: HTMLElement,
 	chatHeader: HTMLElement,
-	activePrivateChat: { current: string | null },
 ) {
 	friendList.innerHTML = "";
-	generalData.onlineUsers!.forEach((username) => {
 
+	const primaryNeon = "#00ffc8";
+	const secondaryNeon = "#66ffc8"
+
+	const channelNames = ["Global Chat"].concat(
+		generalData.onlineUsers!.filter(u => u !== userData.username)
+	);
+
+	generalData.onlineUsers!.forEach((username) => {
 		const userItem = document.createElement("div");
 		userItem.textContent = username;
 		userItem.style.padding = "6px 8px";
 		userItem.style.marginBottom = "6px";
-		userItem.style.background = "rgba(255,255,255,0.08)";
+		userItem.style.background = "rgba(0, 255, 200, 0.1)"; 
+		userItem.style.color = "#66ffc8";
 		userItem.style.borderRadius = "4px";
 		userItem.style.cursor = "pointer";
 		userItem.classList.add("online-user");
 
+		// highlight active channel
+		if (username === userData.activePrivateChat) {
+				userItem.style.border = `1px solid ${primaryNeon}`
+				userItem.style.boxShadow = `0 0 5px ${primaryNeon}`
+		}
+		
+		// hover
+		userItem.onmouseenter = () => {
+			userItem.style.backgroundColor = "rgba(0, 255, 200, 0.25)";
+		};
+
+		userItem.onmouseleave = () => {
+		if (username === userData.activePrivateChat) {
+			userItem.style.backgroundColor = `rgba(0, 255, 200, 0.1)`;
+		} else {
+			userItem.style.backgroundColor = `rgba(0, 255, 200, 0.1)`;
+		}
+	};
 		// Create onlineUserList
 		userItem.onclick = () => {
-			if (username === "Global Chat") {
-				activePrivateChat.current = "Global Chat";
-				chatHeader.textContent = `Global Chat`;
-			} else {
-				activePrivateChat.current = username;
-				chatHeader.textContent = `Chat with ${username}`;
-			}
+			userData.activePrivateChat = username;
+			localStorage.setItem('activePrivateChat', username);
+			renderOnlineUsers(friendList, chatMessages, chatHeader);
 			chatMessages.innerHTML = "";
-			populateChatWindow(userData.chatHistory!, chatMessages, username, activePrivateChat!);
-			renderChatHeaderButtons(chatHeader, activePrivateChat.current);
+			populateChatWindow(userData.chatHistory!, chatMessages);
+			renderChatHeaderButtons(chatHeader, userData.activePrivateChat);
 		};
 		friendList.append(userItem);
 	});
@@ -224,34 +431,37 @@ export function addOnlineUser(username: string) {
 		generalData.allUsers?.push(username);
 }
 
-export function removeUserFromList(username: string, list: string[]) {
-	if (!list) return;
+export function removeUserFromList(username: string, list: string[] | null): string[] {
+	if (!list) return [];
 
-	list = list.filter(
+	return list.filter(
 		(user) => user !== username
 	);
 }
 
-export function addBlockedUser(userToBlock: string){
-	if (!userData.blockedUsers!.includes(userToBlock))
-		userData.blockedUsers!.push(userToBlock);
+export function addUserToList(userToBlock: string, list: string[] | null): string[] {
+	if (!list)
+		list = [];
+	if (!list.includes(userToBlock))
+		list.push(userToBlock);
+	return list
 }
 
 export function populateChatWindow(
 	chatHistory: chatHistory,
 	chatMessages: HTMLElement,
-	username: string,
-	activePrivateChat: { current: string | null }
 ) {
 	chatMessages.innerHTML = "";
 
 	let chatHistoryToAdd: Message[] = [];
-	if (activePrivateChat.current === "Global Chat") {
+	const activeChat = userData.activePrivateChat;
+
+	if (activeChat === "Global Chat") {
 		chatHistoryToAdd = chatHistory.global;
 		console.log("GlobalChatHistory should be loaded!");
 	} else {
-		chatHistoryToAdd = setupPrivateChathistory(username);
-		console.log(`private chatHistory for ${activePrivateChat.current} loaded!`);
+		chatHistoryToAdd = setupPrivateChathistory(activeChat!);
+		console.log(`private chatHistory for ${activeChat} loaded!`);
 	}
 	chatHistoryToAdd.forEach((message) => {
 		renderIncomingMessage(message, chatMessages);
@@ -263,7 +473,9 @@ export function appendMessageToHistory(message: Message): void {
 		userData.chatHistory!.global.push(message);
 		return;
 	}
-	if (message.type === "direct") {
+	if (message.type === "direct" || 
+		(message.type === "blockedByMeMessage" && message.sender === userData.username) || 
+		(message.type === "blockedByOthersMessage" && message.sender === userData.username)) {
 		const otherUser = message.sender === userData.chatHistory!.user ? message.receiver : message.sender;
 		if (!otherUser) return;
 		if (!userData.chatHistory!.private.has(otherUser)) userData.chatHistory!.private.set(otherUser, []);
@@ -280,7 +492,6 @@ export function wireIncomingChat(
 	chatMessages: HTMLElement,
 	friendList: HTMLElement,
 	chatHeader: HTMLElement,
-	activePrivateChat: { current: string | null }
 ): () => void {
 	const ws = userData.userSock;
 	if (!ws) {
@@ -290,9 +501,18 @@ export function wireIncomingChat(
 
 	const previousHandler = ws.onmessage;
 
+	const savedChatPartner = localStorage.getItem('activeChatPartner');
+	if (savedChatPartner) {
+		userData.activePrivateChat = savedChatPartner;
+	} else if (!userData.activePrivateChat){
+		userData.activePrivateChat = "Global Chat";
+	}
+
+
 	generalData.onlineUsers = populateOnlineUserList(userData.username);
-	populateChatWindow(userData.chatHistory!, chatMessages, userData.username!, activePrivateChat);
-	renderOnlineUsers(friendList, chatMessages, chatHeader, activePrivateChat);
+	populateChatWindow(userData.chatHistory!, chatMessages);
+	renderOnlineUsers(friendList, chatMessages, chatHeader);
+	renderChatHeaderButtons(chatHeader, userData.activePrivateChat);
 
 	ws.onmessage = (event) => {
 		try {
@@ -304,30 +524,48 @@ export function wireIncomingChat(
 
 				switch (msg.type) {
 					case "broadcast": {
-						if (activePrivateChat.current === "Global Chat")
+						if (userData.activePrivateChat === "Global Chat")
 							renderIncomingMessage(msg, chatMessages);
 						appendMessageToHistory(msg);
 						break;
 					}
 					case "direct": {
-						if ((activePrivateChat.current === msg.sender || activePrivateChat.current === msg.receiver)
-						&& !userData.blockedUsers?.includes(msg.sender))
+						if ((userData.activePrivateChat === msg.sender || userData.activePrivateChat === msg.receiver)
+						&& (!userData.blockedUsers?.includes(msg.sender) && !userData.blockedByUsers?.includes(msg.receiver!)))
 							renderIncomingMessage(msg, chatMessages);
 						appendMessageToHistory(msg);
 						break;
 					}
 					case "block": {
-						if (activePrivateChat.current === msg.receiver)
-							renderIncomingMessage(msg, chatMessages);
+						if (msg.receiver === userData.username) {
+							userData.blockedByUsers = addUserToList(msg.sender, userData.blockedByUsers);
+						}
 						appendMessageToHistory(msg);
 						break;
-					}
+						}
 					case "unblock": {
-						if (activePrivateChat.current === msg.receiver)
-							renderIncomingMessage(msg, chatMessages);
+						if (msg.receiver === userData.username) {
+							userData.blockedByUsers = removeUserFromList(msg.sender, userData.blockedByUsers);
+						}
 						appendMessageToHistory(msg);
 						break;
 					}
+					case "blockedByMeMessage": {
+						if (userData.activePrivateChat === msg.receiver) {
+								console.log(`blockedByMeMessage from ${msg.sender} for ${msg.receiver}`);
+								renderIncomingMessage(msg, chatMessages);
+						}
+						appendMessageToHistory(msg);
+						break;
+						}
+					case "blockedByOthersMessage": {
+						if (userData.activePrivateChat === msg.receiver){
+								console.log(`blockedByOthersMessage from ${msg.sender} for ${msg.receiver}`);
+								renderIncomingMessage(msg, chatMessages);
+							}
+						appendMessageToHistory(msg);
+						break;
+						}
 				}
 			}
 
@@ -338,44 +576,40 @@ export function wireIncomingChat(
 				renderOnlineUsers(
 							friendList,
 							chatMessages,
-							chatHeader,
-							activePrivateChat,
+							chatHeader
 						);
 					}
 
 			if (payload && payload.type === "user-offline") {
 				const newUserOffline = payload.data.username;
 				console.log(`${newUserOffline} left the realm!`)
-				removeUserFromList(newUserOffline, generalData.onlineUsers!);
+				generalData.onlineUsers = removeUserFromList(newUserOffline, generalData.onlineUsers!);
 				renderOnlineUsers(
 							friendList,
 							chatMessages,
-							chatHeader,
-							activePrivateChat,
+							chatHeader
 						);
 					}
 
 			if (payload && payload.type == "block") {
 				const blockedUser = payload.data.username;
 				console.log(`${userData.username} blocked ${blockedUser}`)
-				addBlockedUser(blockedUser);
+				userData.blockedUsers = addUserToList(blockedUser, userData.blockedUsers);
 				renderOnlineUsers(
 							friendList,
 							chatMessages,
-							chatHeader,
-							activePrivateChat,
+							chatHeader
 						);
 					}
 
 				if (payload && payload.type == "unblock") {
 				const unblockedUser = payload.data.username;
 				console.log(`${userData.username} unblocked ${unblockedUser}`)
-				removeUserFromList(unblockedUser, userData.blockedUsers!);
+				userData.blockedUsers = removeUserFromList(unblockedUser, userData.blockedUsers!);
 				renderOnlineUsers(
 							friendList,
 							chatMessages,
-							chatHeader,
-							activePrivateChat,
+							chatHeader
 						);
 					}
 
