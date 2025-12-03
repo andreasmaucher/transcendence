@@ -12,14 +12,19 @@ export default async function singleGameRoutes(fastify: FastifyInstance) {
 		const data = openSingleGames.map((g) => ({
 			id: g.id,
 			mode: g.mode,
-			//creator: g.creator,
-			//gameNumber: g.gameNumber,
 			match: {
 				id: g.match.id,
-				state: g.match.state,
-				players: g.match.players,
+				isRunning: g.match.state.isRunning,
+				isOver: g.match.state.isOver,
+				players: { left: g.match.players.left?.username, right: g.match.players.right?.username },
 				mode: g.match.mode,
 			},
+			playersJoined: (() => {
+				let count = 0;
+				if (g.match.players.left) count++;
+				if (g.match.players.right) count++;
+				return count;
+			})(),
 		}));
 		return reply.code(200).send({ success: true, data });
 	});
