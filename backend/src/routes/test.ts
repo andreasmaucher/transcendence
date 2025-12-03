@@ -79,7 +79,7 @@ export default async function testRoutes(fastify: FastifyInstance) {
 	});
 
 	// CREATE 5 test single games
-	fastify.get("/api/test/create-single-gamges", async (_request: FastifyRequest, reply: FastifyReply) => {
+	fastify.get("/api/test/create-single-games", async (_request: FastifyRequest, reply: FastifyReply) => {
 		try {
 			createTestSingleGames();
 			return reply.code(200).send({ success: true, message: "5 test single games created" });

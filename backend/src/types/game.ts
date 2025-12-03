@@ -29,6 +29,5 @@ export type Tournament = {
 		socket: any;
 		currentMatch: Match;
 	}[];
-	//clients: Set<WebSocket>;
 	expirationTimer?: NodeJS.Timeout;
 };

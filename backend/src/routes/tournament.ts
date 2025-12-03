@@ -19,31 +19,29 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 	// GET all open tournaments
 	fastify.get("/api/tournaments/open", async (_request: FastifyRequest, reply: FastifyReply) => {
 		const openTournaments: Tournament[] = getOpenTournaments();
-		if (openTournaments.length === 0) {
-			console.error("[tournamentRT] No open tournaments");
-			return reply.code(404).send({ success: false, message: "No open tournaments" });
-		} else {
-			// ANDY: sanitize tournaments before returning (strip WS clients / non-serializable fields so JSON.stringify succeeds)
-			// this is needed for the tournament list in the frontend
-			// if we would return them as it is API throws "ciruclar structure" error and the frontend can't render it
-			const data = openTournaments.map((t) => ({
-				id: t.id,
-				name: t.name,
-				state: t.state,
-				// count players in first round matches to show in the lobby player x of 4 have joined already
-				playersJoined: (() => {
-					const round1Matches = t.matches.get(1);
-					if (!round1Matches) return 0;
-					let count = 0;
-					for (const match of round1Matches) {
-						if (match.players.left) count++;
-						if (match.players.right) count++;
-					}
-					return count;
-				})(),
-			}));
-			return reply.code(200).send({ success: true, data });
-		}
+		if (openTournaments.length === 0) console.error("[tournamentRT] No open tournaments");
+		// Sanitize: remove non-serializable fields like 'clients' (Set<WebSocket>) before returning to avoid JSON.stringify errors
+		const data = openTournaments.map((t) => ({
+			id: t.id,
+			name: t.name,
+			state: t.state,
+			players: t.players.map((p) => ({
+				username: p.username,
+				displayName: p.displayName,
+			})),
+			// count players in first round matches to show in the lobby player x of 4 have joined already
+			playersJoined: (() => {
+				const round1Matches = t.matches.get(1);
+				if (!round1Matches) return 0;
+				let count = 0;
+				for (const match of round1Matches) {
+					if (match.players.left) count++;
+					if (match.players.right) count++;
+				}
+				return count;
+			})(),
+		}));
+		return reply.code(200).send({ success: true, data });
 	});
 
 	// ROUTES FOR ONE TOURNAMENT ONLY

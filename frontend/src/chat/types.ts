@@ -1,11 +1,12 @@
-export type ChatEvent = "direct" 
-| "broadcast" 
-| "invite" 
-| "tournament" 
-| "profile-link" 
-| "block" 
-| "unblock"
-| "onlineUser";
+export type ChatEvent =
+	| "direct"
+	| "broadcast"
+	| "invite"
+	| "tournament"
+	| "profile-link"
+	| "block"
+	| "unblock"
+	| "onlineUser";
 
 export type Message = {
 	type: ChatEvent;

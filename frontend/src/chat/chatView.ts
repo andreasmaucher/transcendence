@@ -1,13 +1,6 @@
 import { blockedUsers, generalData, userData } from "../config/constants";
 import { API_BASE } from "../config/endpoints";
-import {
-	populateChatWindow,
-	populateOnlineUserList,
-	renderBlockMessage,
-	sendMessage,
-	setupPrivateChathistory,
-	wireIncomingChat,
-} from "./chatHandler";
+import { renderBlockMessage, sendMessage, wireIncomingChat } from "./chatHandler";
 import { Message } from "./types";
 
 export function updateBlockState(sender: string, target: string, type: "block" | "unblock") {
@@ -70,7 +63,6 @@ export async function fetchUserData() {
 		return;
 	}
 	const body: any = await response.json();
-	//console.log("Raw user data response:", body);
 
 	if (!body.success) {
 		console.warn("Backend returned an error:", body.message);
@@ -98,7 +90,6 @@ export async function fetchAllUsers() {
 		return;
 	}
 	const body: any = await response.json();
-	//console.log("Raw all users response:", body);
 
 	if (!body.success) {
 		console.warn("Backend returned an error:", body.message);
@@ -117,7 +108,6 @@ export async function fetchOnlineUsers() {
 		return;
 	}
 	const body: any = await response.json();
-	//console.log("Raw online users response:", body);
 
 	if (!body.success) {
 		console.warn("Backend returned an error:", body.message);
@@ -131,7 +121,8 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	await fetchUserData();
 	await fetchAllUsers();
 	await fetchOnlineUsers();
-	if (!userData.chatHistory) console.log("[CHAT] Error retrieving chat history");
+	if (!userData.chatHistory || !userData.blockedUsers || !userData.friends)
+		console.log("[CHAT] Error retrieving user data");
 
 	const onlineUserlist: string[] = ["Global Chat"];
 	let activePrivateChat: { current: string | null } = { current: "Global Chat" };
