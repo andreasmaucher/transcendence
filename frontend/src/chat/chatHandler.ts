@@ -458,10 +458,10 @@ export function populateChatWindow(
 
 	if (activeChat === "Global Chat") {
 		chatHistoryToAdd = chatHistory.global;
-		console.log("GlobalChatHistory should be loaded!");
+		//console.log("GlobalChatHistory should be loaded!");
 	} else {
+		//console.log(`private chatHistory for ${activePrivateChat.current} loaded!`);
 		chatHistoryToAdd = setupPrivateChathistory(activeChat!);
-		console.log(`private chatHistory for ${activeChat} loaded!`);
 	}
 	chatHistoryToAdd.forEach((message) => {
 		renderIncomingMessage(message, chatMessages);

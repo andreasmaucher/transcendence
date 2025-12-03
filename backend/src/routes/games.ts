@@ -12,20 +12,32 @@ export default async function gamesRoutes(fastify: FastifyInstance) {
 			openSingleGames: [],
 			openTournaments: [],
 		};
+		// Sanitize: remove non-serializable fields like 'clients' (Set<WebSocket>) before returning to avoid JSON.stringify errors
 		data.openSingleGames = openSingleGames.map((g) => ({
 			id: g.id,
 			mode: g.mode,
 			match: {
 				id: g.match.id,
-				state: g.match.state,
-				players: g.match.players,
+				isRunning: g.match.state.isRunning,
+				isOver: g.match.state.isOver,
+				players: { left: g.match.players.left?.username, right: g.match.players.right?.username },
 				mode: g.match.mode,
 			},
+			playersJoined: (() => {
+				let count = 0;
+				if (g.match.players.left) count++;
+				if (g.match.players.right) count++;
+				return count;
+			})(),
 		}));
 		data.openTournaments = openTournaments.map((t) => ({
 			id: t.id,
 			name: t.name,
 			state: t.state,
+			players: t.players.map((p) => ({
+				username: p.username,
+				displayName: p.displayName,
+			})),
 			// count players in first round matches to show in the lobby player x of 4 have joined already
 			playersJoined: (() => {
 				const round1Matches = t.matches.get(1);

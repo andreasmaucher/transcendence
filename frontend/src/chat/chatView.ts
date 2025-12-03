@@ -95,7 +95,6 @@ export async function fetchUserData() {
 		return;
 	}
 	const body: any = await response.json();
-	//console.log("Raw user data response:", body);
 
 	if (!body.success) {
 		console.warn("Backend returned an error:", body.message);
@@ -125,7 +124,6 @@ export async function fetchAllUsers() {
 		return;
 	}
 	const body: any = await response.json();
-	//console.log("Raw all users response:", body);
 
 	if (!body.success) {
 		console.warn("Backend returned an error:", body.message);
@@ -144,7 +142,6 @@ export async function fetchOnlineUsers() {
 		return;
 	}
 	const body: any = await response.json();
-	//console.log("Raw online users response:", body);
 
 	if (!body.success) {
 		console.warn("Backend returned an error:", body.message);
@@ -158,7 +155,8 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	await fetchUserData();
 	await fetchAllUsers();
 	await fetchOnlineUsers();
-	if (!userData.chatHistory) console.log("[CHAT] Error retrieving chat history");
+	if (!userData.chatHistory || !userData.blockedUsers || !userData.friends)
+		console.log("[CHAT] Error retrieving user data");
 
 	// LIVE CHAT /; ///////////////////////////////////////////////////////////////
 	// MAIN CHAT PANEL (Container für Chat + Friends)

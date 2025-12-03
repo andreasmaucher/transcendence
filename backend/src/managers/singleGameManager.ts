@@ -22,6 +22,7 @@ export function forEachSingleGame(fn: (singleGame: SingleGame) => void): void {
 export function getOrCreateSingleGame(id: string, mode: string): SingleGame {
 	let singleGame = singleGames.get(id);
 	if (!singleGame) {
+		console.log("Creating new single game");
 		/* // increment game counter for this user
 		const currentCount = userGameCounters.get(userId) || 0;
 		const gameNumber = currentCount + 1;
@@ -93,7 +94,7 @@ export function getMatchInSingleGame(matchId: string): Match | undefined {
 export function isSingleGameOpen(singleGame: SingleGame): boolean {
 	if (singleGame.match.state.isOver || singleGame.match.state.isRunning) return false;
 	const { players } = singleGame.match;
-	if (!players.right || !players.left) true;
+	if (!players.right || !players.left) return true;
 	return false;
 }
 
