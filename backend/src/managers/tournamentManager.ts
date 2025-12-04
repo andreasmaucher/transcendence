@@ -34,43 +34,46 @@ export function getOrCreateTournament(id: string, name?: string, size?: number):
 			matches: new Map<number, Match[]>(),
 			players: [],
 		} as Tournament;
+//! LOGIC
+		// Initialize matches first (needed regardless of DB save success)
+		const matches = initTournamentMatches(tournament, tournament.state.size);
+		tournament.matches.set(1, matches);
 
+		// Try to save to database (might fail if already exists, that's OK)
 		try {
-			// Add new tournament to database (without starting it)
 			createTournamentDB(tournament.id, tournament.name, tournament.state.size);
-			const matches = initTournamentMatches(tournament, tournament.state.size);
-			tournament.matches.set(1, matches);
-			console.log(`[TM] Starting 5-minute timeout for tournament ${tournament.id}`);
-
-			// Set timer to wait for players
-			tournament.expirationTimer = setTimeout(
-				(tournament: Tournament) => {
-					if (!checkTournamentFull(tournament)) {
-						console.log(`[WS] Tournament ${tournament.id} expired — not enough players joined`);
-
-						// Loop through all rounds
-						for (const [round, matches] of tournament.matches) {
-							for (const match of matches) {
-								for (const s of match.clients) {
-									s.close(1000, "Tournament expired: not enough players joined");
-								}
-								match.clients.clear();
-							}
-						}
-
-						removeTournamentDB(tournament.id); // Remove tournament and its matches from database
-						tournament.matches.clear();
-						tournaments.delete(tournament.id);
-					}
-				},
-				5 * 60 * 1000,
-				tournament
-			); // 5 minutes
 		} catch (error: any) {
-			console.error("[TM]", error.message);
+			// Tournament might already exist in DB (e.g., loaded by endpoint), that's fine
+			console.log(`[TM] Tournament ${tournament.id} already exists in database or save failed:`, error.message);
 		}
+
+		// Set timer to wait for players
+		tournament.expirationTimer = setTimeout(
+			(tournament: Tournament) => {
+				if (!checkTournamentFull(tournament)) {
+					console.log(`[WS] Tournament ${tournament.id} expired — not enough players joined`);
+
+					// Loop through all rounds
+					for (const [round, matches] of tournament.matches) {
+						for (const match of matches) {
+							for (const s of match.clients) {
+								s.close(1000, "Tournament expired: not enough players joined");
+							}
+							match.clients.clear();
+						}
+					}
+
+					removeTournamentDB(tournament.id); // Remove tournament and its matches from database
+					tournament.matches.clear();
+					tournaments.delete(tournament.id);
+				}
+			},
+			5 * 60 * 1000,
+			tournament
+		); // 5 minutes
+
 		tournaments.set(id, tournament);
-		console.log("NEW OPEN TOURNAMENT:", tournament.id, tournament.name);
+		console.log(`[TM] NEW OPEN TOURNAMENT: ${tournament.id} (${tournament.name}) - ${tournament.state.size} players`);
 	}
 	return tournament;
 }
