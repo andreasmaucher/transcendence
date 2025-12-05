@@ -34,16 +34,15 @@ export function getOrCreateTournament(id: string, name?: string, size?: number):
 			matches: new Map<number, Match[]>(),
 			players: [],
 		} as Tournament;
-//! LOGIC
+		// ANDY: changed the order here to ensure that the tournament is initialized in any case
 		// Initialize matches first (needed regardless of DB save success)
 		const matches = initTournamentMatches(tournament, tournament.state.size);
 		tournament.matches.set(1, matches);
 
-		// Try to save to database (might fail if already exists, that's OK)
+		// Try to save to database (might fail if already exist in db, but no problem e.g. if it exists from previous server session)
 		try {
 			createTournamentDB(tournament.id, tournament.name, tournament.state.size);
 		} catch (error: any) {
-			// Tournament might already exist in DB (e.g., loaded by endpoint), that's fine
 			console.log(`[TM] Tournament ${tournament.id} already exists in database or save failed:`, error.message);
 		}
 

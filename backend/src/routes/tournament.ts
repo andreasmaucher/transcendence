@@ -23,8 +23,7 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 
 	// GET all open tournaments
 	fastify.get("/api/tournaments/open", async (_request: FastifyRequest, reply: FastifyReply) => {
-		//! LOGIC
-		// Load tournaments from database into memory so they're visible to all users
+		// ANDY: added this to load tournaments from database into memory so they're visible to all users
 		// Also include tournaments that are in memory but might not be in DB yet (just created)
 		try {
 			const dbTournaments = db.prepare(`
@@ -32,8 +31,6 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 				FROM tournaments
 				WHERE started_at IS NULL
 			`).all() as Array<{ id: string; name: string; size: number }>;
-
-			console.log(`[tournamentRT] Found ${dbTournaments.length} tournaments in database, ${tournaments.size} in memory`);
 
 			for (const dbTournament of dbTournaments) {
 				if (!tournaments.has(dbTournament.id)) {
