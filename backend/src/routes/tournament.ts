@@ -1,7 +1,12 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { getAllTournamentsDB, getTournamentByIdDB } from "../database/tournaments/getters.js";
-import { getOpenTournaments, getTournament, isTournamentOpen } from "../managers/tournamentManagerHelpers.js";
+import { getOpenTournaments, getTournament, isTournamentOpen, initTournamentMatches } from "../managers/tournamentManagerHelpers.js";
 import { Tournament } from "../types/game.js";
+import { tournaments } from "../config/structures.js";
+import { createInitialTournamentState } from "../game/state.js";
+import { checkTournamentFull } from "../managers/tournamentManagerHelpers.js";
+import { removeTournamentDB } from "../database/tournaments/setters.js";
+import db from "../database/db_init.js";
 
 export default async function tournamentRoutes(fastify: FastifyInstance) {
 	// ROUTES FOR MULTIPLE TOURNAMENTS
@@ -18,6 +23,52 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 
 	// GET all open tournaments
 	fastify.get("/api/tournaments/open", async (_request: FastifyRequest, reply: FastifyReply) => {
+		// ANDY: added this to load tournaments from database into memory so they're visible to all users
+		// Also include tournaments that are in memory but might not be in DB yet (just created)
+		try {
+			const dbTournaments = db.prepare(`
+				SELECT id, name, size
+				FROM tournaments
+				WHERE started_at IS NULL
+			`).all() as Array<{ id: string; name: string; size: number }>;
+
+			for (const dbTournament of dbTournaments) {
+				if (!tournaments.has(dbTournament.id)) {
+					// Tournament exists in DB but not in memory - load it
+					const tournament: Tournament = {
+						id: dbTournament.id,
+						name: dbTournament.name,
+						state: createInitialTournamentState(dbTournament.size || 4),
+						matches: new Map(),
+						players: [],
+					};
+
+					// Initialize matches for the tournament
+					const matches = initTournamentMatches(tournament, tournament.state.size);
+					tournament.matches.set(1, matches);
+
+					// Set timer to wait for players
+					tournament.expirationTimer = setTimeout(
+						(tournament: Tournament) => {
+							if (!checkTournamentFull(tournament)) {
+								console.log(`[WS] Tournament ${tournament.id} expired — not enough players joined`);
+								removeTournamentDB(tournament.id);
+								tournament.matches.clear();
+								tournaments.delete(tournament.id);
+							}
+						},
+						5 * 60 * 1000,
+						tournament
+					);
+
+					tournaments.set(dbTournament.id, tournament);
+					console.log(`[tournamentRT] Loaded tournament ${dbTournament.id} from database into memory`);
+				}
+			}
+		} catch (error: any) {
+			console.error("[tournamentRT] Error loading tournaments from database:", error.message);
+		}
+
 		const openTournaments: Tournament[] = getOpenTournaments();
 		if (openTournaments.length === 0) console.error("[tournamentRT] No open tournaments");
 		// Sanitize: remove non-serializable fields like 'clients' (Set<WebSocket>) before returning to avoid JSON.stringify errors
