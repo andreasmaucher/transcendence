@@ -29,7 +29,6 @@
 
 .user-profile-root {
   width: 100%;
-  min-height: 100vh;
 
   display: flex;
   justify-content: center;
@@ -54,6 +53,10 @@
   gap: 24px;
 
   padding: 40px;
+
+  max-height: calc(100vh - 6rem - 80px - 40px);
+  overflow-y: auto;
+  padding-right: 20px;
 
   border-radius: 12px;
   border: 2px solid var(--primary-border);

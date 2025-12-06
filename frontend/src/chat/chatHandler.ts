@@ -101,7 +101,6 @@ async function fetchOpenGames() {
 		const response = await fetch("/api/games/open");
 
 		if (response.status !== 200 && response.status !== 404) {
-			// Wenn der Server einen Fehler-Code sendet (z.B. 500), lesen wir den Text
 			const errorText = await response.text(); 
 			console.error("Server returned non-OK status. Response:", errorText);
 			throw new Error(`Server error: Status ${response.status}`);
@@ -320,25 +319,25 @@ export function renderChatHeaderButtons(
 		handleDuelChallenge();
 	});
 
-	if (!userData.blockedUsers)
-		userData.blockedUsers = [];
 	const isBlocked = userData.blockedUsers?.includes(activeChat!);
-
+	
 	const btnBlock = createIconBtn(
 		isBlocked? "♻️": "🚫",
 		isBlocked? "Unblock user" : "Block user",
 		() => {
-		if (!isBlocked){
-			userData.blockedUsers?.push(activeChat!);
-			sendMessage('block', `You've blocked ${activeChat}`, activeChat);
-			console.log(`🚫 User ${activeChat} was blocked`);
-		} else {
-			userData.blockedUsers = userData.blockedUsers!.filter(u => u !== activeChat);
-			sendMessage("unblock", `You've unblocked ${activeChat}`, activeChat);
-			console.log(`♻️ User ${activeChat} was UNBLOCKED`);
-		}
-		renderChatHeaderButtons(chatHeader, activeChat);
-	}, 
+			const isBlockedNow = userData.blockedUsers?.includes(activeChat!) || false;
+
+			if (!isBlockedNow){
+				userData.blockedUsers?.push(activeChat!);
+				sendMessage('block', `You've blocked ${activeChat}`, activeChat);
+				console.log(`🚫 User ${activeChat} was blocked`);
+			} else {
+				userData.blockedUsers = userData.blockedUsers!.filter(u => u !== activeChat);
+				sendMessage("unblock", `You've unblocked ${activeChat}`, activeChat);
+				console.log(`♻️ User ${activeChat} was UNBLOCKED`);
+			}
+			renderChatHeaderButtons(chatHeader, activeChat);
+		}, 
 	isBlocked
 	);
 
@@ -348,59 +347,102 @@ export function renderChatHeaderButtons(
 }
 
 export function renderOnlineUsers(
-	friendList: HTMLElement,
+	channelListContainer: HTMLElement,
 	chatMessages: HTMLElement,
 	chatHeader: HTMLElement,
 ) {
-	friendList.innerHTML = "";
+	channelListContainer.innerHTML = "";
 
 	const primaryNeon = "#00ffc8";
 	const secondaryNeon = "#66ffc8"
+	const headerGreen = "#00A358"
 
-	const channelNames = ["Global Chat"].concat(
-		generalData.onlineUsers!.filter(u => u !== userData.username)
+	const allUsersExcludingSelfAndGlobal = generalData.onlineUsers!.filter(
+		u => u !== userData.username && u !== "Global Chat"
 	);
 
-	generalData.onlineUsers!.forEach((username) => {
+	const friendsOnline = allUsersExcludingSelfAndGlobal.filter(u => userData.friends?.includes(u));
+	const othersOnline = allUsersExcludingSelfAndGlobal.filter(u => !userData.friends?.includes(u));
+	const friendsOffline = userData.friends.filter(f => !allUsersExcludingSelfAndGlobal.includes(f));
+
+	const renderSectionHeader = (title: string, color: string, margin: string = "12px 0 5px 0") => {
+		const header = document.createElement("h4");
+		header.textContent = title;
+		header.style.color = color;
+		header.style.margin = margin;
+		header.style.fontSize = "14px";
+		header.style.paddingLeft = "4px";
+		header.style.borderBottom = `1px solid rgba(0, 255, 200, 0.1)`;
+		channelListContainer.append(header);
+	};
+
+	const renderUserItem = (username: string, isOffline: boolean = false) => {
 		const userItem = document.createElement("div");
 		userItem.textContent = username;
 		userItem.style.padding = "6px 8px";
 		userItem.style.marginBottom = "6px";
-		userItem.style.background = "rgba(0, 255, 200, 0.1)"; 
-		userItem.style.color = "#66ffc8";
 		userItem.style.borderRadius = "4px";
 		userItem.style.cursor = "pointer";
 		userItem.classList.add("online-user");
 
+		if (isOffline) {
+			userItem.style.background = "rgba(255, 255, 255, 0.05)"; 
+			userItem.style.color = "#888"; 
+		} else if (username !== "Global Chat") {
+			userItem.style.background = "rgba(0, 255, 200, 0.1)"; 
+			userItem.style.color = "#66ffc8";
+		} else {
+			userItem.style.background = "rgba(0, 255, 200, 0.2)";
+			userItem.style.color = primaryNeon;
+			userItem.style.fontWeight = "bold";
+		}
+
 		// highlight active channel
 		if (username === userData.activePrivateChat) {
-				userItem.style.border = `1px solid ${primaryNeon}`
-				userItem.style.boxShadow = `0 0 5px ${primaryNeon}`
+			userItem.style.border = `1px solid ${primaryNeon}`
+			userItem.style.boxShadow = `0 0 5px ${primaryNeon}`
+			userItem.style.color = primaryNeon; // Stärkeres Neon für aktiv
 		}
 		
 		// hover
 		userItem.onmouseenter = () => {
-			userItem.style.backgroundColor = "rgba(0, 255, 200, 0.25)";
+			userItem.style.backgroundColor = isOffline 
+				? "rgba(255, 255, 255, 0.1)" 
+				: "rgba(0, 255, 200, 0.25)";
+		};
+		userItem.onmouseleave = () => {
+			userItem.style.backgroundColor = (username === userData.activePrivateChat) 
+				? `rgba(0, 255, 200, 0.1)` 
+				: isOffline ? "rgba(255, 255, 255, 0.05)" : `rgba(0, 255, 200, 0.1)`;
 		};
 
-		userItem.onmouseleave = () => {
-		if (username === userData.activePrivateChat) {
-			userItem.style.backgroundColor = `rgba(0, 255, 200, 0.1)`;
-		} else {
-			userItem.style.backgroundColor = `rgba(0, 255, 200, 0.1)`;
-		}
-	};
-		// Create onlineUserList
+		// Click handler
 		userItem.onclick = () => {
 			userData.activePrivateChat = username;
 			localStorage.setItem('activePrivateChat', username);
-			renderOnlineUsers(friendList, chatMessages, chatHeader);
+			renderOnlineUsers(channelListContainer, chatMessages, chatHeader); 
 			chatMessages.innerHTML = "";
-			populateChatWindow(userData.chatHistory!, chatMessages);
+			populateChatWindow(userData.chatHistory!, chatMessages); 
 			renderChatHeaderButtons(chatHeader, userData.activePrivateChat);
 		};
-		friendList.append(userItem);
-	});
+		channelListContainer.append(userItem);
+	};
+
+	//render the sections
+	renderUserItem("Global Chat");
+
+	//friends online
+	if (friendsOnline.length > 0 || friendsOffline.length > 0) {
+		renderSectionHeader("Friends", headerGreen);
+		friendsOnline.forEach(f => renderUserItem(f, false));
+		friendsOffline.forEach(f => renderUserItem(f, true));
+	}
+
+	//user online
+	if (othersOnline.length > 0) {
+		renderSectionHeader("Online Users", headerGreen);
+		othersOnline.forEach(f => renderUserItem(f, false));
+	}
 }
 
 // METHODS /////////////////////////////////////////////////////////////////////

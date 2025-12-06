@@ -263,7 +263,6 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	fHeader.style.fontWeight = "bold";
 	fHeader.style.fontSize = "18px";
 	fHeader.style.margin = "8px";
-	fHeader.style.cursor = "pointer";
 	fHeader.style.whiteSpace = "nowrap";
 	fHeader.style.color = "#00ffc8";
 	fHeader.style.textShadow = "0 0 5px #66ffc8";
@@ -279,32 +278,15 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	// CHAT EXPANDS AUTOMATICALLY
 	chat.style.flex = "1";
 
-	// TOGGLE OPEN/CLOSE FRIEND LIST
-	let channelOpen = true;
-	fHeader.onclick = () => {
-		channelOpen = !channelOpen;
-		if (channelOpen) {
-			// NORMAL (aufgeklappt)
-			friends.style.width = "180px";
-			friends.style.padding = "6px";
-			channelList.style.display = "block";
-			
-			fHeader.style.writingMode = "horizontal-tb";
-			fHeader.style.margin = "8px";
-			fHeader.style.rotate = "0deg";
-			fHeader.textContent = "Channels";
-		} else {
+	// STATIC CHANNELLIST
+	friends.style.width = "180px";
+	friends.style.padding = "6px";
+	channelList.style.display = "block";
 
-			friends.style.width = "32px";
-			friends.style.padding = "0";
-			channelList.style.display = "none";
-
-			fHeader.style.writingMode = "vertical-lr";
-			fHeader.style.rotate = "0deg";
-			fHeader.style.margin = "40px auto 0 auto";
-			fHeader.textContent = "Channels";
-		}
-	};
+	fHeader.style.writingMode = "horizontal-tb";
+	fHeader.style.margin = "8px";
+	fHeader.style.rotate = "0deg";
+	fHeader.textContent = "Channels";
 
 	// MINIMIZE CHAT
 	// Minimize button

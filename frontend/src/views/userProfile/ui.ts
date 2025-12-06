@@ -4,7 +4,7 @@ import { t } from "../../i18n";
 import { fetchUserPublic } from "../../api/http";
 import { userData } from "../../config/constants";
 import { API_BASE } from "../../config/endpoints";
-import { sendMessage } from "../../chat/chatHandler";
+import { appendMessageToHistory, sendMessage } from "../../chat/chatHandler";
 
 export async function renderUserProfile(container: HTMLElement, username?: string) {
   container.innerHTML = "";
