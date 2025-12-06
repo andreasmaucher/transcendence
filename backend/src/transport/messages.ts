@@ -8,8 +8,7 @@ import { createUTCTimestamp } from "../utils/time.js";
 import { convertToMessage } from "../chat/utils.js";
 import { ChatMessage } from "../types/chat.js";
 
-//! Last logic
-// Track when matches ended to delay reset requests (so final score is visible)
+// ANDY: added this to track when matches ended to delay reset requests (so final score is visible)
 export const matchEndTimes = new Map<string, number>(); // matchId -> timestamp when game ended
 const RESET_DELAY_MS = 3000; // 3 seconds - time to show final score before allowing reset
 
