@@ -8,6 +8,11 @@ import { createUTCTimestamp } from "../utils/time.js";
 import { convertToMessage } from "../chat/utils.js";
 import { ChatMessage } from "../types/chat.js";
 
+//! Last logic
+// Track when matches ended to delay reset requests (so final score is visible)
+export const matchEndTimes = new Map<string, number>(); // matchId -> timestamp when game ended
+const RESET_DELAY_MS = 3000; // 3 seconds - time to show final score before allowing reset
+
 // Handles the "message" type of socket messages for the user sockets
 export function handleChatMessages(raw: RawData) {
 	let rawMsg;
@@ -45,7 +50,25 @@ export function handleGameMessages(raw: RawData, match: Match) {
 	} else if (msg.type === "reset") {
 		// ANDY: For tournament matches, we should not reset the match state when a "reset" message is received, because we need to preserve the winner for round progression!
 		if (!match.tournament) {
-			resetMatchState(match);
+			// Delay reset if game just ended - allow final score to be visible for a few seconds
+			const endTime = matchEndTimes.get(match.id);
+			const now = Date.now();
+			
+			if (endTime && (now - endTime) < RESET_DELAY_MS) {
+				// Game ended recently, delay the reset
+				const remainingDelay = RESET_DELAY_MS - (now - endTime);
+				setTimeout(() => {
+					// Only reset if game is still over (user hasn't started a new game)
+					if (match.state.isOver) {
+						resetMatchState(match);
+						matchEndTimes.delete(match.id);
+					}
+				}, remainingDelay);
+			} else {
+				// Enough time has passed or game didn't just end, reset immediately
+				resetMatchState(match);
+				matchEndTimes.delete(match.id);
+			}
 		}
 	}
 }

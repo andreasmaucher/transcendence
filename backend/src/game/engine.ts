@@ -4,6 +4,7 @@ import { clamp, resetBall } from "./state.js";
 import { updateMatchDB } from "../database/matches/setters.js";
 import { endMatch } from "../managers/matchManager.js";
 import { Match } from "../types/match.js";
+import { matchEndTimes } from "../transport/messages.js";
 
 export function isGameOver(match: Match): void {
 	const state = match.state;
@@ -21,6 +22,10 @@ export function isGameOver(match: Match): void {
 		gameOver = true;
 	}
 	if (state.isOver) {
+		// Track when match ended for delayed reset handling (so final score is visible)
+		if (!match.tournament) {
+			matchEndTimes.set(match.id, Date.now());
+		}
 		endMatch(match);
 		match.inputs.left = 0;
 		match.inputs.right = 0;
