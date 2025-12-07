@@ -53,6 +53,7 @@ db.exec(`
 		started_at DATETIME,
 		ended_at DATETIME,
 		notes TEXT,
+		creator TEXT,
 
 		FOREIGN KEY (winner) REFERENCES users (username)
 	);
