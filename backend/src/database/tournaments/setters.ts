@@ -61,3 +61,21 @@ export function removeTournamentDB(id: string): void {
 	const stmt = db.prepare("DELETE FROM tournaments WHERE id = ?");
 	stmt.run(id);
 }
+
+// Clean up abandoned tournaments that were never started
+// Removes tournaments where started_at is NULL and were created more than X minutes ago
+export function cleanupAbandonedTournamentsDB(minutesOld: number = 3): number {
+	const stmt = db.prepare(`
+		DELETE FROM tournaments 
+		WHERE started_at IS NULL 
+		AND datetime(created_at, '+' || ? || ' minutes') < datetime('now')
+	`);
+	const result = stmt.run(minutesOld);
+	const deletedCount = result.changes;
+	
+	if (deletedCount > 0) {
+		console.log(`[DB] Cleaned up ${deletedCount} abandoned tournament(s) older than ${minutesOld} minutes`);
+	}
+	
+	return deletedCount;
+}

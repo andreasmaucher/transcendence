@@ -50,6 +50,7 @@ db.exec(`
 		name TEXT NOT NULL,
 		size INTEGER,
 		winner TEXT,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		started_at DATETIME,
 		ended_at DATETIME,
 		notes TEXT,
@@ -109,7 +110,26 @@ function cleanupIncompleteGames() {
 	}
 }
 
+function cleanupAbandonedTournaments() {
+	try {
+		// Delete tournaments that were never started and are older than 3 minutes
+		// This handles tournaments that got stuck in DB due to server restarts
+		const stmt = db.prepare(`
+			DELETE FROM tournaments 
+			WHERE started_at IS NULL 
+			AND datetime(created_at, '+3 minutes') < datetime('now')
+		`);
+		const result = stmt.run();
+		if (result.changes > 0) {
+			console.log(`[DB] Cleaned up ${result.changes} abandoned tournament(s) older than 3 minutes`);
+		}
+	} catch (error) {
+		console.error("[DB] Error cleaning up abandoned tournaments:", error);
+	}
+}
+
 // Run cleanup on startup
 cleanupIncompleteGames();
+cleanupAbandonedTournaments();
 
 export default db;
