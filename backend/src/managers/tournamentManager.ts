@@ -20,15 +20,35 @@ import { Match } from "../types/match.js";
 import { forfeitMatchDB } from "../database/matches/setters.js";
 import { buildPayload } from "../transport/broadcaster.js";
 import { createTournamentPlayerDB } from "../database/tournament_players/setters.js";
+import db from "../database/db_init.js";
 
 // Get or Create a tournament, called only when creating a socket connection
-export function getOrCreateTournament(id: string, name?: string, size?: number): Tournament {
+export function getOrCreateTournament(id: string, name?: string, size?: number, creator?: string): Tournament {
 	let tournament = tournaments.get(id);
 	if (!tournament) {
+		// Generate unique name with counter if creator is provided
+		let tournamentName = name;
+		if (creator && name) {
+			// Count existing tournaments by this creator
+			const stmt = db.prepare(`
+				SELECT COUNT(*) as count 
+				FROM tournaments 
+				WHERE creator = ?
+			`);
+			const result: any = stmt.get(creator);
+			const counter = (result?.count || 0) + 1;
+			
+			// Replace generic tournament name with numbered version
+			// E.g., "andy Tournament" -> "andy Tournament #1"
+			if (name.includes('Tournament')) {
+				tournamentName = `${creator} tournament #${counter}`;
+			}
+		}
+		
 		// use the provided id from URL so players can find each other
 		tournament = {
 			id: id,
-			name: name,
+			name: tournamentName,
 			isRunning: false,
 			state: createInitialTournamentState(size || 4),
 			matches: new Map<number, Match[]>(),
@@ -37,7 +57,7 @@ export function getOrCreateTournament(id: string, name?: string, size?: number):
 		// ANDY: Save tournament to database FIRST before creating matches
 		// Matches have FOREIGN KEY constraint to tournaments table
 		try {
-			createTournamentDB(tournament.id, tournament.name, tournament.state.size);
+			createTournamentDB(tournament.id, tournament.name, tournament.state.size, creator);
 		} catch (error: any) {
 			console.log(`[TM] Tournament ${tournament.id} already exists in database or save failed:`, error.message);
 		}
