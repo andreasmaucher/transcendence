@@ -95,8 +95,16 @@ setInterval(() => {
 	// Single games loop
 	forEachSingleGame((singleGame) => {
 		const match = singleGame.match;
+		const wasRunning = match.state.isRunning;
+		const wasOver = match.state.isOver;
+		
 		if (match.state.isRunning) {
 			stepMatch(match, dt || 1 / UPDATE_FPS);
+		}
+		
+		// Broadcast state if game was running (includes the frame when game just ended)
+		// The reset delay in messages.ts ensures the final score stays visible
+		if (wasRunning || (match.state.isOver && !wasOver)) {
 			gameBroadcast(buildPayload("state", match.state), match);
 		}
 	});
@@ -109,8 +117,16 @@ setInterval(() => {
 			if (!matches || matches.length === 0) return;
 
 			for (const match of matches) {
+				const wasRunning = match.state.isRunning;
+				const wasOver = match.state.isOver;
+				
 				if (match.state.isRunning) {
 					stepMatch(match, dt || 1 / UPDATE_FPS);
+				}
+				
+				// Broadcast state if game was running (includes the frame when game just ended)
+				// The reset delay in messages.ts ensures the final score stays visible
+				if (wasRunning || (match.state.isOver && !wasOver)) {
 					gameBroadcast(buildPayload("state", match.state), match);
 				}
 			}
