@@ -121,8 +121,18 @@ export function endMatch(match: Match) {
 	if (!match.tournament) return;
 	const tournament = tournaments.get(match.tournament.id);
 	if (!tournament) return;
-	if (isTournamentOver(tournament)) endTournament(tournament);
-	else if (isRoundOver(tournament)) goToNextRound(tournament);
+	if (isTournamentOver(tournament)) {
+		// Delay ending tournament to show final score
+		setTimeout(() => {
+			endTournament(tournament);
+		}, 1000); // 1 second to show final score
+	} else if (isRoundOver(tournament)) {
+		// Delay advancing to next round to show final scores
+		console.log(`[TM] Round ${tournament.state.round} complete, advancing to next round in 1 second...`);
+		setTimeout(() => {
+			goToNextRound(tournament);
+		}, 1000); // 1 second to show final scores
+	}
 }
 
 // Add player to open match
