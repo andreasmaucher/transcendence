@@ -3,6 +3,8 @@
 
 export const CONTRACT_ADDRESS: string = (import.meta as any).env?.VITE_CONTRACT_ADDRESS || "";
 export const SNOWTRACE_TX_BASE: string = (import.meta as any).env?.VITE_SNOWTRACE_TX_BASE || "";
+export const API_BASE: string = (import.meta as any).env?.VITE_API_BASE || "";
+export const TEST: string = (import.meta as any).env?.VITE_TEST || "";
 
 // Default function name we expect to call. Adjust when integrating the real contract.
 export const CONTRACT_FUNCTION = "saveMatch" as const;

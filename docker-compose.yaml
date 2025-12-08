@@ -1,13 +1,16 @@
-name: ft_transcendence
 
 services:
   backend:
+    image: transcendence-backend:latest
+    secrets:
+      - backend_tls_key
+      - backend_tls_cert
     build:
       context: ./backend
       dockerfile: Dockerfile
       args:
         - CACHEBUST=1
-    container_name: transcendence-backend
+    # container_name: transcendence-backend
     ports:
       - "4000:4000"
     env_file:
@@ -24,12 +27,13 @@ services:
     restart: unless-stopped
 
   frontend:
+    image: transcendence-frontend:latest
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
         - CACHEBUST=1
-    container_name: transcendence-frontend
+    # container_name: transcendence-frontend
     ports:
       - "5173:5173"
     env_file:
@@ -45,3 +49,9 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+
+secrets:
+  backend_tls_key:
+    file: ./certs/key.pem
+  backend_tls_cert:
+    file: ./certs/cert.pem

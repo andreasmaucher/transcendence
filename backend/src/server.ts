@@ -1,7 +1,8 @@
 // Backend server that handles the game logic and websocket connections
 
-import Fastify, { FastifyInstance } from "fastify";
+import Fastify, { FastifyInstance, FastifyServerOptions } from "fastify";
 import fastifyWebsocket from "@fastify/websocket";
+import fs from "fs";
 import { GAME_CONSTANTS } from "./config/constants.js";
 import { stepMatch } from "./game/engine.js";
 import { buildPayload, gameBroadcast } from "./transport/broadcaster.js";
@@ -20,10 +21,32 @@ import type WebSocket from "ws";
 import userManagementRoutes from "./routes/userManagement.js";
 import chatRoutes from "./routes/chat.js";
 import gamesRoutes from "./routes/games.js";
+import path from "path";
 
 const UPDATE_FPS = GAME_CONSTANTS.UPDATE_FPS;
+const useHttps = (process.env.USE_HTTPS ?? "").toLowerCase() === "true";
 
-const fastify: FastifyInstance = Fastify({ logger: true });
+let fastifyOptions: FastifyServerOptions & { https?: { key: Buffer; cert: Buffer } } = {
+	logger: true,
+};
+
+if (useHttps) {
+	const keyPath = process.env.HTTPS_KEY_PATH;
+	const certPath = process.env.HTTPS_CERT_PATH;
+
+	if (!keyPath || !certPath) {
+		throw new Error("USE_HTTPS is true but HTTPS_KEY_PATH or HTTPS_CERT_PATH is not set");
+	}
+
+	fastifyOptions = {
+		...fastifyOptions,
+		https: {
+			key: fs.readFileSync(keyPath),
+			cert: fs.readFileSync(certPath),
+		},
+	};
+}
+const fastify: FastifyInstance = Fastify(fastifyOptions);
 
 await fastify.register(fastifyWebsocket);
 
