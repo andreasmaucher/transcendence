@@ -134,6 +134,8 @@ async function handleDuelChallenge() {
 
 		const availableGames = [];
 
+		const singleGames = openGames.openSingleGames || [];
+
 		openGames.singleGames.forEach(g => {
 			availableGames.push({
 				type: 'single', 
@@ -143,21 +145,28 @@ async function handleDuelChallenge() {
 			});
 		});
 
-		openGames.tournaments.forEach(t => {
-			availableGames.push({	
-				type: 'tournament', 
-				id: t.id,
-				name: `Tournament: ${t.name}`
-			});
-		});
+		const tournaments = openGames.openTournaments || {};
+
+		if (tournaments && typeof tournaments === 'object') {
+				Object.entries(tournaments).forEach(([id, t]) => {
+					// 'id' ist der Schlüssel, 't' ist das Turnier-Datenobjekt
+					if (t.name) { // Sicherheitsprüfung
+						availableGames.push({   
+							type: 'tournament', 
+							id: id, // <--- Die ID ist jetzt der SCHLÜSSEL
+							name: `Tournament: ${t.name}` // <--- Der Name ist in den Turnierdaten
+						});
+					}
+				});
+			}
 
 		if (availableGames.length === 0) {
 			alert(`No open games or tournaments available to challenge ${userData.activePrivateChat}`);
 			return;
 		}
 
-		console.log(`Open Single Games: `, openGames.singleGames);
-		console.log(`Open Tournaments: `, openGames.tournaments);
+		console.log(`Open Single Games: `, openGames.openSingleGames);
+		console.log(`Open Tournaments: `, openGames.openTournaments);
 
 		const modalOverlay = document.createElement('div');
 		modalOverlay.id = 'challenge-modal-overlay';
