@@ -132,13 +132,21 @@ export function addPlayerToTournament({
 			for (const match of matches) {
 				if (!checkMatchFull(match)) {
 					if (tournament.state.round === 1 && playerDisplayName && socket) {
-						tournament.players.push({
-							username: playerId,
-							displayName: playerDisplayName,
-							socket: socket,
-							currentMatch: match,
-						});
-						createTournamentPlayerDB(tournament.id, playerId, playerDisplayName);
+						// Only add to tournament.players if not already there
+						const alreadyInTournament = tournament.players.some(p => p.username === playerId);
+						if (!alreadyInTournament) {
+							tournament.players.push({
+								username: playerId,
+								displayName: playerDisplayName,
+								socket: socket,
+								currentMatch: match,
+							});
+							try {
+								createTournamentPlayerDB(tournament.id, playerId, playerDisplayName);
+							} catch (error: any) {
+								console.log(`[TM] Player ${playerId} already in tournament_players table: ${error.message}`);
+							}
+						}
 					}
 					addPlayerToMatch(match, playerId, socket);
 					if (checkTournamentFull(tournament)) startTournament(tournament);
