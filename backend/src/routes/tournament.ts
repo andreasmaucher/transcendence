@@ -32,16 +32,9 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 				WHERE started_at IS NULL
 			`).all() as Array<{ id: string; name: string; size: number }>;
 
-			console.log(`[tournamentRT] Found ${dbTournaments.length} tournaments in DB`);
-			console.log(`[tournamentRT] Currently ${tournaments.size} tournaments in memory`);
-
 			for (const dbTournament of dbTournaments) {
-				const inMemory = tournaments.has(dbTournament.id);
-				console.log(`[tournamentRT] Tournament ${dbTournament.id}: inMemory=${inMemory}`);
-				
-				if (!inMemory) {
+				if (!tournaments.has(dbTournament.id)) {
 					// Tournament exists in DB but not in memory - load it
-					console.log(`[tournamentRT] Loading tournament ${dbTournament.id} from DB - creating NEW matches`);
 					const tournament: Tournament = {
 						id: dbTournament.id,
 						name: dbTournament.name,
@@ -52,7 +45,6 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 
 					// Initialize matches for the tournament
 					const matches = initTournamentMatches(tournament, tournament.state.size);
-					console.log(`[tournamentRT]   Created ${matches.length} NEW empty matches`);
 					tournament.matches.set(1, matches);
 
 					// Set timer to wait for players
@@ -70,7 +62,6 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 					);
 
 					tournaments.set(dbTournament.id, tournament);
-					console.log(`[tournamentRT] Loaded tournament ${dbTournament.id} from database into memory`);
 				}
 			}
 		} catch (error: any) {
@@ -78,8 +69,6 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 		}
 
 		const openTournaments: Tournament[] = getOpenTournaments();
-		console.log(`[tournamentRT] Returning ${openTournaments.length} open tournaments`);
-		
 		if (openTournaments.length === 0) console.error("[tournamentRT] No open tournaments");
 		// Sanitize: remove non-serializable fields like 'clients' (Set<WebSocket>) before returning to avoid JSON.stringify errors
 		const data = openTournaments.map((t) => ({
@@ -93,18 +82,12 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 			// count players in first round matches to show in the lobby player x of 4 have joined already
 			playersJoined: (() => {
 				const round1Matches = t.matches.get(1);
-				if (!round1Matches) {
-					console.log(`[tournamentRT]   Tournament ${t.id}: NO round 1 matches!`);
-					return 0;
-				}
+				if (!round1Matches) return 0;
 				let count = 0;
-				console.log(`[tournamentRT]   Tournament ${t.id}: checking ${round1Matches.length} matches`);
 				for (const match of round1Matches) {
-					console.log(`[tournamentRT]     Match ${match.id}: left=${match.players.left?.username || 'empty'}, right=${match.players.right?.username || 'empty'}`);
 					if (match.players.left) count++;
 					if (match.players.right) count++;
 				}
-				console.log(`[tournamentRT]   Tournament ${t.id}: playersJoined=${count}/${t.state.size}`);
 				return count;
 			})(),
 		}));

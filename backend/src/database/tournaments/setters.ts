@@ -62,8 +62,12 @@ export function removeTournamentDB(id: string): void {
 	stmt.run(id);
 }
 
-// Clean up abandoned tournaments that were never started
-// Removes tournaments where started_at is NULL and were created more than X minutes ago
+// ANDY: added this function to clean up abandoned tournaments
+/*
+tournaments are deleted if ALL of these conditions are true:
+- start_at is NULL, meaning they never reached 4 players
+- created_at is more than 3 minutes ago
+ */
 export function cleanupAbandonedTournamentsDB(minutesOld: number = 3): number {
 	const stmt = db.prepare(`
 		DELETE FROM tournaments 
@@ -76,6 +80,5 @@ export function cleanupAbandonedTournamentsDB(minutesOld: number = 3): number {
 	if (deletedCount > 0) {
 		console.log(`[DB] Cleaned up ${deletedCount} abandoned tournament(s) older than ${minutesOld} minutes`);
 	}
-	
 	return deletedCount;
 }

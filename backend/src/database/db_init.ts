@@ -2,6 +2,7 @@
 import Database from "better-sqlite3";
 import fs from "fs";
 import path from "path";
+import { cleanupAbandonedTournamentsDB } from "./tournaments/setters.js";
 
 const dbPath = process.env.DB_PATH || "/app/data/database.sqlite";
 
@@ -112,17 +113,8 @@ function cleanupIncompleteGames() {
 
 function cleanupAbandonedTournaments() {
 	try {
-		// Delete tournaments that were never started and are older than 3 minutes
-		// This handles tournaments that got stuck in DB due to server restarts
-		const stmt = db.prepare(`
-			DELETE FROM tournaments 
-			WHERE started_at IS NULL 
-			AND datetime(created_at, '+3 minutes') < datetime('now')
-		`);
-		const result = stmt.run();
-		if (result.changes > 0) {
-			console.log(`[DB] Cleaned up ${result.changes} abandoned tournament(s) older than 3 minutes`);
-		}
+		// ANDY: regularly cleanup tournaments from the db so the lobby does not get polluted
+		cleanupAbandonedTournamentsDB(3);
 	} catch (error) {
 		console.error("[DB] Error cleaning up abandoned tournaments:", error);
 	}

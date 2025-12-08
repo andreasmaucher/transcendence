@@ -29,7 +29,7 @@ export function getOrCreateTournament(id: string, name?: string, size?: number, 
 		// Generate unique name with counter if creator is provided
 		let tournamentName = name;
 		if (creator && name) {
-			// Count existing tournaments by this creator
+			// Count existing tournaments by this creator (ANDY:added creator field to the db)
 			const stmt = db.prepare(`
 				SELECT COUNT(*) as count 
 				FROM tournaments 
@@ -38,8 +38,7 @@ export function getOrCreateTournament(id: string, name?: string, size?: number, 
 			const result: any = stmt.get(creator);
 			const counter = (result?.count || 0) + 1;
 			
-			// Replace generic tournament name with numbered version
-			// E.g., "andy Tournament" -> "andy Tournament #1"
+			// name the tournaments e.g.  "andy tournament #1"
 			if (name.includes('Tournament')) {
 				tournamentName = `${creator} tournament #${counter}`;
 			}
@@ -54,15 +53,14 @@ export function getOrCreateTournament(id: string, name?: string, size?: number, 
 			matches: new Map<number, Match[]>(),
 			players: [],
 		} as Tournament;
-		// ANDY: Save tournament to database FIRST before creating matches
-		// Matches have FOREIGN KEY constraint to tournaments table
+		// ANDY: Save tournament to database first before creating matches (tournament needs to exist in db so matches can be created)
 		try {
 			createTournamentDB(tournament.id, tournament.name, tournament.state.size, creator);
 		} catch (error: any) {
 			console.log(`[TM] Tournament ${tournament.id} already exists in database or save failed:`, error.message);
 		}
 
-		// Initialize matches AFTER tournament is in DB (so FOREIGN KEY constraint works)
+		// Initialize matches after the tournament is in db
 		const matches = initTournamentMatches(tournament, tournament.state.size);
 		tournament.matches.set(1, matches);
 
@@ -141,11 +139,7 @@ export function addPlayerToTournament({
 								socket: socket,
 								currentMatch: match,
 							});
-							try {
-								createTournamentPlayerDB(tournament.id, playerId, playerDisplayName);
-							} catch (error: any) {
-								console.log(`[TM] Player ${playerId} already in tournament_players table: ${error.message}`);
-							}
+					createTournamentPlayerDB(tournament.id, playerId, playerDisplayName);
 						}
 					}
 					addPlayerToMatch(match, playerId, socket);
@@ -396,7 +390,7 @@ export function forfeitTournament(tournamentId: string, playerId: string) {
 			console.log(`[TM] Could not remove ${playerId} from tournament_players DB: ${error.message}`);
 		}
 		
-		// If tournament already started, end it. Otherwise, just remove the player.
+		// If tournament already started, end it, therwise just remove the player
 		if (tournament.state.isRunning) {
 			tournament.state.isRunning = false;
 			if (roundMatches) {
