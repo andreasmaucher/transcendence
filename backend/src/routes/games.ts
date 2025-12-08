@@ -15,6 +15,7 @@ export default async function gamesRoutes(fastify: FastifyInstance) {
 		// Sanitize: remove non-serializable fields like 'clients' (Set<WebSocket>) before returning to avoid JSON.stringify errors
 		data.openSingleGames = openSingleGames.map((g) => ({
 			id: g.id,
+			name: g.name,
 			mode: g.mode,
 			match: {
 				id: g.match.id,
