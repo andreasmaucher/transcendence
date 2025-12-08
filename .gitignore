@@ -24,6 +24,9 @@ pnpm-debug.log*
 .env.local
 .env.*.local
 
+# Certs
+certs/*
+
 # Keep example env files tracked
 !.env.example
 !.env.*.example

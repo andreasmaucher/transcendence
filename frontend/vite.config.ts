@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import basicSsl from "@vitejs/plugin-basic-ssl";
+console.log("VITE_API_BASE from process.env:", process.env.VITE_API_BASE);
 
 // https://vitejs.dev/config/
 export default defineConfig({

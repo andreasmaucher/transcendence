@@ -8,20 +8,16 @@ export const WS_PORT = Number(new URLSearchParams(window.location.search).get("w
 
 // REST API base is built from the same host/port as WebSocket to avoid mismatches
 // export const API_BASE = `${window.location.protocol === "https:" ? "https" : "http"}://${WS_HOST}:${WS_PORT}`;
-console.log("Hello");
 // console.log("import.meta.env:", import.meta.env);
 
 // console.log("VITE_API_BASE:", import.meta.env.VITE_API_BASE);
 // console.log("VITE_API_BASE1:", import.meta.env.VITE_API_BASE1);
 // console.log("VITE_TEST:", import.meta.env.VITE_TEST);
 
-console.log("VITE_CONTRACT_ADDRESS", import.meta.env.VITE_CONTRACT_ADDRESS);
-export const API_BASE: string = (import.meta as any).env?.VITE_API_BASE || "";
-console.log("Hello");
-console.log("VITE_API_BASE", import.meta.env.VITE_API_BASE);
-console.log("API_BASE", import.meta.env.API_BASE);
+// export const API_BASE: string = (import.meta as any).env?.VITE_API_BASE || "";
 
-// export const API_BASE = import.meta.env.VITE_API_BASE || "https://localhost:4000"; // <--- Check this fallback!
+export const API_BASE = import.meta.env.VITE_API_BASE || "https://localhost:4000"; // <--- Check this fallback!
+console.log("API_BASE:", import.meta.env.API_BASE);
 
 // room ID selection (default to "default" if not specified)
 export const ROOM_ID = new URLSearchParams(window.location.search).get("roomId") ?? "default";
