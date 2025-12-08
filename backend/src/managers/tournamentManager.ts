@@ -133,13 +133,13 @@ export function addPlayerToTournament({
 						// Only add to tournament.players if not already there
 						const alreadyInTournament = tournament.players.some(p => p.username === playerId);
 						if (!alreadyInTournament) {
-							tournament.players.push({
-								username: playerId,
-								displayName: playerDisplayName,
-								socket: socket,
-								currentMatch: match,
-							});
-					createTournamentPlayerDB(tournament.id, playerId, playerDisplayName);
+						tournament.players.push({
+							username: playerId,
+							displayName: playerDisplayName,
+							socket: socket,
+							currentMatch: match,
+						});
+						createTournamentPlayerDB(tournament.id, playerId, playerDisplayName);
 						}
 					}
 					addPlayerToMatch(match, playerId, socket);
@@ -393,23 +393,23 @@ export function forfeitTournament(tournamentId: string, playerId: string) {
 		// If tournament already started, end it, therwise just remove the player
 		if (tournament.state.isRunning) {
 			tournament.state.isRunning = false;
-			if (roundMatches) {
-				for (const match of roundMatches) {
-					match.state.isRunning = false;
-					const clients = tournament.players.map((player) => player.socket);
-					for (const client of clients) {
-						client.send(
-							buildPayload("player-left", {
-								username: playerId,
-							})
-						);
-						client.close(1000, "A player left");
-					}
-					forfeitMatchDB(match.id, playerId);
+		if (roundMatches) {
+			for (const match of roundMatches) {
+				match.state.isRunning = false;
+				const clients = tournament.players.map((player) => player.socket);
+				for (const client of clients) {
+					client.send(
+						buildPayload("player-left", {
+							username: playerId,
+						})
+					);
+					client.close(1000, "A player left");
 				}
+				forfeitMatchDB(match.id, playerId);
 			}
-			forfeitTournamentDB(tournament.id, playerId);
-			tournaments.delete(tournament.id);
+		}
+		forfeitTournamentDB(tournament.id, playerId);
+		tournaments.delete(tournament.id);
 		}
 	}
 }

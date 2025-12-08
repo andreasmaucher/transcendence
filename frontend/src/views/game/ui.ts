@@ -13,6 +13,7 @@ import {
 	registerGameUiHandlers,
 } from "../../ws/game";
 import { showCountdown } from "../game/countdown";
+import { showMessageOverlay } from "../game/messageOverlay";
 import { t } from "../../i18n";
 
 
@@ -228,11 +229,15 @@ export async function renderGame(container: HTMLElement) {
 		exitBtn.style.boxShadow = "none";
 	};
 
-	exitBtn.onclick = () => {
+	exitBtn.onclick = async () => {
 		cancelled = true;
 		if (cancelCountdown) cancelCountdown(); // Stop countdown immediately
+		// Show message overlay for 3 seconds, then navigate
+		// Overlay is added to document.body so it survives view changes
+		const overlayPromise = showMessageOverlay("You forfeited the game.");
+		userData.gameSock?.close(); // Close socket (triggers backend forfeit)
+		await overlayPromise; // Wait for overlay to complete
 		navigate("#/menu");
-		userData.gameSock?.close();
 	};
 
 	wrapper.append(exitBtn);
@@ -334,6 +339,15 @@ export async function renderGame(container: HTMLElement) {
 			} else {
 				waitingOverlay.style.display = "none";
 			}
+		},
+
+		showPlayerLeftMessage: async (message: string) => {
+			// Cancel countdown if it's running (so the countdown overlay is not running in the background)
+			if (cancelCountdown) {
+				cancelCountdown();
+				cancelCountdown = null;
+			}
+			await showMessageOverlay(message);
 		},
 	});
 

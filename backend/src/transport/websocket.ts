@@ -58,9 +58,9 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				`[gameWS] Websocket for LocalSingleGame: ${singleGameId} and User: ${payload.username} registered`
 			);
 
-		socket.username = payload.username;
+			socket.username = payload.username;
 		const singleGame = getOrCreateSingleGame(singleGameId, "local", payload.username);
-		const match: Match = singleGame.match;
+			const match: Match = singleGame.match;
 
 			// Add the current game info to the userOnline struct
 			addGameToUser(socket.username, socket, singleGame.id);
@@ -104,10 +104,10 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				console.log(`[gameWS] Websocket for SingleGame: ${singleGameId} and User: ${payload.username} registered`);
 			else console.log(`[gameWS] Websocket for SingleGame: ${singleGameId} and User: ${payload.username} connected`);
 
-		socket.username = payload.username;
+			socket.username = payload.username;
 
 		const singleGame = getOrCreateSingleGame(singleGameId, "remote", payload.username);
-		const match: Match = singleGame.match;
+			const match: Match = singleGame.match;
 
 			if (checkMatchFull(match)) {
 				console.log("[gameWS] Match already full");
@@ -173,10 +173,10 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				return;
 			}
 
-		if (tournamentId === "default")
-			console.log(`[gameWS] Websocket for Tournament: ${tournamentId} and User: ${payload.username} registered`);
-		else console.log(`[gameWS] Websocket for Tournament: ${tournamentId} and User: ${payload.username} connected`);
-		socket.username = payload.username;
+			if (tournamentId === "default")
+				console.log(`[gameWS] Websocket for Tournament: ${tournamentId} and User: ${payload.username} registered`);
+			else console.log(`[gameWS] Websocket for Tournament: ${tournamentId} and User: ${payload.username} connected`);
+			socket.username = payload.username;
 
 		const tournament = getOrCreateTournament(tournamentId, tournamentName, tournamentSize, payload.username);
 			// ANDY: added this part to ensure that in the second round of the tournament the sides are correctly assigned to the players

@@ -135,14 +135,14 @@ async function handleDuelChallenge() {
 
 		const availableGames = [];
 
-	openGames.singleGames.forEach(g => {
-		availableGames.push({
-			type: 'single', 
-			id: g.id, 
-			creator: g.creator,
+		openGames.singleGames.forEach(g => {
+			availableGames.push({
+				type: 'single', 
+				id: g.id, 
+				creator: g.creator,
 			name: g.name || `Game ${g.id.substring(0, 8)}` // Use generated name or fallback to short ID
+			});
 		});
-	});
 
 		openGames.tournaments.forEach(t => {
 			availableGames.push({	
