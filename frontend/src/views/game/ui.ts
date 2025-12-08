@@ -88,6 +88,7 @@ export async function renderGame(container: HTMLElement) {
 	// NEW: minimal variable to ensure countdown fires ONCE
 	let onlineCountdownStarted = false;
 	let onlineCountdownPromise: Promise<void> | null = null;
+	let cancelCountdown: (() => void) | null = null;
 
 	const hash = location.hash;
 	const queryStr = hash.split("?")[1] || "";
@@ -228,6 +229,8 @@ export async function renderGame(container: HTMLElement) {
 	};
 
 	exitBtn.onclick = () => {
+		cancelled = true;
+		if (cancelCountdown) cancelCountdown(); // Stop countdown immediately
 		navigate("#/menu");
 		userData.gameSock?.close();
 	};
@@ -257,7 +260,11 @@ export async function renderGame(container: HTMLElement) {
 	// Local game countdown
 	//
 	if (mode === "local") {
-		await showCountdown(wrapper, canvas);
+		const countdown = showCountdown(wrapper, canvas);
+		cancelCountdown = countdown.cancel;
+		await countdown.promise;
+		cancelCountdown = null;
+		if (cancelled) return;
 	}
 
 	//
@@ -290,6 +297,7 @@ export async function renderGame(container: HTMLElement) {
 	//
 	registerGameUiHandlers({
 		waitingForPlayers: () => {
+			if (cancelled) return;
 			if (mode !== "local") {
 				waitingOverlay.textContent = "Waiting for opponent...";
 				waitingOverlay.style.display = "flex";
@@ -300,12 +308,15 @@ export async function renderGame(container: HTMLElement) {
 		// FIX: Replace text countdown with real animation
 		//
 		countdownToGame: (n, _side) => {
+			if (cancelled) return;
 			if (mode !== "local" && n > 0 && !onlineCountdownStarted) {
 				onlineCountdownStarted = true;
 				waitingOverlay.style.display = "none";
 
 				// trigger the animated countdown
-				onlineCountdownPromise = showCountdown(wrapper, canvas);
+				const countdown = showCountdown(wrapper, canvas);
+				cancelCountdown = countdown.cancel;
+				onlineCountdownPromise = countdown.promise;
 			}
 		},
 
@@ -313,8 +324,11 @@ export async function renderGame(container: HTMLElement) {
 		// FIX: Start only after animation fully completes
 		//
 		startGame: () => {
+			if (cancelled) return;
 			if (onlineCountdownPromise) {
 				onlineCountdownPromise.then(() => {
+					cancelCountdown = null;
+					if (cancelled) return;
 					waitingOverlay.style.display = "none";
 				});
 			} else {
