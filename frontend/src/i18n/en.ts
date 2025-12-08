@@ -14,7 +14,7 @@ export default {
   },
 
   game: {
-    exit: "Exit Match",
+    exit: "Forfeit Match",
   },
 
   tournaments: {
