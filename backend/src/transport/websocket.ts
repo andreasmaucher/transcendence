@@ -175,12 +175,12 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				return;
 			}
 
-			if (tournamentId === "default")
-				console.log(`[gameWS] Websocket for Tournament: ${tournamentId} and User: ${payload.username} registered`);
-			else console.log(`[gameWS] Websocket for Tournament: ${tournamentId} and User: ${payload.username} connected`);
-			socket.username = payload.username;
+		if (tournamentId === "default")
+			console.log(`[gameWS] Websocket for Tournament: ${tournamentId} and User: ${payload.username} registered`);
+		else console.log(`[gameWS] Websocket for Tournament: ${tournamentId} and User: ${payload.username} connected`);
+		socket.username = payload.username;
 
-			const tournament = getOrCreateTournament(tournamentId, tournamentName, tournamentSize);
+		const tournament = getOrCreateTournament(tournamentId, tournamentName, tournamentSize, payload.username);
 			// ANDY: added this part to ensure that in the second round of the tournament the sides are correctly assigned to the players
 			// Find which match this player will join and determine their side BEFORE adding them
 			let playerSide: "left" | "right" = "left";

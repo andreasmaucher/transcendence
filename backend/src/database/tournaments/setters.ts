@@ -1,12 +1,12 @@
 import { PaddleSide } from "../../types/match.js";
 import db from "../db_init.js";
 
-export function createTournamentDB(id: string, name: string, size: number): void {
+export function createTournamentDB(id: string, name: string, size: number, creator?: string): void {
 	const stmt = db.prepare(`
-		INSERT INTO tournaments (id, name, size)
-		VALUES (?, ?, ?)
+		INSERT INTO tournaments (id, name, size, creator)
+		VALUES (?, ?, ?, ?)
 	`);
-	const result = stmt.run(id, name, size);
+	const result = stmt.run(id, name, size, creator || null);
 	if (result.changes === 0) throw new Error(`[DB] Failed to create tournament ${id}`); // If DB run fails, throws error
 	else console.log(`[DB] Created new tournament ${id} named ${name} with size ${size}`);
 }
@@ -60,4 +60,25 @@ export function forfeitTournamentDB(id: string, playerId: string) {
 export function removeTournamentDB(id: string): void {
 	const stmt = db.prepare("DELETE FROM tournaments WHERE id = ?");
 	stmt.run(id);
+}
+
+// ANDY: added this function to clean up abandoned tournaments
+/*
+tournaments are deleted if ALL of these conditions are true:
+- start_at is NULL, meaning they never reached 4 players
+- created_at is more than 3 minutes ago
+ */
+export function cleanupAbandonedTournamentsDB(minutesOld: number = 3): number {
+	const stmt = db.prepare(`
+		DELETE FROM tournaments 
+		WHERE started_at IS NULL 
+		AND datetime(created_at, '+' || ? || ' minutes') < datetime('now')
+	`);
+	const result = stmt.run(minutesOld);
+	const deletedCount = result.changes;
+	
+	if (deletedCount > 0) {
+		console.log(`[DB] Cleaned up ${deletedCount} abandoned tournament(s) older than ${minutesOld} minutes`);
+	}
+	return deletedCount;
 }
