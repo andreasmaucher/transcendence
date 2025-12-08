@@ -19,7 +19,7 @@ import {
 import { Match } from "../types/match.js";
 import { forfeitMatchDB } from "../database/matches/setters.js";
 import { buildPayload } from "../transport/broadcaster.js";
-import { createTournamentPlayerDB } from "../database/tournament_players/setters.js";
+import { createTournamentPlayerDB, removeTournamentPlayerDB } from "../database/tournament_players/setters.js";
 import db from "../database/db_init.js";
 
 // Get or Create a tournament, called only when creating a socket connection
@@ -358,25 +358,56 @@ export function endTournament(tournament: Tournament) {
 export function forfeitTournament(tournamentId: string, playerId: string) {
 	const tournament = getTournament(tournamentId);
 	if (tournament) {
-		tournament.state.isRunning = false;
+		// Don't end the whole tournament if a player leaves before it starts
 		const roundMatches = tournament.matches.get(tournament.state.round);
 		if (roundMatches) {
+			// Remove player from their match in memory
 			for (const match of roundMatches) {
-				match.state.isRunning = false;
-				const clients = tournament.players.map((player) => player.socket);
-				for (const client of clients) {
-					// Send a message BEFORE closing
-					client.send(
-						buildPayload("player-left", {
-							username: playerId,
-						})
-					);
-					client.close(1000, "A player left");
+				if (match.players.left?.username === playerId) {
+					console.log(`[TM] Removing ${playerId} from match ${match.id} (left side)`);
+					match.players.left = undefined;
 				}
-				forfeitMatchDB(match.id, playerId);
+				if (match.players.right?.username === playerId) {
+					console.log(`[TM] Removing ${playerId} from match ${match.id} (right side)`);
+					match.players.right = undefined;
+				}
 			}
 		}
-		forfeitTournamentDB(tournament.id, playerId);
-		tournaments.delete(tournament.id);
+		
+		// Remove player from tournament players list
+		const playerIndex = tournament.players.findIndex(p => p.username === playerId);
+		if (playerIndex !== -1) {
+			tournament.players.splice(playerIndex, 1);
+			console.log(`[TM] Removed ${playerId} from tournament players list`);
+		}
+		
+		// Remove player from database tournament_players table
+		try {
+			removeTournamentPlayerDB(tournament.id, playerId);
+		} catch (error: any) {
+			console.log(`[TM] Could not remove ${playerId} from tournament_players DB: ${error.message}`);
+		}
+		
+		// If tournament already started, end it. Otherwise, just remove the player.
+		if (tournament.state.isRunning) {
+			tournament.state.isRunning = false;
+			if (roundMatches) {
+				for (const match of roundMatches) {
+					match.state.isRunning = false;
+					const clients = tournament.players.map((player) => player.socket);
+					for (const client of clients) {
+						client.send(
+							buildPayload("player-left", {
+								username: playerId,
+							})
+						);
+						client.close(1000, "A player left");
+					}
+					forfeitMatchDB(match.id, playerId);
+				}
+			}
+			forfeitTournamentDB(tournament.id, playerId);
+			tournaments.delete(tournament.id);
+		}
 	}
 }

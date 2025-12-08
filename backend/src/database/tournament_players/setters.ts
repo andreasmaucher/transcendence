@@ -13,3 +13,13 @@ export function createTournamentPlayerDB(tournamentId: string, username: string,
 	// If DB run fails, throws error
 	else console.log(`[DB] Created new tournament player for tournament ${tournamentId}`);
 }
+
+export function removeTournamentPlayerDB(tournamentId: string, username: string): void {
+	const stmt = db.prepare(`
+		DELETE FROM tournament_players
+		WHERE tournament_id = ? AND username = ?
+	`);
+
+	const result = stmt.run(tournamentId, username);
+	console.log(`[DB] Removed player ${username} from tournament ${tournamentId}`);
+}
