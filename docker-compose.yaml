@@ -10,7 +10,7 @@ services:
       dockerfile: Dockerfile
       args:
         - CACHEBUST=1
-    # container_name: transcendence-backend
+    container_name: transcendence-backend
     ports:
       - "4000:4000"
     env_file:
