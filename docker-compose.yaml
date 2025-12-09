@@ -3,8 +3,8 @@ services:
   backend:
     image: transcendence-backend:latest
     secrets:
-      - backend_tls_key
-      - backend_tls_cert
+      - tls_key
+      - tls_cert
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -51,7 +51,7 @@ services:
     restart: unless-stopped
 
 secrets:
-  backend_tls_key:
+  tls_key:
     file: ./certs/key.pem
-  backend_tls_cert:
+  tls_cert:
     file: ./certs/cert.pem

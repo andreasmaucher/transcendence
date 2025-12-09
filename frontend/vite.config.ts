@@ -6,8 +6,8 @@ export default defineConfig({
 		host: "0.0.0.0",
 		port: 5173,
 		https: {
-			key: fs.readFileSync("/run/secrets/frontend_tls_key"), // or a bind-mounted path
-			cert: fs.readFileSync("/run/secrets/frontend_tls_cert"),
+			key: fs.readFileSync("/run/secrets/tls_key"), // or a bind-mounted path
+			cert: fs.readFileSync("/run/secrets/tls_cert"),
 		},
 	},
 });
