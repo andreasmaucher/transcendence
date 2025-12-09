@@ -28,6 +28,9 @@ services:
 
   frontend:
     image: transcendence-frontend:latest
+    secrets:
+      - tls_key
+      - tls_cert
     build:
       context: ./frontend
       dockerfile: Dockerfile
