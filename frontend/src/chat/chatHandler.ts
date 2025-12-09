@@ -1,13 +1,16 @@
 import { generalData, userData } from "../config/constants";
-import { ChatEvent, chatHistory, Message } from "./types";
+import { ApiOpenSingleGame, ApiOpenTournament, ChatEvent, chatHistory, Message, OpenGames, OpenGamesResponse, Tournament } from "./types";
 import { navigate } from "../router/router"; 
+import { fetchTournamentList } from "../api/http";
+import { API_BASE } from "../config/endpoints";
 
 
 export function sendMessage(
 	type: ChatEvent,
 	content: string,
 	receiver: string | null = null,
-	gameId: any | null = null
+	gameId: any | null = null,
+	tournamentName: string | null = null,
 ) {
 	const message: Message = {
 		id: undefined,
@@ -17,6 +20,7 @@ export function sendMessage(
 		content: content,
 		gameId: gameId ?? undefined,
 		sentAt: undefined,
+		tournamentName: tournamentName ?? undefined
 	};
 	if (userData.userSock?.readyState === WebSocket.OPEN) {
 		userData.userSock.send(JSON.stringify(message));
@@ -27,25 +31,93 @@ export function sendMessage(
 // RENDER FUNCTIONS ///////////////////////////////////////////////////////////
 
 export function renderIncomingMessage(message: Message, chatMessages: HTMLElement) {
-	const item = document.createElement("div");
-	item.className = "chat-message";
-	item.style.padding = "6px 8px";
-	item.style.marginBottom = "6px";
-	item.style.background = "rgba(0, 255, 200, 0.1)";
-	item.style.borderRadius = "4px";
-	item.style.cursor = "pointer";
+	const messageElement = document.createElement("div");
+	messageElement.classList.add('message');
+
+	messageElement.className = "chat-message";
+	messageElement.style.padding = "6px 8px";
+	messageElement.style.marginBottom = "6px";
+	messageElement.style.background = "rgba(0, 255, 200, 0.1)";
+	messageElement.style.borderRadius = "4px";
+	messageElement.style.cursor = "pointer";
 
 	if (message.type === "blockedByMeMessage") {
-		item.style.background = "rgba(150, 0, 0, 0.4)";
-		item.innerHTML =
+		messageElement.style.background = "rgba(150, 0, 0, 0.4)";
+		messageElement.innerHTML =
 			`<span style="color: #ff0000; font-weight: bold;">You've blocked ${message.receiver}. No Conversation possible!</span>`;
-	}
+	} 
 	else if (message.type === "blockedByOthersMessage"){
-		item.style.background = "rgba(255, 170, 0, 0.15)";
-		item.innerHTML =
+		messageElement.style.background = "rgba(255, 170, 0, 0.15)";
+		messageElement.innerHTML =
 			`<span style="color: #ffaa00; font-weight: bold;">You have been blocked by ${message.receiver}. Message cannot be sent.</span>`;
-	} else {
-		item.innerHTML = `
+	} 
+	else if (message.type === "invite") {
+
+		const MAX_AGE_MS = 5 * 60 * 1000; 
+
+		let timeString = message.sentAt!.replace(' ', 'T');
+		if (!timeString.endsWith('Z')) {
+			timeString += 'Z'; 
+			}
+		const msgTime = new Date(timeString).getTime();
+		const currentTime = Date.now();
+		const isExpired = (currentTime - msgTime) > MAX_AGE_MS;
+
+		if (isExpired) {
+			const expiredText = document.createElement('div');
+			expiredText.style.color = "#888";
+			expiredText.style.fontStyle = "italic";
+			expiredText.innerText = `⚔️ Game Invite from ${message.sender} (Expired)`;
+			messageElement.appendChild(expiredText);
+		} else {
+			const headerInfo = document.createElement('div');
+			headerInfo.innerHTML = `
+				<div style="display:flex; justify-content:space-between; font-size:12px; color: #00ffc8; margin-bottom: 5px;">
+					<strong>${message.sender}</strong>
+					<small style="color: #66ffc8;">${message.sentAt}</small>
+				</div>
+			`;
+			messageElement.appendChild(headerInfo);
+
+			const inviteContainer = document.createElement('div');
+			inviteContainer.style.background = "rgba(0, 0, 0, 0.3)"; 
+			inviteContainer.style.border = "1px solid #00ffc8";
+			inviteContainer.style.padding = "10px";
+			inviteContainer.style.borderRadius = "5px";
+
+			const text = document.createElement('p');
+			text.innerText = message.content!;
+			text.style.color = "#fff";
+			text.style.margin = "0 0 5px 0";
+			
+			const joinButton = document.createElement('button');
+			joinButton.innerText = "ACCEPT CHALLENGE";
+			joinButton.style.cursor = "pointer";
+			joinButton.style.backgroundColor = "#00ffc8";
+			joinButton.style.color = "#000";
+			joinButton.style.border = "none";
+			joinButton.style.padding = "5px 10px";
+			joinButton.style.borderRadius = "3px";
+			joinButton.style.fontWeight = "bold";
+
+			// click logic invitation
+			joinButton.onclick = (e) => {
+				e.stopPropagation();
+				if (message.content === "Are you up for a tournament") {
+					navigate(`#/game?mode=tournament&id=${message.gameId}&name=${encodeURIComponent(message.tournamentName!)}`);
+				} else {
+					navigate(`#/game?mode=online&id=${message.gameId}`);
+				}
+				console.log("Joining game:", message.gameId);
+			};
+
+			inviteContainer.appendChild(text);
+			inviteContainer.appendChild(joinButton);
+			messageElement.appendChild(inviteContainer);
+		}
+	}
+	else {
+		messageElement.innerHTML = `
 			<div style="display:flex; justify-content:space-between; font-size:12px; color: #00ffc8;">
 				<strong>${message.sender}</strong>
 				<small style="color: #66ffc8;">${message.sentAt}</small>
@@ -54,7 +126,7 @@ export function renderIncomingMessage(message: Message, chatMessages: HTMLElemen
 			`;
 	}
 
-	chatMessages.append(item);
+	chatMessages.append(messageElement);
 	requestAnimationFrame(() => {
 		chatMessages.scrollTop = chatMessages.scrollHeight;
 	});
@@ -98,7 +170,9 @@ export function renderBlockedByMessage(blockedByUser: string, chatMessages: HTML
 
 async function fetchOpenGames() {
 	try {
-		const response = await fetch("/api/games/open");
+		const response = await fetch(`${API_BASE}/api/games/open`, {
+		credentials: "include",
+	});
 
 		if (response.status !== 200 && response.status !== 404) {
 			const errorText = await response.text(); 
@@ -127,102 +201,126 @@ export function removeModal() {
 	}
 }
 
-async function handleDuelChallenge() {
-		removeModal();
+async function handleDuelChallenge(anchorElement: HTMLElement) {
+	const existingDropdown = document.getElementById('challenge-dropdown');
+	if (existingDropdown) {
+		existingDropdown.remove();
+		return;
+	}
 
-		const openGames = await fetchOpenGames();
+	let apiData: OpenGamesResponse = { openSingleGames: [], openTournaments: [] };
+	try {
+		const response = await fetchOpenGames();
+		if (response) {
+			apiData = response as unknown as OpenGamesResponse; 
+		}
+	} catch (error) {
+		console.error("Error fetching games:", error);
+		return;
+	}
 
-		const availableGames = [];
+	const availableGames: OpenGames[] = [];
 
-		const singleGames = openGames.openSingleGames || [];
-
-		openGames.singleGames.forEach(g => {
+	if (apiData.openSingleGames && Array.isArray(apiData.openSingleGames)) {
+		apiData.openSingleGames.forEach((g: ApiOpenSingleGame) => {
+			const creatorName = g.match.players.left || "Unknown";
 			availableGames.push({
-				type: 'single', 
-				id: g.id, 
-				creator: g.creator,
-				name: `Single Game #${g.gameNumber} (created by: ${g.creator})` 
+				type: 'single',
+				id: g.id,
+				name: `Single Match vs ${creatorName} (${g.mode})` 
 			});
 		});
+	}
 
-		const tournaments = openGames.openTournaments || {};
+	if (apiData.openTournaments && Array.isArray(apiData.openTournaments)) {
+		apiData.openTournaments.forEach((t: ApiOpenTournament) => {
+			availableGames.push({
+				type: 'tournament',
+				id: t.id,
+				name: `Tournament: ${t.name} (${t.playersJoined}/${t.state.size})`
+			});
+		});
+	}
 
-		if (tournaments && typeof tournaments === 'object') {
-				Object.entries(tournaments).forEach(([id, t]) => {
-					// 'id' ist der Schlüssel, 't' ist das Turnier-Datenobjekt
-					if (t.name) { // Sicherheitsprüfung
-						availableGames.push({   
-							type: 'tournament', 
-							id: id, // <--- Die ID ist jetzt der SCHLÜSSEL
-							name: `Tournament: ${t.name}` // <--- Der Name ist in den Turnierdaten
-						});
-					}
-				});
-			}
+	if (availableGames.length === 0) {
+		alert(`No open games available.`);
+		return;
+	}
 
-		if (availableGames.length === 0) {
-			alert(`No open games or tournaments available to challenge ${userData.activePrivateChat}`);
-			return;
+	const rect = anchorElement.getBoundingClientRect();
+	
+
+	const dropdown = document.createElement('div');
+	dropdown.id = 'challenge-dropdown';
+	dropdown.style.cssText = `
+		position: absolute; 
+		z-index: 99999;
+		background: #111;
+		border: 1px solid #00ffc8;
+		border-radius: 4px;
+		box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+		width: 280px;
+		max-height: 300px;
+		overflow-y: auto;
+		padding: 5px;
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+	`;
+
+	dropdown.style.top = `${rect.bottom + window.scrollY + 5}px`; 
+	
+	const leftPos = rect.right - 280; 
+	dropdown.style.left = `${rect.left + window.scrollX}px`;
+
+	availableGames.forEach(game => {
+		const item = document.createElement('div');
+		item.textContent = game.name;
+		item.title = `[${game.type.toUpperCase()}] ${game.name}`;
+		item.style.cssText = `
+			padding: 8px 10px;
+			font-size: 13px;
+			color: #fff;
+			cursor: pointer;
+			border-radius: 3px;
+			transition: background 0.2s;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		`;
+
+		if (game.type === 'tournament') {
+			item.style.borderLeft = "2px solid #ffcc00";
+			item.innerHTML = `🏆 ${game.name}`;
+		} else {
+			item.style.borderLeft = "2px solid #00ffc8";
+			item.innerHTML = `🎾 ${game.name}`;
 		}
 
-		console.log(`Open Single Games: `, openGames.openSingleGames);
-		console.log(`Open Tournaments: `, openGames.openTournaments);
+		item.onmouseenter = () => item.style.background = 'rgba(0, 255, 200, 0.2)';
+		item.onmouseleave = () => item.style.background = 'transparent';
 
-		const modalOverlay = document.createElement('div');
-		modalOverlay.id = 'challenge-modal-overlay';
-		modalOverlay.style.cssText = `
-		position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-		background-color: rgba(0, 0, 0, 0.75); z-index: 1000;
-		display: flex; justify-content: center; align-items: center;
-		`;
-		//close by clicking outside of the modal
-		modalOverlay.onclick = removeModal;
+		item.onclick = (e) => {
+			e.stopPropagation();
+			sendMessage('invite', `Are you up for a ${game.type}`, userData.activePrivateChat, game.id, game.name);
+			dropdown.remove();
+		};
 
-		const modalContent = document.createElement('div');
-		modalContent.style.cssText = `
-		background: #111; padding: 20px; border-radius: 8px;
-		border: 1px solid #00ffc8; box-shadow: 0 0 10px #00ffc8;
-		max-width: 400px; width: 90%; color: #fff;
-		`;
-		// prevents the closing of the modal by clicking somewhere inside the modal
-		modalContent.onclick = (e) => e.stopPropagation();
+		dropdown.appendChild(item);
+	});
 
-		const header = document.createElement('h3');
-		header.textContent = `Choose a match/tournament for ${userData.activePrivateChat}` //DE: `Wähle eine Herausforderung für ${targetUser}`;
-		header.style.color = '#00ffc8';
-		modalContent.appendChild(header);
+	// close dropdown by clicking outside of the modal
+	setTimeout(() => {
+		const closeMenu = (e: MouseEvent) => {
+			if (!dropdown.contains(e.target as Node) && e.target !== anchorElement) {
+				dropdown.remove();
+				document.removeEventListener('click', closeMenu);
+			}
+		};
+		document.addEventListener('click', closeMenu);
+	}, 0);
 
-		const listContainer = document.createElement('ul');
-		listContainer.style.cssText = `
-			list-style: none; padding: 0; max-height: 250px; overflow-y: auto;
-		`;
-
-		availableGames.forEach(game => {
-			const listItem = document.createElement('li');
-			listItem.textContent = `[${game.type.toUpperCase()}] ${game.name}`;
-			listItem.style.cssText = `
-				padding: 10px; margin-bottom: 5px; cursor: pointer;
-				background: rgba(0, 224, 179, 0.1); border-radius: 4px;
-			`;
-			
-			// hover
-			listItem.onmouseenter = () => listItem.style.background = 'rgba(0, 255, 200, 0.35)';
-			listItem.onmouseleave = () => listItem.style.background = 'rgba(0, 224, 179, 0.1)';
-
-			// send invitation
-			listItem.onclick = () => {
-				sendMessage('invite', 'I\'ll crush you', userData.activePrivateChat, game.id);
-				console.log(`[WS] Sending challenge to ${userData.activePrivateChat} for game: ${game.id}`);
-				//sendChallengeInvite(targetUser, game.type, game.id, game.name);
-				removeModal(); // Schließe das Modal nach dem Senden
-			};
-			
-			listContainer.appendChild(listItem);
-		});
-
-	modalContent.appendChild(listContainer);
-	modalOverlay.appendChild(modalContent);
-	document.body.appendChild(modalOverlay);
+	document.body.appendChild(dropdown);
 }
 
 export function renderChatHeaderButtons(
@@ -267,7 +365,7 @@ export function renderChatHeaderButtons(
 	const createIconBtn = (
 		symbol: string, 
 		title: string, 
-		action: () => void,
+		action: (btnElement: HTMLButtonElement) => void,
 		blocked: boolean = false
 	) => {
 		const btn = document.createElement("button");
@@ -288,7 +386,7 @@ export function renderChatHeaderButtons(
 		btn.style.cursor = "pointer";
 		btn.onclick = (e) => {
 			e.stopPropagation();
-			action();
+			action(btn);
 		};
 
 		const hoverColor = blocked ? "rgba(255, 0, 0, 0.8)" : "rgba(0, 255, 200, 0.35)";
@@ -323,9 +421,9 @@ export function renderChatHeaderButtons(
 		navigate(`#/user/${activeChat}`);
 	});
 
-	const btnDuel = createIconBtn("⚔️", "Challenge to match", () => {
+	const btnDuel = createIconBtn("⚔️", "Challenge to match", (clickedButton) => {
 		//console.log(`⚔️ Challenge sent to ${activeChat}`);
-		handleDuelChallenge();
+		handleDuelChallenge(clickedButton);
 	});
 
 	const isBlocked = userData.blockedUsers?.includes(activeChat!);
@@ -410,7 +508,7 @@ export function renderOnlineUsers(
 		if (username === userData.activePrivateChat) {
 			userItem.style.border = `1px solid ${primaryNeon}`
 			userItem.style.boxShadow = `0 0 5px ${primaryNeon}`
-			userItem.style.color = primaryNeon; // Stärkeres Neon für aktiv
+			userItem.style.color = primaryNeon;
 		}
 		
 		// hover
@@ -509,9 +607,7 @@ export function populateChatWindow(
 
 	if (activeChat === "Global Chat") {
 		chatHistoryToAdd = chatHistory.global;
-		//console.log("GlobalChatHistory should be loaded!");
 	} else {
-		//console.log(`private chatHistory for ${activePrivateChat.current} loaded!`);
 		chatHistoryToAdd = setupPrivateChathistory(activeChat!);
 	}
 	chatHistoryToAdd.forEach((message) => {
@@ -558,7 +654,6 @@ export function wireIncomingChat(
 	} else if (!userData.activePrivateChat){
 		userData.activePrivateChat = "Global Chat";
 	}
-
 
 	generalData.onlineUsers = populateOnlineUserList(userData.username);
 	populateChatWindow(userData.chatHistory!, chatMessages);
@@ -612,6 +707,14 @@ export function wireIncomingChat(
 					case "blockedByOthersMessage": {
 						if (userData.activePrivateChat === msg.receiver){
 								console.log(`blockedByOthersMessage from ${msg.sender} for ${msg.receiver}`);
+								renderIncomingMessage(msg, chatMessages);
+							}
+						appendMessageToHistory(msg);
+						break;
+						}
+					case "invite": {
+						if (userData.username === msg.receiver){
+								console.log(`Got a game invite from ${msg.sender} for ${msg.receiver}`);
 								renderIncomingMessage(msg, chatMessages);
 							}
 						appendMessageToHistory(msg);

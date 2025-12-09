@@ -20,6 +20,7 @@ export type ChatMessage = {
 	gameId?: string;
 	content?: string;
 	sentAt: string;
+	tournamentName?: string;
 };
 
 export type chatHistoryBE = {
