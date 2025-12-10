@@ -13,7 +13,7 @@ import {
 	registerGameUiHandlers,
 } from "../../ws/game";
 import { showCountdown } from "../game/countdown";
-import { showMessageOverlay } from "../game/messageOverlay";
+import { showMessageOverlay } from "./forfeit_overlay";
 import { t } from "../../i18n";
 
 
