@@ -140,7 +140,7 @@ async function handleDuelChallenge() {
 				type: 'single', 
 				id: g.id, 
 				creator: g.creator,
-				name: `Single Game #${g.gameNumber} (created by: ${g.creator})` 
+			name: g.name || `Game ${g.id.substring(0, 8)}` // Use generated name or fallback to short ID
 			});
 		});
 

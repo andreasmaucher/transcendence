@@ -4,12 +4,14 @@ import { flushInputs, queueInput, setActiveSocket, setAssignedSide } from "../ga
 import { applyBackendState } from "../game/state";
 import { MatchState } from "../types/game";
 import { Payload } from "../types/ws_message";
+import { navigate } from "../router/router";
 
 // no-op functions to avoid errors as long as the UI has not registered handlers by calling registerGameUiHandlers
 let waitingForPlayers: () => void = () => {};
 let countdownToGame: (n: number, side?: "left" | "right") => void = () => {};
 let startGame: () => void = () => {};
 let tournamentMatchType: (type: string, round: number) => void = () => {};
+let showPlayerLeftMessage: (message: string) => Promise<void> = async () => {};
 
 // function that registers the UI handlers (replaces the no-op functions above with the actual handlers)
 export function registerGameUiHandlers(handlers: {
@@ -17,11 +19,13 @@ export function registerGameUiHandlers(handlers: {
 	countdownToGame?: (n: number, side?: "left" | "right") => void;
 	startGame?: () => void;
 	tournamentMatchType?: (type: string, round: number) => void;
+	showPlayerLeftMessage?: (message: string) => Promise<void>;
 }) {
 	if (handlers.waitingForPlayers) waitingForPlayers = handlers.waitingForPlayers;
 	if (handlers.countdownToGame) countdownToGame = handlers.countdownToGame;
 	if (handlers.startGame) startGame = handlers.startGame;
 	if (handlers.tournamentMatchType) tournamentMatchType = handlers.tournamentMatchType;
+	if (handlers.showPlayerLeftMessage) showPlayerLeftMessage = handlers.showPlayerLeftMessage;
 }
 
 export function connectToLocalSingleGameWS(state: MatchState): () => void {
@@ -34,6 +38,7 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 	setAssignedSide(null); // Local game: control both paddles
 
 	let resetRequested = false;
+	let isHandlingForfeit = false; // Flag to prevent close handler from navigating during forfeit overlay
 
 	ws.addEventListener("open", () => {
 		queueInput("left", "stop");
@@ -41,7 +46,7 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 		flushInputs();
 	});
 
-	ws.addEventListener("message", (event) => {
+	ws.addEventListener("message", async (event) => {
 		let parsed: any;
 
 		try {
@@ -86,26 +91,40 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 				break;
 			}
 
-			case "start": {
-				startGame();
-				break;
-			}
-
-			/* 	case "chat":
-				addChatMessage(payload.data.from, payload.data.message);
-				break; */
-
-			default:
-				console.warn("[WS] Unknown payload:", payload);
-				break;
+		case "start": {
+			startGame();
+			break;
 		}
-	});
 
-	ws.addEventListener("close", () => {
-		setActiveSocket(null);
-		resetRequested = false;
-		//setTimeout(() => connectToLocalSingleGameWS(state), 1000);
-	});
+		case "player-left": {
+			// Other player left - show overlay message then navigate
+			isHandlingForfeit = true;
+			await showPlayerLeftMessage("Your opponent forfeited the game.");
+			navigate("#/menu");
+			ws.close();
+			break;
+		}
+
+		/* 	case "chat":
+			addChatMessage(payload.data.from, payload.data.message);
+			break; */
+
+		default:
+			console.warn("[WS] Unknown payload:", payload);
+			break;
+	}
+});
+
+ws.addEventListener("close", (event) => {
+	setActiveSocket(null);
+	resetRequested = false;
+	// If socket closed unexpectedly (not by us) AND we're not handling forfeit, navigate to menu
+	if (!isHandlingForfeit && (event.code !== 1000 || event.reason)) {
+		console.log("[WS] Connection closed:", event.reason);
+		navigate("#/menu");
+	}
+	//setTimeout(() => connectToLocalSingleGameWS(state), 1000);
+});
 
 	ws.addEventListener("error", () => ws.close());
 
@@ -122,6 +141,7 @@ export function connectToSingleGameWS(state: MatchState, roomId?: string): () =>
 	setActiveSocket(ws);
 
 	let resetRequested = false;
+	let isHandlingForfeit = false;
 
 	ws.addEventListener("open", () => {
 		queueInput("left", "stop");
@@ -129,7 +149,7 @@ export function connectToSingleGameWS(state: MatchState, roomId?: string): () =>
 		flushInputs();
 	});
 
-	ws.addEventListener("message", (event) => {
+	ws.addEventListener("message", async (event) => {
 		let parsed: any;
 
 		try {
@@ -179,26 +199,40 @@ export function connectToSingleGameWS(state: MatchState, roomId?: string): () =>
 				break;
 			}
 
-			case "start": {
-				startGame();
-				break;
-			}
-
-			/* 	case "chat":
-				addChatMessage(payload.data.from, payload.data.message);
-				break; */
-
-			default:
-				console.warn("[WS] Unknown payload:", payload);
-				break;
+		case "start": {
+			startGame();
+			break;
 		}
-	});
 
-	ws.addEventListener("close", () => {
-		setActiveSocket(null);
-		resetRequested = false;
-		//setTimeout(() => connectToSingleGameWS(state), 1000);
-	});
+		case "player-left": {
+			// Other player left - show overlay message then navigate
+			isHandlingForfeit = true;
+			await showPlayerLeftMessage("Your opponent forfeited the game.");
+			navigate("#/menu");
+			ws.close();
+			break;
+		}
+
+		/* 	case "chat":
+			addChatMessage(payload.data.from, payload.data.message);
+			break; */
+
+		default:
+			console.warn("[WS] Unknown payload:", payload);
+			break;
+	}
+});
+
+ws.addEventListener("close", (event) => {
+	setActiveSocket(null);
+	resetRequested = false;
+	// If socket closed unexpectedly (not by us) AND we're not handling forfeit, navigate to menu
+	if (!isHandlingForfeit && (event.code !== 1000 || event.reason)) {
+		console.log("[WS] Connection closed:", event.reason);
+		navigate("#/menu");
+	}
+	//setTimeout(() => connectToSingleGameWS(state), 1000);
+});
 
 	ws.addEventListener("error", () => ws.close());
 
@@ -217,6 +251,7 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 	setActiveSocket(ws);
 
 	let resetRequested = false;
+	let isHandlingForfeit = false;
 
 	ws.addEventListener("open", () => {
 		queueInput("left", "stop");
@@ -224,7 +259,7 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 		flushInputs();
 	});
 
-	ws.addEventListener("message", (event) => {
+	ws.addEventListener("message", async (event) => {
 		let parsed: any;
 
 		try {
@@ -278,25 +313,40 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 				break;
 			}
 
-			case "start": {
-				startGame();
-				break;
-			}
-			/* 	case "chat":
-				addChatMessage(payload.data.from, payload.data.message);
-				break; */
-
-			default:
-				console.warn("[WS] Unknown payload:", payload);
-				break;
+		case "start": {
+			startGame();
+			break;
 		}
-	});
 
-	ws.addEventListener("close", () => {
-		setActiveSocket(null);
-		resetRequested = false;
-		//setTimeout(() => connectToTournamentWS(state), 1000);
-	});
+		case "player-left": {
+			// Other player left - show overlay message then navigate
+			isHandlingForfeit = true;
+			await showPlayerLeftMessage("Your opponent forfeited the game.");
+			navigate("#/menu");
+			ws.close();
+			break;
+		}
+
+		/* 	case "chat":
+			addChatMessage(payload.data.from, payload.data.message);
+			break; */
+
+		default:
+			console.warn("[WS] Unknown payload:", payload);
+			break;
+	}
+});
+
+ws.addEventListener("close", (event) => {
+	setActiveSocket(null);
+	resetRequested = false;
+	// If socket closed unexpectedly (not by us) AND we're not handling forfeit, navigate to menu
+	if (!isHandlingForfeit && (event.code !== 1000 || event.reason)) {
+		console.log("[WS] Connection closed:", event.reason);
+		navigate("#/menu");
+	}
+	//setTimeout(() => connectToTournamentWS(state), 1000);
+});
 
 	ws.addEventListener("error", () => ws.close());
 
