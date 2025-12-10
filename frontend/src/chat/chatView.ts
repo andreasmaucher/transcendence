@@ -322,7 +322,10 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 		else {
 			if (userData.blockedUsers?.includes(userData.activePrivateChat!)) {
 				console.log(`Message to ${userData.activePrivateChat} should be blocked`);
-				renderBlockMessage(userData.activePrivateChat!, chatMessages);
+				sendMessage("blockedByMeMessage", '', userData.activePrivateChat);
+			} else if (userData.blockedByUsers?.includes(userData.activePrivateChat!)) {
+				console.log(`${userData.activePrivateChat} blocked you`);
+				sendMessage("blockedByOthersMessage", '', userData.activePrivateChat);
 			}
 			else
 				sendMessage("direct", input.value, userData.activePrivateChat);

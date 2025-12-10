@@ -31,34 +31,62 @@ export function sendMessage(
 // RENDER FUNCTIONS ///////////////////////////////////////////////////////////
 
 export function renderIncomingMessage(message: Message, chatMessages: HTMLElement) {
-	const messageElement = document.createElement("div");
-	messageElement.classList.add('message');
+	const messageElement = document.createElement("div");	
 
-	messageElement.className = "chat-message";
+	messageElement.classList.add('message', 'chat-message');
 	messageElement.style.padding = "6px 8px";
 	messageElement.style.marginBottom = "6px";
 	messageElement.style.background = "rgba(0, 255, 200, 0.1)";
 	messageElement.style.borderRadius = "4px";
 	messageElement.style.cursor = "pointer";
 
+	const createHeader = (senderName: string, timeStr: string | undefined) => {
+		const headerContainer = document.createElement('div');
+		headerContainer.style.display = "flex";
+		headerContainer.style.justifyContent = "space-between";
+		headerContainer.style.fontSize = "12px";
+		headerContainer.style.color = "#00ffc8";
+		headerContainer.style.marginBottom = "5px";
+
+		const senderStrong = document.createElement('strong');
+		senderStrong.textContent = senderName;
+
+		const timeSmall = document.createElement('small');
+		timeSmall.style.color = "#66ffc8";
+		timeSmall.textContent = timeStr || '';
+
+		headerContainer.appendChild(senderStrong);
+		headerContainer.appendChild(timeSmall);
+		return headerContainer;
+	};
+
 	if (message.type === "blockedByMeMessage") {
 		messageElement.style.background = "rgba(150, 0, 0, 0.4)";
-		messageElement.innerHTML =
-			`<span style="color: #ff0000; font-weight: bold;">You've blocked ${message.receiver}. No Conversation possible!</span>`;
+		
+		const span = document.createElement('span');
+		span.style.color = "#ff0000";
+		span.style.fontWeight = "bold";
+		span.textContent = `You've blocked ${message.receiver}. No Conversation possible!`; 
+		
+		messageElement.appendChild(span);
 	} 
 	else if (message.type === "blockedByOthersMessage"){
 		messageElement.style.background = "rgba(255, 170, 0, 0.15)";
-		messageElement.innerHTML =
-			`<span style="color: #ffaa00; font-weight: bold;">You have been blocked by ${message.receiver}. Message cannot be sent.</span>`;
+		
+		const span = document.createElement('span');
+		span.style.color = "#ffaa00";
+		span.style.fontWeight = "bold";
+		span.textContent = `You have been blocked by ${message.receiver}. Message cannot be sent.`;
+
+		messageElement.appendChild(span);
 	} 
 	else if (message.type === "invite") {
 
 		const MAX_AGE_MS = 5 * 60 * 1000; 
 
 		let timeString = message.sentAt!.replace(' ', 'T');
-		if (!timeString.endsWith('Z')) {
+		if (!timeString.endsWith('Z'))
 			timeString += 'Z'; 
-			}
 		const msgTime = new Date(timeString).getTime();
 		const currentTime = Date.now();
 		const isExpired = (currentTime - msgTime) > MAX_AGE_MS;
@@ -67,17 +95,10 @@ export function renderIncomingMessage(message: Message, chatMessages: HTMLElemen
 			const expiredText = document.createElement('div');
 			expiredText.style.color = "#888";
 			expiredText.style.fontStyle = "italic";
-			expiredText.innerText = `⚔️ Game Invite from ${message.sender} (Expired)`;
+			expiredText.textContent = `⚔️ Game Invite from ${message.sender} (Expired)`;
 			messageElement.appendChild(expiredText);
 		} else {
-			const headerInfo = document.createElement('div');
-			headerInfo.innerHTML = `
-				<div style="display:flex; justify-content:space-between; font-size:12px; color: #00ffc8; margin-bottom: 5px;">
-					<strong>${message.sender}</strong>
-					<small style="color: #66ffc8;">${message.sentAt}</small>
-				</div>
-			`;
-			messageElement.appendChild(headerInfo);
+			messageElement.appendChild(createHeader(message.sender, message.sentAt));
 
 			const inviteContainer = document.createElement('div');
 			inviteContainer.style.background = "rgba(0, 0, 0, 0.3)"; 
@@ -86,12 +107,12 @@ export function renderIncomingMessage(message: Message, chatMessages: HTMLElemen
 			inviteContainer.style.borderRadius = "5px";
 
 			const text = document.createElement('p');
-			text.innerText = message.content!;
+			text.textContent = message.content || "";
 			text.style.color = "#fff";
 			text.style.margin = "0 0 5px 0";
 			
 			const joinButton = document.createElement('button');
-			joinButton.innerText = "ACCEPT CHALLENGE";
+			joinButton.textContent = "ACCEPT CHALLENGE";
 			joinButton.style.cursor = "pointer";
 			joinButton.style.backgroundColor = "#00ffc8";
 			joinButton.style.color = "#000";
@@ -100,7 +121,6 @@ export function renderIncomingMessage(message: Message, chatMessages: HTMLElemen
 			joinButton.style.borderRadius = "3px";
 			joinButton.style.fontWeight = "bold";
 
-			// click logic invitation
 			joinButton.onclick = (e) => {
 				e.stopPropagation();
 				if (message.content === "Are you up for a tournament") {
@@ -117,52 +137,16 @@ export function renderIncomingMessage(message: Message, chatMessages: HTMLElemen
 		}
 	}
 	else {
-		messageElement.innerHTML = `
-			<div style="display:flex; justify-content:space-between; font-size:12px; color: #00ffc8;">
-				<strong>${message.sender}</strong>
-				<small style="color: #66ffc8;">${message.sentAt}</small>
-			</div>
-			<span style="color: #66ffc8;">${message.content}</span>
-			`;
+		messageElement.appendChild(createHeader(message.sender, message.sentAt));
+
+		const contentSpan = document.createElement('span');
+		contentSpan.style.color = "#66ffc8";
+		contentSpan.textContent = message.content || ""; 
+		
+		messageElement.appendChild(contentSpan);
 	}
 
 	chatMessages.append(messageElement);
-	requestAnimationFrame(() => {
-		chatMessages.scrollTop = chatMessages.scrollHeight;
-	});
-}
-
-export function renderBlockMessage(blockedUser: string, chatMessages: HTMLElement) {
-	const item = document.createElement("div");
-	item.className = "chat-message";
-	item.style.padding = "6px 8px";
-	item.style.marginBottom = "6px";
-	item.style.background = "rgba(150, 0, 0, 0.4)";
-	item.style.borderRadius = "4px";
-	item.style.cursor = "pointer";
-
-	item.innerHTML =
-	`<span style="color: #ff0000; font-weight: bold;">You've blocked ${blockedUser}. No Conversation possible!</span>`;
-
-	chatMessages.append(item);
-	requestAnimationFrame(() => {
-		chatMessages.scrollTop = chatMessages.scrollHeight;
-	});
-}
-
-export function renderBlockedByMessage(blockedByUser: string, chatMessages: HTMLElement) {
-	const item = document.createElement("div");
-	item.className = "chat-message";
-	item.style.padding = "6px 8px";
-	item.style.marginBottom = "6px";
-	item.style.background = "rgba(255, 170, 0, 0.15)";
-	item.style.borderRadius = "4px";
-	item.style.cursor = "pointer";
-
-	item.innerHTML =
-	`<span style="color: #ffaa00; font-weight: bold;">You have been blocked by ${blockedByUser}. Message cannot be sent.</span>`;
-
-	chatMessages.append(item);
 	requestAnimationFrame(() => {
 		chatMessages.scrollTop = chatMessages.scrollHeight;
 	});
@@ -249,7 +233,6 @@ async function handleDuelChallenge(anchorElement: HTMLElement) {
 
 	const rect = anchorElement.getBoundingClientRect();
 	
-
 	const dropdown = document.createElement('div');
 	dropdown.id = 'challenge-dropdown';
 	dropdown.style.cssText = `
@@ -291,11 +274,13 @@ async function handleDuelChallenge(anchorElement: HTMLElement) {
 
 		if (game.type === 'tournament') {
 			item.style.borderLeft = "2px solid #ffcc00";
-			item.innerHTML = `🏆 ${game.name}`;
+			item.textContent = `🏆 ${game.name}`;
 		} else {
 			item.style.borderLeft = "2px solid #00ffc8";
-			item.innerHTML = `🎾 ${game.name}`;
+			item.textContent = `🎾 ${game.name}`;
 		}
+		
+		item.title = `[${game.type.toUpperCase()}] ${game.name}`;
 
 		item.onmouseenter = () => item.style.background = 'rgba(0, 255, 200, 0.2)';
 		item.onmouseleave = () => item.style.background = 'transparent';
@@ -327,7 +312,7 @@ export function renderChatHeaderButtons(
 	chatHeader: HTMLElement,
 	activeChat: string | null
 ) {
-	chatHeader.innerHTML = "";
+	chatHeader.textContent = "";
 
 	const primaryNeon = "#00ffc8"; // OLD "#00e0b3";
 	const secondaryNeon = "#66ffc8"; // OLD "#33cc99";
@@ -422,7 +407,6 @@ export function renderChatHeaderButtons(
 	});
 
 	const btnDuel = createIconBtn("⚔️", "Challenge to match", (clickedButton) => {
-		//console.log(`⚔️ Challenge sent to ${activeChat}`);
 		handleDuelChallenge(clickedButton);
 	});
 
@@ -458,7 +442,7 @@ export function renderOnlineUsers(
 	chatMessages: HTMLElement,
 	chatHeader: HTMLElement,
 ) {
-	channelListContainer.innerHTML = "";
+	channelListContainer.textContent = "";
 
 	const primaryNeon = "#00ffc8";
 	const secondaryNeon = "#66ffc8"
@@ -528,7 +512,7 @@ export function renderOnlineUsers(
 			userData.activePrivateChat = username;
 			localStorage.setItem('activePrivateChat', username);
 			renderOnlineUsers(channelListContainer, chatMessages, chatHeader); 
-			chatMessages.innerHTML = "";
+			chatMessages.textContent = "";
 			populateChatWindow(userData.chatHistory!, chatMessages); 
 			renderChatHeaderButtons(chatHeader, userData.activePrivateChat);
 		};
@@ -600,7 +584,7 @@ export function populateChatWindow(
 	chatHistory: chatHistory,
 	chatMessages: HTMLElement,
 ) {
-	chatMessages.innerHTML = "";
+	chatMessages.textContent = "";
 
 	let chatHistoryToAdd: Message[] = [];
 	const activeChat = userData.activePrivateChat;
