@@ -31,8 +31,8 @@ export function getOrCreateTournament(id: string, name?: string, size?: number, 
 		if (creator && name) {
 			// Count existing tournaments by this creator (ANDY:added creator field to the db)
 			const stmt = db.prepare(`
-				SELECT COUNT(*) as count 
-				FROM tournaments 
+				SELECT COUNT(*) as count
+				FROM tournaments
 				WHERE creator = ?
 			`);
 			const result: any = stmt.get(creator);
