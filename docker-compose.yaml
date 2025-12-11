@@ -5,6 +5,8 @@ services:
     secrets:
       - tls_key
       - tls_cert
+      - github_client_id
+      - github_client_secret
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -64,6 +66,10 @@ secrets:
     file: ./certs/key.pem
   tls_cert:
     file: ./certs/cert.pem
+  github_client_id:
+    file: ./certs/github_client_id.txt
+  github_client_secret:
+    file: ./certs/github_client_secret.txt
 
 networks:
   internal:

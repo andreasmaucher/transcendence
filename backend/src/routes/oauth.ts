@@ -6,12 +6,13 @@ import { createSessionToken, makeSessionCookie } from "../auth/session.js";
 import { getGithubUserByProviderIdDB, isUsernameDB } from "../database/users/getters.js";
 import { registerGithubUserDB } from "../database/users/setters.js";
 import { readCookie, setStateCookie } from "../auth/oauth.js";
+import { GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, GITHUB_REDIRECT_URI } from "../config/github.js";
 
-// OAuth config from .env
+// // OAuth config from .env
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN;
-const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
-const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
-const GITHUB_REDIRECT_URI = process.env.GITHUB_REDIRECT_URI; // exact callback URL registered in the GitHub app
+// const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
+// const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
+// const GITHUB_REDIRECT_URI = process.env.GITHUB_REDIRECT_URI; // exact callback URL registered in the GitHub app
 
 export default async function oauthRoutes(fastify: FastifyInstance) {
 	fastify.get("/api/auth/github/start", async (_request: FastifyRequest, reply: FastifyReply) => {
