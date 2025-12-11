@@ -1,18 +1,18 @@
 .page-transition {
-	opacity: 0;
-	transition: opacity 300ms ease;
+  opacity: 0;
+  transition: opacity 300ms ease;
 }
 
 .page-transition.page-show {
-	opacity: 1;
+  opacity: 1;
 }
 
-html,
-body {
-	height: 100%;
-	overflow-y: auto;
+html, body {
+  height: 100%;
+  overflow-y: auto;
 }
+
 #app {
-	min-height: 100vh;
-	overflow-y: auto;
+  min-height: 100vh;
+  overflow-y: auto;
 }
