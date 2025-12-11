@@ -1,5 +1,5 @@
 import { userData } from "../config/constants";
-import { ROOM_ID, WS_HOST, WS_PORT, WS_PROTOCOL } from "../config/endpoints";
+import { ROOM_ID, WS_BASE } from "../config/endpoints";
 import { flushInputs, queueInput, setActiveSocket, setAssignedSide } from "../game/input";
 import { applyBackendState } from "../game/state";
 import { MatchState } from "../types/game";
@@ -25,7 +25,7 @@ export function registerGameUiHandlers(handlers: {
 }
 
 export function connectToLocalSingleGameWS(state: MatchState): () => void {
-	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/local-single-game/${ROOM_ID}/ws`;
+	const wsUrl = `${WS_BASE}/local-single-game/${ROOM_ID}/ws`;
 	console.log("URL: ", wsUrl);
 
 	const ws = new WebSocket(wsUrl);
@@ -115,7 +115,7 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 
 export function connectToSingleGameWS(state: MatchState, roomId?: string): () => void {
 	const targetRoomId = roomId ?? ROOM_ID;
-	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/single-game/${targetRoomId}/ws`;
+	const wsUrl = `${WS_BASE}/single-game/${targetRoomId}/ws`;
 
 	const ws = new WebSocket(wsUrl);
 	userData.gameSock = ws;
@@ -209,8 +209,8 @@ export function connectToSingleGameWS(state: MatchState, roomId?: string): () =>
 export function connectToTournamentWS(state: MatchState, roomId?: string, tournamentName?: string): () => void {
 	const targetRoomId = roomId ?? ROOM_ID;
 	// add tournament name as query parameter if provided
-	const nameParam = tournamentName ? `?name=${encodeURIComponent(tournamentName)}` : '';
-	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/tournament/${targetRoomId}/ws${nameParam}`;
+	const nameParam = tournamentName ? `?name=${encodeURIComponent(tournamentName)}` : "";
+	const wsUrl = `${WS_BASE}/tournament/${targetRoomId}/ws${nameParam}`;
 
 	const ws = new WebSocket(wsUrl);
 	userData.gameSock = ws;
@@ -242,7 +242,7 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 				// server tells us which side we're playing on
 				const data = (payload as any).data;
 				setAssignedSide(data?.playerSide || null);
-				
+
 				// notify UI about tournament match type
 				if (data?.tournamentMatchType) {
 					tournamentMatchType(data.tournamentMatchType, data.round || 1);

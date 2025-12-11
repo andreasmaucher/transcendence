@@ -1,7 +1,7 @@
 // src/views/auth/ui.ts
 import { loginUser, registerUser, fetchMe } from "../../api/http";
 import { navigate } from "../../router/router";
-import { API_BASE } from "../../config/endpoints";
+// import { API_BASE } from "../../config/endpoints";
 import { updateTopBar } from "../topbar/ui";
 import { t } from "../../i18n";
 import "./auth.css";
@@ -79,9 +79,9 @@ export function renderAuth(container: HTMLElement) {
 	// when the button is clicked, the follwowing code is run:
 	ghBtn.onclick = () => {
 		// Full-page redirect to start the OAuth flow on the backend
-		location.href = `${API_BASE}/api/auth/github/start`;
+		location.href = `/api/auth/github/start`;
 	};
-	console.log("{API_BASE}", API_BASE);
+	// console.log("{API_BASE}", API_BASE);
 	// adds the button to the card
 	card.appendChild(ghBtn);
 	// mounts the whole auth screen (root, that already contains card) into the page

@@ -3,11 +3,11 @@
 // API_BASE is the base URL for the backend HTTP API e.g. if you open http://localhost:5173/, API_BASE = http://localhost:4000
 
 import { userData } from "../config/constants";
-import { API_BASE } from "../config/endpoints";
+// import { API_BASE } from "../config/endpoints";
 import type { GameConstants } from "../constants";
 
 export async function fetchGameConstants(): Promise<GameConstants> {
-	const res = await fetch(`${API_BASE}/api/constants`, {
+	const res = await fetch(`/api/constants`, {
 		credentials: "omit",
 	});
 	if (!res.ok) throw new Error("constants fetch failed");
@@ -22,7 +22,7 @@ export async function fetchMe(): Promise<{
 	avatar: string | null;
 	created_at: string;
 } | null> {
-	const res = await fetch(`${API_BASE}/api/user/me`, {
+	const res = await fetch(`/api/user/me`, {
 		credentials: "include",
 	});
 	if (res.status === 401) return null;
@@ -33,7 +33,7 @@ export async function fetchMe(): Promise<{
 
 // Register a new user (also creates a session cookie on success)
 export async function registerUser(params: { username: string; password: string }): Promise<void> {
-	const res = await fetch(`${API_BASE}/api/user/register`, {
+	const res = await fetch(`/api/user/register`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		credentials: "include",
@@ -52,7 +52,7 @@ export async function registerUser(params: { username: string; password: string 
 
 // Login existing user (sets session cookie on success)
 export async function loginUser(params: { username: string; password: string }): Promise<void> {
-	const res = await fetch(`${API_BASE}/api/user/login`, {
+	const res = await fetch(`/api/user/login`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		credentials: "include",
@@ -71,7 +71,7 @@ export async function loginUser(params: { username: string; password: string }):
 
 // Logout current user (clears the cookie on the server)
 export async function logout(params: { username: string }): Promise<void> {
-	const res = await fetch(`${API_BASE}/api/user/logout`, {
+	const res = await fetch(`/api/user/logout`, {
 		method: "POST",
 		credentials: "include",
 		body: JSON.stringify(params),
@@ -87,7 +87,7 @@ export async function updateUser(params: {
 	newPassword?: string;
 	newAvatar?: string;
 }): Promise<void> {
-	const res = await fetch(`${API_BASE}/api/user/update`, {
+	const res = await fetch(`/api/user/update`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		credentials: "include",
@@ -126,7 +126,7 @@ export type Tournament = {
 };
 
 export async function fetchTournamentList(): Promise<Tournament[]> {
-	const res = await fetch(`${API_BASE}/api/tournaments/open`, {
+	const res = await fetch(`/api/tournaments/open`, {
 		credentials: "include",
 	});
 

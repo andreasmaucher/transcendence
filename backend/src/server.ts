@@ -51,7 +51,6 @@ const fastify: FastifyInstance = Fastify(fastifyOptions);
 await fastify.register(fastifyWebsocket);
 
 // fastify.get("/api/health", async () => ({ ok: true }));
-
 // Expose gameplay constants to the frontend so it can size the canvas, paddles, etc.
 fastify.get("/api/constants", async () => {
 	return {

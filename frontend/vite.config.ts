@@ -9,6 +9,16 @@ export default defineConfig({
 			key: fs.readFileSync("/run/secrets/tls_key"), // or a bind-mounted path
 			cert: fs.readFileSync("/run/secrets/tls_cert"),
 		},
+		proxy: {
+			// Anything starting with /api is proxied to the backend container
+
+			"/api": {
+				target: "https://backend:4000",
+				changeOrigin: true,
+				secure: false,
+				ws: true,
+			},
+		},
 	},
 });
 

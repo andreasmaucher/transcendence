@@ -1,9 +1,12 @@
 // Contract configuration placeholders.
-// Replace VITE_CONTRACT_ADDRESS in your .env (Vite) and adjust ABI/function as needed.
 
+// const raw = (import.meta as any).env?.VITE_API_BASE;
+
+// // If env var is defined (even as empty string), use it as-is.
+// // Only if it's truly undefined, fall back to "".
+// export const API_BASE: string = raw === undefined ? "" : raw;
 export const CONTRACT_ADDRESS: string = (import.meta as any).env?.VITE_CONTRACT_ADDRESS || "";
 export const SNOWTRACE_TX_BASE: string = (import.meta as any).env?.VITE_SNOWTRACE_TX_BASE || "";
-export const API_BASE: string = (import.meta as any).env?.VITE_API_BASE || "";
 export const TEST: string = (import.meta as any).env?.VITE_TEST || "";
 
 // Default function name we expect to call. Adjust when integrating the real contract.

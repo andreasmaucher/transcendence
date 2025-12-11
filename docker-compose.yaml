@@ -11,8 +11,12 @@ services:
       args:
         - CACHEBUST=1
     container_name: transcendence-backend
-    ports:
-      - "4000:4000"
+    # ports:
+    #   - "4000:4000"
+    expose:
+      - "4000"
+    networks:
+      - internal
     env_file:
       - ./backend/.env
     environment:
@@ -39,6 +43,8 @@ services:
     # container_name: transcendence-frontend
     ports:
       - "5173:5173"
+    networks:
+      - internal
     env_file:
       - ./frontend/.env
     environment:
@@ -58,3 +64,7 @@ secrets:
     file: ./certs/key.pem
   tls_cert:
     file: ./certs/cert.pem
+
+networks:
+  internal:
+    driver: bridge

@@ -1,8 +1,10 @@
 import { userData } from "../config/constants";
-import { WS_HOST, WS_PORT, WS_PROTOCOL } from "../config/endpoints";
+import { WS_HOST, WS_PORT, WS_PROTOCOL, WS_BASE } from "../config/endpoints";
+
+let ws: WebSocket | null = null;
 
 export function connectToUserWS(username: string) {
-	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/user/ws`;
+	const wsUrl = `${WS_BASE}/user/ws`;
 
 	const ws = new WebSocket(wsUrl);
 
