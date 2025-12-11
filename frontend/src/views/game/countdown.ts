@@ -1,11 +1,19 @@
 export function showCountdown(
   wrapper: HTMLElement,
   canvas: HTMLCanvasElement
-): Promise<void> {
-  return new Promise((resolve) => {
+): { promise: Promise<void>; cancel: () => void } {
+  let intervalId: ReturnType<typeof setInterval> | null = null;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let animationTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  let el: HTMLDivElement | null = null;
+
+  let resolvePromise: (() => void) | null = null;
+
+  const promise = new Promise<void>((resolve) => {
+    resolvePromise = resolve;
     canvas.style.filter = "blur(6px)";
 
-    const el = document.createElement("div");
+    el = document.createElement("div");
 
     // Center + size
     el.style.position = "absolute";
@@ -35,6 +43,7 @@ export function showCountdown(
     let index = 0;
 
     function animate(text: string, isGo: boolean) {
+      if (!el) return;
       el.textContent = text;
 
       if (isGo) {
@@ -61,7 +70,8 @@ export function showCountdown(
       el.style.opacity = "1";
       el.style.transform = "translate(-50%, -50%) scale(1)";
 
-      setTimeout(() => {
+      animationTimeoutId = setTimeout(() => {
+        if (!el) return;
         el.style.opacity = "0";
         el.style.transform = "translate(-50%, -50%) scale(1.25)";
       }, 650);
@@ -69,15 +79,15 @@ export function showCountdown(
 
     animate(sequence[index], false);
 
-    const timer = setInterval(() => {
+    intervalId = setInterval(() => {
       index++;
 
       if (index >= sequence.length) {
-        clearInterval(timer);
+        if (intervalId) clearInterval(intervalId);
         animate("GO!", true);
 
-        setTimeout(() => {
-          el.remove();
+        timeoutId = setTimeout(() => {
+          if (el) el.remove();
           canvas.style.filter = "none";
           resolve();
         }, 950);
@@ -88,4 +98,18 @@ export function showCountdown(
       animate(sequence[index], false);
     }, 1000);
   });
+
+  // ANDY: added this so the countdown can be cancelled if the user forfeits the match
+  // Cancel immediately cleans up all timers/elements and resolves the promise
+  // so the calling code can continue and check the 'cancelled' flag
+  const cancel = () => {
+    if (intervalId) clearInterval(intervalId);
+    if (timeoutId) clearTimeout(timeoutId);
+    if (animationTimeoutId) clearTimeout(animationTimeoutId);
+    if (el) el.remove();
+    canvas.style.filter = "none";
+    if (resolvePromise) resolvePromise(); // Resolve promise (code that takes time to compelte / asynchronous operation) so the countdown is not blocking
+  };
+
+  return { promise, cancel };
 }

@@ -62,7 +62,6 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 					);
 
 					tournaments.set(dbTournament.id, tournament);
-					console.log(`[tournamentRT] Loaded tournament ${dbTournament.id} from database into memory`);
 				}
 			}
 		} catch (error: any) {

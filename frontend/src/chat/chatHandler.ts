@@ -209,9 +209,10 @@ async function handleDuelChallenge(anchorElement: HTMLElement) {
 		apiData.openSingleGames.forEach((g: ApiOpenSingleGame) => {
 			const creatorName = g.match.players.left || "Unknown";
 			availableGames.push({
-				type: 'single',
-				id: g.id,
-				name: `Single Match vs ${creatorName} (${g.mode})` 
+				type: 'single', 
+				id: g.id, 
+				creator: g.creator,
+				name: g.name || `Game ${g.id.substring(0, 8)}` // Use generated name or fallback to short ID
 			});
 		});
 	}

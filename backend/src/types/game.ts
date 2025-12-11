@@ -3,10 +3,10 @@ import { Match, PaddleSide } from "./match.js";
 
 export type SingleGame = {
 	id: string;
+	name?: string; // to show the game in the lobby e.g.  "username game #1"
 	match: Match;
 	mode: "remote" | "local";
-	//creator: string; // username of the player who created the game (only for naming the game)
-	//gameNumber: number; // number of games a user has created (only for naming the game)
+	creator?: string; // username of the player who created the game
 	expirationTimer?: NodeJS.Timeout;
 };
 

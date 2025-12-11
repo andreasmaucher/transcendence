@@ -4,6 +4,7 @@ import { clamp, resetBall } from "./state.js";
 import { updateMatchDB } from "../database/matches/setters.js";
 import { endMatch } from "../managers/matchManager.js";
 import { Match } from "../types/match.js";
+import { matchEndTimes } from "../transport/messages.js";
 
 export function isGameOver(match: Match): void {
 	const state = match.state;
@@ -21,6 +22,12 @@ export function isGameOver(match: Match): void {
 		gameOver = true;
 	}
 	if (state.isOver) {
+		// ANDY: added this to track when match ended for delayed reset handling (so final score is visible)
+		// issue was that when game ended isGameOver() sets state to isOver = true and when the frontend receives this state update if immediately resets the match state
+		// solution: When a reset request arrives, check matchEndTimes.get(match.id) to see when the game ended and if it's recent, delay the reset for 3 seconds
+		if (!match.tournament) {
+			matchEndTimes.set(match.id, Date.now());
+		}
 		endMatch(match);
 		match.inputs.left = 0;
 		match.inputs.right = 0;

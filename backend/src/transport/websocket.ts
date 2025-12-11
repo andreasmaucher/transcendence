@@ -59,8 +59,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			);
 
 			socket.username = payload.username;
-			//const singleGame = getOrCreateSingleGame(singleGameId, payload.username, "local");
-			const singleGame = getOrCreateSingleGame(singleGameId, "local");
+		const singleGame = getOrCreateSingleGame(singleGameId, "local", payload.username);
 			const match: Match = singleGame.match;
 
 			// Add the current game info to the userOnline struct
@@ -107,8 +106,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 
 			socket.username = payload.username;
 
-			//const singleGame = getOrCreateSingleGame(singleGameId, payload.username, "remote");
-			const singleGame = getOrCreateSingleGame(singleGameId, "remote");
+		const singleGame = getOrCreateSingleGame(singleGameId, "remote", payload.username);
 			const match: Match = singleGame.match;
 
 			if (checkMatchFull(match)) {
@@ -180,7 +178,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			else console.log(`[gameWS] Websocket for Tournament: ${tournamentId} and User: ${payload.username} connected`);
 			socket.username = payload.username;
 
-			const tournament = getOrCreateTournament(tournamentId, tournamentName, tournamentSize);
+		const tournament = getOrCreateTournament(tournamentId, tournamentName, tournamentSize, payload.username);
 			// ANDY: added this part to ensure that in the second round of the tournament the sides are correctly assigned to the players
 			// Find which match this player will join and determine their side BEFORE adding them
 			let playerSide: "left" | "right" = "left";

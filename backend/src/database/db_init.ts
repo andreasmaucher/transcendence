@@ -2,6 +2,7 @@
 import Database from "better-sqlite3";
 import fs from "fs";
 import path from "path";
+import { cleanupAbandonedTournamentsDB } from "./tournaments/setters.js";
 
 const dbPath = process.env.DB_PATH || "/app/data/database.sqlite";
 
@@ -50,9 +51,11 @@ db.exec(`
 		name TEXT NOT NULL,
 		size INTEGER,
 		winner TEXT,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		started_at DATETIME,
 		ended_at DATETIME,
 		notes TEXT,
+		creator TEXT,
 
 		FOREIGN KEY (winner) REFERENCES users (username)
 	);
@@ -108,7 +111,17 @@ function cleanupIncompleteGames() {
 	}
 }
 
+function cleanupAbandonedTournaments() {
+	try {
+		// ANDY: regularly cleanup tournaments from the db so the lobby does not get polluted
+		cleanupAbandonedTournamentsDB(3);
+	} catch (error) {
+		console.error("[DB] Error cleaning up abandoned tournaments:", error);
+	}
+}
+
 // Run cleanup on startup
 cleanupIncompleteGames();
+cleanupAbandonedTournaments();
 
 export default db;

@@ -6,3 +6,13 @@
 .page-transition.page-show {
   opacity: 1;
 }
+
+html, body {
+  height: 100%;
+  overflow-y: auto;
+}
+
+#app {
+  min-height: 100vh;
+  overflow-y: auto;
+}
