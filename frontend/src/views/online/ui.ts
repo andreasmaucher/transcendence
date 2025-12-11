@@ -84,10 +84,7 @@ export function renderOnlineLobby(container: HTMLElement) {
         row.className = "tournament-row";
 
         const label = document.createElement("span");
-        const gameName =
-          g.creator && g.gameNumber
-            ? `${g.creator} ${t("online.game")} #${g.gameNumber}`
-            : `${t("online.game")} #${g.id}`;
+        const gameName = g.name || `${t("online.game")} ${g.id.substring(0, 8)}`;
         label.textContent = gameName;
 
         const right = document.createElement("div");

@@ -19,58 +19,78 @@ import {
 import { Match } from "../types/match.js";
 import { forfeitMatchDB } from "../database/matches/setters.js";
 import { buildPayload } from "../transport/broadcaster.js";
-import { createTournamentPlayerDB } from "../database/tournament_players/setters.js";
+import { createTournamentPlayerDB, removeTournamentPlayerDB } from "../database/tournament_players/setters.js";
+import db from "../database/db_init.js";
 
 // Get or Create a tournament, called only when creating a socket connection
-export function getOrCreateTournament(id: string, name?: string, size?: number): Tournament {
+export function getOrCreateTournament(id: string, name?: string, size?: number, creator?: string): Tournament {
 	let tournament = tournaments.get(id);
 	if (!tournament) {
+		// Generate unique name with counter if creator is provided
+		let tournamentName = name;
+		if (creator && name) {
+			// Count existing tournaments by this creator (ANDY:added creator field to the db)
+			const stmt = db.prepare(`
+				SELECT COUNT(*) as count 
+				FROM tournaments 
+				WHERE creator = ?
+			`);
+			const result: any = stmt.get(creator);
+			const counter = (result?.count || 0) + 1;
+			
+			// name the tournaments e.g.  "andy tournament #1"
+			if (name.includes('Tournament')) {
+				tournamentName = `${creator} tournament #${counter}`;
+			}
+		}
+		
 		// use the provided id from URL so players can find each other
 		tournament = {
 			id: id,
-			name: name,
+			name: tournamentName,
 			isRunning: false,
 			state: createInitialTournamentState(size || 4),
 			matches: new Map<number, Match[]>(),
 			players: [],
 		} as Tournament;
-
+		// ANDY: Save tournament to database first before creating matches (tournament needs to exist in db so matches can be created)
 		try {
-			// Add new tournament to database (without starting it)
-			createTournamentDB(tournament.id, tournament.name, tournament.state.size);
-			const matches = initTournamentMatches(tournament, tournament.state.size);
-			tournament.matches.set(1, matches);
-			console.log(`[TM] Starting 5-minute timeout for tournament ${tournament.id}`);
-
-			// Set timer to wait for players
-			tournament.expirationTimer = setTimeout(
-				(tournament: Tournament) => {
-					if (!checkTournamentFull(tournament)) {
-						console.log(`[WS] Tournament ${tournament.id} expired — not enough players joined`);
-
-						// Loop through all rounds
-						for (const [round, matches] of tournament.matches) {
-							for (const match of matches) {
-								for (const s of match.clients) {
-									s.close(1000, "Tournament expired: not enough players joined");
-								}
-								match.clients.clear();
-							}
-						}
-
-						removeTournamentDB(tournament.id); // Remove tournament and its matches from database
-						tournament.matches.clear();
-						tournaments.delete(tournament.id);
-					}
-				},
-				5 * 60 * 1000,
-				tournament
-			); // 5 minutes
+			createTournamentDB(tournament.id, tournament.name, tournament.state.size, creator);
 		} catch (error: any) {
-			console.error("[TM]", error.message);
+			console.log(`[TM] Tournament ${tournament.id} already exists in database or save failed:`, error.message);
 		}
+
+		// Initialize matches after the tournament is in db
+		const matches = initTournamentMatches(tournament, tournament.state.size);
+		tournament.matches.set(1, matches);
+
+		// Set timer to wait for players
+		tournament.expirationTimer = setTimeout(
+			(tournament: Tournament) => {
+				if (!checkTournamentFull(tournament)) {
+					console.log(`[WS] Tournament ${tournament.id} expired — not enough players joined`);
+
+					// Loop through all rounds
+					for (const [round, matches] of tournament.matches) {
+						for (const match of matches) {
+							for (const s of match.clients) {
+								s.close(1000, "Tournament expired: not enough players joined");
+							}
+							match.clients.clear();
+						}
+					}
+
+					removeTournamentDB(tournament.id); // Remove tournament and its matches from database
+					tournament.matches.clear();
+					tournaments.delete(tournament.id);
+				}
+			},
+			5 * 60 * 1000,
+			tournament
+		); // 5 minutes
+
 		tournaments.set(id, tournament);
-		console.log("NEW OPEN TOURNAMENT:", tournament.id, tournament.name);
+		console.log(`[TM] NEW OPEN TOURNAMENT: ${tournament.id} (${tournament.name}) - ${tournament.state.size} players`);
 	}
 	return tournament;
 }
@@ -110,6 +130,9 @@ export function addPlayerToTournament({
 			for (const match of matches) {
 				if (!checkMatchFull(match)) {
 					if (tournament.state.round === 1 && playerDisplayName && socket) {
+						// Only add to tournament.players if not already there
+						const alreadyInTournament = tournament.players.some(p => p.username === playerId);
+						if (!alreadyInTournament) {
 						tournament.players.push({
 							username: playerId,
 							displayName: playerDisplayName,
@@ -117,6 +140,7 @@ export function addPlayerToTournament({
 							currentMatch: match,
 						});
 						createTournamentPlayerDB(tournament.id, playerId, playerDisplayName);
+						}
 					}
 					addPlayerToMatch(match, playerId, socket);
 					if (checkTournamentFull(tournament)) startTournament(tournament);
@@ -336,14 +360,44 @@ export function endTournament(tournament: Tournament) {
 export function forfeitTournament(tournamentId: string, playerId: string) {
 	const tournament = getTournament(tournamentId);
 	if (tournament) {
-		tournament.state.isRunning = false;
+		// Don't end the whole tournament if a player leaves before it starts
 		const roundMatches = tournament.matches.get(tournament.state.round);
+		if (roundMatches) {
+			// Remove player from their match in memory
+			for (const match of roundMatches) {
+				if (match.players.left?.username === playerId) {
+					console.log(`[TM] Removing ${playerId} from match ${match.id} (left side)`);
+					match.players.left = undefined;
+				}
+				if (match.players.right?.username === playerId) {
+					console.log(`[TM] Removing ${playerId} from match ${match.id} (right side)`);
+					match.players.right = undefined;
+				}
+			}
+		}
+		
+		// Remove player from tournament players list
+		const playerIndex = tournament.players.findIndex(p => p.username === playerId);
+		if (playerIndex !== -1) {
+			tournament.players.splice(playerIndex, 1);
+			console.log(`[TM] Removed ${playerId} from tournament players list`);
+		}
+		
+		// Remove player from database tournament_players table
+		try {
+			removeTournamentPlayerDB(tournament.id, playerId);
+		} catch (error: any) {
+			console.log(`[TM] Could not remove ${playerId} from tournament_players DB: ${error.message}`);
+		}
+		
+		// If tournament already started, end it, therwise just remove the player
+		if (tournament.state.isRunning) {
+			tournament.state.isRunning = false;
 		if (roundMatches) {
 			for (const match of roundMatches) {
 				match.state.isRunning = false;
 				const clients = tournament.players.map((player) => player.socket);
 				for (const client of clients) {
-					// Send a message BEFORE closing
 					client.send(
 						buildPayload("player-left", {
 							username: playerId,
@@ -356,5 +410,6 @@ export function forfeitTournament(tournamentId: string, playerId: string) {
 		}
 		forfeitTournamentDB(tournament.id, playerId);
 		tournaments.delete(tournament.id);
+		}
 	}
 }

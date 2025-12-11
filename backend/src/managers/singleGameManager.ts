@@ -5,13 +5,10 @@ import { singleGames } from "../config/structures.js";
 import { checkMatchFull } from "./matchManager.js";
 import { removeMatchDB } from "../database/matches/setters.js";
 import { Match } from "../types/match.js";
-
-// Track game numbers per user
-const userGameCounters = new Map<string, number>();
+import db from "../database/db_init.js";
 
 export function resetSingleGamesForTest(): void {
 	singleGames.clear();
-	userGameCounters.clear();
 }
 
 export function forEachSingleGame(fn: (singleGame: SingleGame) => void): void {
@@ -19,21 +16,33 @@ export function forEachSingleGame(fn: (singleGame: SingleGame) => void): void {
 }
 
 // Get or Create a single game, called only when creating a socket connection
-export function getOrCreateSingleGame(id: string, mode: string): SingleGame {
+export function getOrCreateSingleGame(id: string, mode: string, creator?: string): SingleGame {
 	let singleGame = singleGames.get(id);
 	if (!singleGame) {
 		console.log("Creating new single game");
-		/* // increment game counter for this user
-		const currentCount = userGameCounters.get(userId) || 0;
-		const gameNumber = currentCount + 1;
-		userGameCounters.set(userId, gameNumber); */
+		
+		// Generate unique name with counter if creator is provided (only for remote games)
+		let gameName: string | undefined = undefined;
+		if (creator && mode === "remote") {
+			// Count existing matches created by this user
+			const stmt = db.prepare(`
+				SELECT COUNT(*) as count 
+				FROM matches 
+				WHERE mode = 'remote' 
+				AND (player_left = ? OR player_right = ?)
+			`);
+			const result: any = stmt.get(creator, creator);
+			const counter = (result?.count || 0) + 1;
+			
+			gameName = `${creator} game #${counter}`;
+		}
 
 		// Use the URL id as the singleGame id so players can find each other
 		singleGame = {
 			id: id,
+			name: gameName,
 			mode: mode,
-			//creator: userId,
-			//gameNumber: gameNumber,
+			creator: creator,
 		} as SingleGame;
 
 		try {
