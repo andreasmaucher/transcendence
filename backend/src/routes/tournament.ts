@@ -1,6 +1,11 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { getAllTournamentsDB, getTournamentByIdDB } from "../database/tournaments/getters.js";
-import { getOpenTournaments, getTournament, isTournamentOpen, initTournamentMatches } from "../managers/tournamentManagerHelpers.js";
+import {
+	getOpenTournaments,
+	getTournament,
+	isTournamentOpen,
+	initTournamentMatches,
+} from "../managers/tournamentManagerHelpers.js";
 import { Tournament } from "../types/game.js";
 import { tournaments } from "../config/structures.js";
 import { createInitialTournamentState } from "../game/state.js";
@@ -26,11 +31,15 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 		// ANDY: added this to load tournaments from database into memory so they're visible to all users
 		// Also include tournaments that are in memory but might not be in DB yet (just created)
 		try {
-			const dbTournaments = db.prepare(`
+			const dbTournaments = db
+				.prepare(
+					`
 				SELECT id, name, size
 				FROM tournaments
 				WHERE started_at IS NULL
-			`).all() as Array<{ id: string; name: string; size: number }>;
+			`
+				)
+				.all() as Array<{ id: string; name: string; size: number }>;
 
 			for (const dbTournament of dbTournaments) {
 				if (!tournaments.has(dbTournament.id)) {

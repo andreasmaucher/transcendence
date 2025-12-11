@@ -14,6 +14,20 @@ export function getAllMatchesDB(): any[] {
 	return matches;
 }
 
+// Retrieve all single games where an user played
+export function getAllSGMatchesByUserDB(username: string): any[] {
+	const stmt = db.prepare(`
+		SELECT *
+		FROM matches
+		WHERE tournament_id IS NULL
+		AND (player_left = ? OR player_right = ?);
+  `);
+
+	const matches = stmt.all(username, username);
+
+	return matches;
+}
+
 // Retrieve the desired match from the database (if present) and return it as json
 export function getMatchByIdDB(id: string) {
 	const stmt = db.prepare(`

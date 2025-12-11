@@ -1,6 +1,8 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { getOpenSingleGames } from "../managers/singleGameManager.js";
 import { getOpenTournaments } from "../managers/tournamentManagerHelpers.js";
+import { getTournamentsByUserDB } from "../database/tournaments/getters.js";
+import { getAllSGMatchesByUserDB } from "../database/matches/getters.js";
 
 // ROUTES FOR GAMES (SINGLE OR TOURNAMENTS)
 export default async function gamesRoutes(fastify: FastifyInstance) {
@@ -52,5 +54,22 @@ export default async function gamesRoutes(fastify: FastifyInstance) {
 			})(),
 		}));
 		return reply.code(200).send({ success: true, data: data });
+	});
+
+	// GET all games where a specific user played
+	fastify.get("/api/games/of/:username", async (request: FastifyRequest, reply: FastifyReply) => {
+		const { username } = request.params as { username: string };
+		try {
+			const singleGames = getAllSGMatchesByUserDB(username);
+			const tournaments = getTournamentsByUserDB(username);
+			const data: any = {
+				singleGames: singleGames,
+				tournaments: tournaments,
+			};
+			return reply.code(200).send({ success: true, data });
+		} catch (error: any) {
+			console.error("[gamesRT]", error.message);
+			return reply.code(500).send({ success: false, message: "Unable to retrieve games" });
+		}
 	});
 }
