@@ -36,7 +36,10 @@ const CONTRACT_ABI = [
 // Provider / signer / contract only if fully configured
 export const provider = isBlockchainConfigured ? new ethers.JsonRpcProvider(RPC_URL!) : undefined;
 
-export const signer = isBlockchainConfigured && provider ? new ethers.Wallet(PRIVATE_KEY!, provider) : undefined;
+const baseSigner = isBlockchainConfigured && provider ? new ethers.Wallet(PRIVATE_KEY!, provider) : undefined;
+
+// NonceManager prevents nonce collisions when multiple requests send txs concurrently
+export const signer = isBlockchainConfigured && baseSigner ? new ethers.NonceManager(baseSigner) : undefined;
 
 export const matchContract =
 	isBlockchainConfigured && signer ? new ethers.Contract(CONTRACT_ADDRESS!, CONTRACT_ABI, signer) : undefined;
