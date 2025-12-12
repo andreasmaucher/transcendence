@@ -139,10 +139,6 @@ export async function renderIncomingMessage(message: Message) {
 		messageElement.appendChild(contentSpan);
 	}
 
-	/*chatMessages.append(messageElement);
-	requestAnimationFrame(() => {
-		chatMessages.scrollTop = chatMessages.scrollHeight;
-	});*/
 	return messageElement;
 }
 
@@ -440,7 +436,6 @@ export function renderChatHeaderButtons(
 		return btn;
 	};
 
-	// navigates to the profile of the other user :)
 	const btnProfile = createIconBtn("👤", "Open profile", () => {
 		navigate(`#/user/${activeChat}`);
 	});
@@ -690,6 +685,12 @@ export function wireIncomingChat(
 	}
 
 	generalData.onlineUsers = populateOnlineUserList(userData.username);
+
+	if (userData.activePrivateChat !== "Global Chat" && !generalData.onlineUsers.includes(userData.activePrivateChat!)){
+		userData.activePrivateChat = "Global Chat";
+		localStorage.setItem('activePrivateChat', "Global Chat");
+	}
+
 	populateChatWindow(userData.chatHistory!, chatMessages);
 	renderOnlineUsers(friendList, chatMessages, chatHeader);
 	renderChatHeaderButtons(chatHeader, userData.activePrivateChat);
@@ -775,7 +776,7 @@ export function wireIncomingChat(
 
 			if (payload && payload.type === "user-online") {
 				const newUserOnline = payload.data.username;
-				console.log(`${newUserOnline} entered the realm!`)
+				console.log(`${newUserOnline} is online!`)
 				addOnlineUser(newUserOnline);
 				renderOnlineUsers(
 							friendList,
@@ -788,6 +789,12 @@ export function wireIncomingChat(
 				const newUserOffline = payload.data.username;
 				console.log(`${newUserOffline} left the realm!`)
 				generalData.onlineUsers = removeUserFromList(newUserOffline, generalData.onlineUsers!);
+				if (userData.activePrivateChat === newUserOffline) {
+					userData.activePrivateChat = "Global Chat";
+					localStorage.setItem('activePrivateChat', "Global Chat");
+					populateChatWindow(userData.chatHistory!, chatMessages);
+					renderChatHeaderButtons(chatHeader, userData.activePrivateChat);
+				}
 				renderOnlineUsers(
 							friendList,
 							chatMessages,
