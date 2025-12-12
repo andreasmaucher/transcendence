@@ -58,10 +58,11 @@ export function resetTournamentOrchestrator() {
  * - tracking round
  * - tracking match type
  * - registering semifinal match IDs
+ * - storing player display names from WebSocket payload
  * - triggering MATCH-READY overlays
  */
 export function handleTournamentMatchAssigned(data: any) {
-	const { matchId, round, tournamentMatchType } = data;
+	const { matchId, round, tournamentMatchType, leftPlayer, rightPlayer } = data;
 
 	currentRound = round ?? 1;
 	currentMatchType = tournamentMatchType;
@@ -69,13 +70,35 @@ export function handleTournamentMatchAssigned(data: any) {
 	const me = userData.username ?? undefined;
 
 	// -------------------------------
-	// ROUND 1: identify SF1 / SF2
+	// ROUND 1: identify SF1 / SF2 and store player display names
 	// -------------------------------
 	if (currentRound === 1 && tournamentMatchType === "normal") {
 		if (!semiFinalMatchIds.sf1) {
 			semiFinalMatchIds.sf1 = matchId;
+			// ANDY: store player display names from ws payload
+			if (leftPlayer?.username && rightPlayer?.username) {
+				internalBracket.players[0] = {
+					username: leftPlayer.username,
+					displayName: leftPlayer.displayName || leftPlayer.username,
+				};
+				internalBracket.players[1] = {
+					username: rightPlayer.username,
+					displayName: rightPlayer.displayName || rightPlayer.username,
+				};
+			}
 		} else if (!semiFinalMatchIds.sf2 && semiFinalMatchIds.sf1 !== matchId) {
 			semiFinalMatchIds.sf2 = matchId;
+			// ANDY: store player display names from ws payload
+			if (leftPlayer?.username && rightPlayer?.username) {
+				internalBracket.players[2] = {
+					username: leftPlayer.username,
+					displayName: leftPlayer.displayName || leftPlayer.username,
+				};
+				internalBracket.players[3] = {
+					username: rightPlayer.username,
+					displayName: rightPlayer.displayName || rightPlayer.username,
+				};
+			}
 		}
 
 		showTournamentOverlay("match-ready", {
@@ -115,9 +138,9 @@ export function handleTournamentMatchAssigned(data: any) {
 /**
  * Called from WS "state"
  * Responsible for:
- * - placing players into bracket (ROUND 1 ONLY)
  * - computing winners
  * - triggering BETWEEN / FINAL overlays
+
  */
 export function handleTournamentMatchState(
 	state: any,
@@ -125,22 +148,6 @@ export function handleTournamentMatchState(
 	leftUsername: string | null,
 	rightUsername: string | null
 ) {
-	// -------------------------------
-	// PLACE PLAYERS INTO BRACKET
-	// (ROUND 1 ONLY)
-	// -------------------------------
-	if (currentRound === 1 && leftUsername && rightUsername) {
-		if (matchId === semiFinalMatchIds.sf1) {
-			internalBracket.players[0] = { username: leftUsername };
-			internalBracket.players[1] = { username: rightUsername };
-		}
-
-		if (matchId === semiFinalMatchIds.sf2) {
-			internalBracket.players[2] = { username: leftUsername };
-			internalBracket.players[3] = { username: rightUsername };
-		}
-	}
-
 	// -------------------------------
 	// IGNORE NON-FINISHED MATCHES
 	// -------------------------------

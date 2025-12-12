@@ -142,7 +142,10 @@ export function addPlayerToTournament({
 						createTournamentPlayerDB(tournament.id, playerId, playerDisplayName);
 						}
 					}
-					addPlayerToMatch(match, playerId, socket);
+					// ANDY: look up displayName from tournament.players for later rounds or if already in tournament
+					const tournamentPlayer = tournament.players.find(p => p.username === playerId);
+					const displayName = tournamentPlayer?.displayName || playerDisplayName;
+					addPlayerToMatch(match, playerId, socket, displayName);
 					if (checkTournamentFull(tournament)) startTournament(tournament);
 					return match;
 				}
@@ -212,6 +215,7 @@ export function assignPlayersToRound(tournament: Tournament) {
 			socket.currentTournamentMatch = newMatch;
 
 			// build & send new match assignment with tournament info to the frontend
+			// ANDY: include player display names for tournament tree overlay
 			const playerSide = newMatch.players.left?.username === winner ? "left" : "right";
 			socket.send(
 				buildPayload("match-assigned", {
@@ -219,6 +223,14 @@ export function assignPlayersToRound(tournament: Tournament) {
 					playerSide: playerSide,
 					tournamentMatchType: newMatch.tournament?.type,
 					round: tournament.state.round,
+					leftPlayer: {
+						username: newMatch.players.left?.username || null,
+						displayName: newMatch.players.left?.displayName || newMatch.players.left?.username || null,
+					},
+					rightPlayer: {
+						username: newMatch.players.right?.username || null,
+						displayName: newMatch.players.right?.displayName || newMatch.players.right?.username || null,
+					},
 				} as any)
 			);
 
@@ -250,6 +262,7 @@ export function assignPlayersToRound(tournament: Tournament) {
 			socket.currentTournamentMatch = newMatch;
 
 			// send new match assignment with tournament info
+			// ANDY: include player display names for tournament tree overlay
 			const playerSide = newMatch.players.left?.username === loser ? "left" : "right";
 			socket.send(
 				buildPayload("match-assigned", {
@@ -257,6 +270,14 @@ export function assignPlayersToRound(tournament: Tournament) {
 					playerSide: playerSide,
 					tournamentMatchType: newMatch.tournament?.type,
 					round: tournament.state.round,
+					leftPlayer: {
+						username: newMatch.players.left?.username || null,
+						displayName: newMatch.players.left?.displayName || newMatch.players.left?.username || null,
+					},
+					rightPlayer: {
+						username: newMatch.players.right?.username || null,
+						displayName: newMatch.players.right?.displayName || newMatch.players.right?.username || null,
+					},
 				} as any)
 			);
 

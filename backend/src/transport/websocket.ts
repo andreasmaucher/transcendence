@@ -207,12 +207,21 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				socket.currentTournamentMatch = match; // track which match the socket belongs to
 				socket.tournamentId = tournament.id; // tracks the tournament this socket belongs to
 
+				// ANDY: include player display names for the tournament tree overlay
 				socket.send(
 					buildPayload("match-assigned", {
 						matchId: match.id,
 						playerSide: playerSide,
 						tournamentMatchType: match.tournament?.type,
 						round: tournament.state.round,
+						leftPlayer: {
+							username: match.players.left?.username || null,
+							displayName: match.players.left?.displayName || match.players.left?.username || null,
+						},
+						rightPlayer: {
+							username: match.players.right?.username || null,
+							displayName: match.players.right?.displayName || match.players.right?.username || null,
+						},
 					} as any)
 				);
 

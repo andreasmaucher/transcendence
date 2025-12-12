@@ -40,6 +40,7 @@ export type MatchMode = "local" | "remote";
 
 export type Player = {
 	username: string;
+	displayName?: string; // ANDY: added display name for tournament tree overlay
 	socket: any;
 };
 
