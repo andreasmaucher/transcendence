@@ -33,17 +33,22 @@ export default async function gamesRoutes(fastify: FastifyInstance) {
 		// 1. Optionally save to DB
 		// const match = await saveMatchToDB(body);
 
-		// 2. Write on-chain (fire-and-forget)
+		// 2. Write on-chain (fire-and-forget).
+		// Use mode as a coarse tournamentId hint and generate a
+		// per-game unique gameId from players + timestamp so that
+		// repeated games are stored under distinct keys.
 		const nowTs = BigInt(Date.now());
+		const tournamentId = body.mode || "generic";
+		const gameId = `${body.player1}-${body.player2}-${Date.now().toString()}`;
 
 		saveMatchOnChain({
-			player1: body.player1,
-			player2: body.player2,
-			timestamp: nowTs,
-			mode: body.mode,
-			winner: body.winner,
-			score1: body.score1,
-			score2: body.score2,
+			tournamentId,
+			gameId,
+			gameIndex: nowTs,
+			playerLeft: body.player1,
+			playerRight: body.player2,
+			scoreLeft: body.score1,
+			scoreRight: body.score2,
 		}).catch((err) => {
 			request.log.error({ err }, "Failed to save match on-chain");
 		});

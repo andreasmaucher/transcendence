@@ -13,6 +13,9 @@ import {
 } from "../../ws/game";
 import { userData } from "../../config/constants";
 import { showCountdown } from "../game/countdown";
+import { SNOWTRACE_TX_BASE } from "../../config/contract";
+
+type ChainResult = { ok: true; txHash: string } | { ok: false; error: string };
 
 let GAME_CONSTANTS: GameConstants | null = null;
 
@@ -83,7 +86,7 @@ async function reportLocalGameToBlockchain(params: {
 	mode: string;
 	score1: number;
 	score2: number;
-}) {
+}): Promise<ChainResult> {
 	console.log("[BLOCKCHAIN] Sending local game to backend /api/blockchain/local-game", params);
 	try {
 		const res = await fetch("/api/blockchain/local-game", {
@@ -97,14 +100,27 @@ async function reportLocalGameToBlockchain(params: {
 
 		if (!res.ok || !body?.success) {
 			console.error("[BLOCKCHAIN] Failed to write local game", res.status, body);
-			alert("Warning: game stats could not be stored on the blockchain.");
-			return;
+			const message = body?.message || body?.error || "Game stats could not be stored on the blockchain.";
+			return { ok: false, error: message };
 		}
 
-		console.log("[BLOCKCHAIN] Local game stored on-chain. Tx:", body.data?.txHash);
+		const txHash: string | undefined = body.data?.txHash;
+		if (!txHash) {
+			console.warn("[BLOCKCHAIN] Response success=true but missing txHash", body);
+			return {
+				ok: false,
+				error: "Game stats may be stored on-chain, but no transaction hash was returned.",
+			};
+		}
+
+		console.log("[BLOCKCHAIN] Local game stored on-chain. Tx:", txHash);
+		return { ok: true, txHash };
 	} catch (err) {
 		console.error("[BLOCKCHAIN] Error calling /api/blockchain/local-game", err);
-		alert("Warning: game stats could not be stored on the blockchain.");
+		return {
+			ok: false,
+			error: "Network or server error while storing game stats on the blockchain.",
+		};
 	}
 }
 
@@ -307,6 +323,121 @@ export async function renderGame(container: HTMLElement) {
 	waitingOverlay.textContent = "Waiting for opponent...";
 	wrapper.append(waitingOverlay);
 
+	// overlay to show blockchain save result after game over (local only)
+	const chainOverlay = document.createElement("div");
+	chainOverlay.style.position = "absolute";
+	chainOverlay.style.top = "0";
+	chainOverlay.style.left = "0";
+	chainOverlay.style.width = "100%";
+	chainOverlay.style.height = "100%";
+	chainOverlay.style.display = "none";
+	chainOverlay.style.alignItems = "center";
+	chainOverlay.style.justifyContent = "center";
+	chainOverlay.style.background = "rgba(0, 0, 0, 0.78)";
+	chainOverlay.style.zIndex = "1100";
+
+	const chainCard = document.createElement("div");
+	chainCard.style.minWidth = "360px";
+	chainCard.style.maxWidth = "520px";
+	chainCard.style.padding = "20px 24px";
+	chainCard.style.borderRadius = "10px";
+	chainCard.style.background = "linear-gradient(135deg, rgba(12,12,30,0.96), rgba(32,10,40,0.96))";
+	chainCard.style.border = "1px solid rgba(255,44,251,0.4)";
+	chainCard.style.boxShadow = "0 0 16px rgba(255,44,251,0.4), 0 0 32px rgba(140,120,255,0.35)";
+	chainCard.style.color = "#fdfdff";
+	chainCard.style.fontFamily = "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+	chainOverlay.append(chainCard);
+	wrapper.append(chainOverlay);
+
+	const showChainResult = (
+		result: ChainResult,
+		options: {
+			leftScore: number;
+			rightScore: number;
+			player1: string;
+			player2: string;
+			winner: string;
+		}
+	) => {
+		chainCard.innerHTML = "";
+
+		const title = document.createElement("h2");
+		title.style.margin = "0 0 8px 0";
+		title.style.fontSize = "20px";
+		title.style.fontWeight = "700";
+		title.style.letterSpacing = "0.04em";
+
+		const summary = document.createElement("p");
+		summary.style.margin = "0 0 10px 0";
+		summary.style.fontSize = "14px";
+		summary.style.opacity = "0.9";
+
+		const scoreLine = document.createElement("p");
+		scoreLine.style.margin = "0 0 12px 0";
+		scoreLine.style.fontSize = "15px";
+		scoreLine.style.fontWeight = "500";
+
+		const meta = document.createElement("div");
+		meta.style.marginBottom = "14px";
+		meta.style.fontSize = "13px";
+		meta.style.opacity = "0.9";
+
+		const winnerLabel =
+			options.winner === "Draw"
+				? "Game ended in a draw."
+				: `Winner: ${options.winner} (${options.leftScore}:${options.rightScore})`;
+		scoreLine.textContent = winnerLabel;
+
+		if (result.ok) {
+			title.textContent = "Match saved to the blockchain";
+			title.style.color = "#7dffb2";
+			summary.textContent = "Your local game stats have been written to the smart contract.";
+
+			const hashLine = document.createElement("div");
+			hashLine.style.marginBottom = "8px";
+			hashLine.textContent = `Tx hash: ${result.txHash}`;
+			meta.append(hashLine);
+
+			if (SNOWTRACE_TX_BASE) {
+				const link = document.createElement("a");
+				link.href = `${SNOWTRACE_TX_BASE.replace(/\/+$/, "")}/${result.txHash}`;
+				link.target = "_blank";
+				link.rel = "noreferrer";
+				link.style.color = "#9ad4ff";
+				link.style.textDecoration = "none";
+				link.style.fontWeight = "500";
+				link.textContent = "View on Snowtrace";
+				meta.append(link);
+			}
+		} else {
+			title.textContent = "Could not store stats on the blockchain";
+			title.style.color = "#ff9a9a";
+			summary.textContent = result.error || "Your game finished normally, but the blockchain write failed.";
+		}
+
+		const buttonsRow = document.createElement("div");
+		buttonsRow.style.display = "flex";
+		buttonsRow.style.justifyContent = "flex-end";
+		buttonsRow.style.gap = "8px";
+
+		const backBtn = document.createElement("button");
+		backBtn.textContent = "Back to menu";
+		backBtn.style.padding = "6px 14px";
+		backBtn.style.borderRadius = "6px";
+		backBtn.style.border = "1px solid rgba(255,255,255,0.35)";
+		backBtn.style.background = "rgba(15,15,30,0.9)";
+		backBtn.style.color = "#fdfdff";
+		backBtn.style.cursor = "pointer";
+		backBtn.onclick = () => {
+			navigate("#/menu");
+		};
+
+		buttonsRow.append(backBtn);
+
+		chainCard.append(title, summary, scoreLine, meta, buttonsRow);
+		chainOverlay.style.display = "flex";
+	};
+
 	// register UI handlers for WS events
 	registerGameUiHandlers({
 		waitingForPlayers: () => {
@@ -327,7 +458,7 @@ export async function renderGame(container: HTMLElement) {
 			waitingOverlay.style.display = "none";
 		},
 
-		// NEW: game over handler – trigger blockchain write for LOCAL games
+		// game over handler – trigger blockchain write and show overlay for LOCAL games
 		gameOver: (finalState: MatchState) => {
 			if (mode !== "local") return;
 
@@ -346,20 +477,31 @@ export async function renderGame(container: HTMLElement) {
 				player2,
 				winner,
 			});
-			// If it's a draw, you may choose to skip blockchain write
+
+			// Always show an overlay so the player knows the outcome.
 			if (winner === "Draw") {
 				console.log("[BLOCKCHAIN] Local game ended in draw – not writing to chain");
+				showChainResult(
+					{
+						ok: false,
+						error: "Game ended in a draw – stats are not stored on the blockchain.",
+					},
+					{ leftScore, rightScore, player1, player2, winner }
+				);
 				return;
 			}
 
-			void reportLocalGameToBlockchain({
-				player1,
-				player2,
-				winner,
-				mode: "local",
-				score1: leftScore,
-				score2: rightScore,
-			});
+			void (async () => {
+				const result = await reportLocalGameToBlockchain({
+					player1,
+					player2,
+					winner,
+					mode: "local",
+					score1: leftScore,
+					score2: rightScore,
+				});
+				showChainResult(result, { leftScore, rightScore, player1, player2, winner });
+			})();
 		},
 	});
 

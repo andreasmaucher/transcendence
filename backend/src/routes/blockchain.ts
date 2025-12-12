@@ -10,7 +10,6 @@ type LocalGameBody = {
 	score1: number;
 	score2: number;
 };
-
 export default async function blockchainRoutes(app: FastifyInstance) {
 	app.post("/api/blockchain/local-game", async (request: FastifyRequest, reply: FastifyReply) => {
 		const body = request.body as LocalGameBody;
@@ -29,24 +28,21 @@ export default async function blockchainRoutes(app: FastifyInstance) {
 		try {
 			request.log.info({ body }, "[BLOCKCHAIN] Writing local game to chain...");
 
-			const receipt = await saveMatchOnChain({
-				player1: body.player1,
-				player2: body.player2,
-				timestamp: nowTs,
-				mode: body.mode,
-				winner: body.winner,
-				score1: body.score1,
-				score2: body.score2,
-			});
+			// For local single-player games, use a synthetic tournamentId and
+			// a per-game unique gameId based on timestamp so repeated games
+			// for the same player still get distinct records on-chain.
+			const tournamentId = `local-single:${body.player1}`;
+			const gameId = `${body.player1}-${body.player2}-${Date.now().toString()}`;
 
-			// if (!receipt) {
-			// 	request.log.error("[BLOCKCHAIN] saveMatchOnChain returned null/undefined for local game");
-			// 	return reply.code(500).send({
-			// 		success: false,
-			// 		error: "BLOCKCHAIN_WRITE_FAILED",
-			// 		message: "Failed to store local game on the blockchain.",
-			// 	});
-			// }
+			const receipt = await saveMatchOnChain({
+				tournamentId,
+				gameId,
+				gameIndex: nowTs,
+				playerLeft: body.player1,
+				playerRight: body.player2,
+				scoreLeft: body.score1,
+				scoreRight: body.score2,
+			});
 
 			request.log.info({ txHash: receipt.hash }, "[BLOCKCHAIN] Local game written to chain");
 
@@ -57,7 +53,19 @@ export default async function blockchainRoutes(app: FastifyInstance) {
 				},
 			});
 		} catch (err) {
-			request.log.error({ err }, "[BLOCKCHAIN] local game write failed");
+			const anyErr = err as any;
+			const reason = anyErr?.reason || anyErr?.shortMessage || anyErr?.info?.error?.message || anyErr?.message;
+
+			if (typeof reason === "string" && /game already saved/i.test(reason)) {
+				request.log.info({ err }, "[BLOCKCHAIN] local game already saved on-chain");
+				return reply.send({
+					success: true,
+					data: {
+						alreadySaved: true,
+					},
+				});
+			}
+
 			return reply.code(500).send({
 				success: false,
 				error: "BLOCKCHAIN_WRITE_FAILED",

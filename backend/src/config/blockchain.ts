@@ -42,22 +42,33 @@ export const matchContract =
 	isBlockchainConfigured && signer ? new ethers.Contract(CONTRACT_ADDRESS!, CONTRACT_ABI, signer) : undefined;
 
 // Called by routes (e.g. /api/blockchain/local-game)
+// This mirrors the on-chain contract signature:
+// saveMatch(string tournamentId, string gameId, uint256 gameIndex,
+//           string playerLeft, string playerRight, uint8 scoreLeft, uint8 scoreRight)
 export async function saveMatchOnChain(params: {
-	player1: string;
-	player2: string;
-	timestamp: bigint | number;
-	mode: string;
-	winner: string;
-	score1: number;
-	score2: number;
+	tournamentId: string;
+	gameId: string;
+	gameIndex: bigint | number;
+	playerLeft: string;
+	playerRight: string;
+	scoreLeft: number;
+	scoreRight: number;
 }) {
 	if (!isBlockchainConfigured || !matchContract) {
 		throw new Error("BLOCKCHAIN_NOT_CONFIGURED");
 	}
 
-	const { player1, player2, timestamp, mode, winner, score1, score2 } = params;
+	const { tournamentId, gameId, gameIndex, playerLeft, playerRight, scoreLeft, scoreRight } = params;
 
-	const tx = await matchContract.saveMatch(player1, player2, timestamp, mode, winner, score1, score2);
+	const tx = await matchContract.saveMatch(
+		tournamentId,
+		gameId,
+		gameIndex,
+		playerLeft,
+		playerRight,
+		scoreLeft,
+		scoreRight
+	);
 
 	const receipt = await tx.wait();
 	return receipt;
