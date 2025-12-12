@@ -29,11 +29,11 @@ export function updateLocalBlockState(
 	}
 }
 
-export function populatePrivateConv(username: string, privateMessages: Message[]): Map<string, Message[]> {
-	const privateConvs = new Map<string, Message[]>();
-	const blockedUsersLocal = new Map<string, string[]>();
-	let blockedByMe: string[] = [];
-	let blockedByThem: string[] = [];
+	export function populatePrivateConv(username: string, privateMessages: Message[]): Map<string, Message[]> {
+		const privateConvs = new Map<string, Message[]>();
+		const blockedUsersLocal = new Map<string, string[]>();
+		let blockedByMe: string[] = [];
+		let blockedByThem: string[] = [];
 
 	for (const msg of privateMessages) {
 		const otherUser = msg.sender === username ? msg.receiver : msg.sender;
@@ -44,26 +44,28 @@ export function populatePrivateConv(username: string, privateMessages: Message[]
 			privateConvs.set(otherUser, []);
 		}
 
-		if (msg.type === "block" || msg.type === "unblock") {
-			updateLocalBlockState(blockedUsersLocal, msg.sender!, msg.receiver!, msg.type);
-			
-			if (msg.sender === username){
-				const index = blockedByThem.indexOf(msg.receiver!);
-				if (msg.type === "block") {
-					if (index === -1) blockedByThem.push(msg.receiver!);
-				} else {
-					if (index !== -1) blockedByThem.splice(index, 1);
+			if (msg.type === "block" || msg.type === "unblock") {
+				updateLocalBlockState(blockedUsersLocal, msg.sender!, msg.receiver!, msg.type);
+				
+				if (msg.sender === username) {
+					// I am blocking someone -> goes into my blockedUsers
+					const index = blockedByMe.indexOf(msg.receiver!);
+					if (msg.type === "block") {
+						if (index === -1) blockedByMe.push(msg.receiver!);
+					} else {
+						if (index !== -1) blockedByMe.splice(index, 1);
+					}
+				} else if (msg.receiver === username) {
+					// Someone blocks me -> goes into blockedByUsers
+					const index = blockedByThem.indexOf(msg.sender!);
+					if (msg.type === "block") {
+						if (index === -1) blockedByThem.push(msg.sender!);
+					} else {
+						if (index !== -1) blockedByThem.splice(index, 1);
+					}
 				}
-			} else if (msg.receiver === username) {
-				const index = blockedByMe.indexOf(msg.sender!);
-				if (msg.type === "block") {
-					if (index === -1) blockedByMe.push(msg.sender!);
-				} else {
-					if (index !== -1) blockedByMe.splice(index, 1);
-				}
+				continue;
 			}
-			continue;
-		}
 
 		const senderBlockedTarget =
 			blockedUsersLocal.get(msg.sender!)?.includes(msg.receiver!) ?? false;
@@ -81,10 +83,10 @@ export function populatePrivateConv(username: string, privateMessages: Message[]
 		privateConvs.get(otherUser)!.push(msg);
 	}
 
-	userData.blockedByUsers = blockedByThem;
-	userData.blockedUsers = blockedByMe;
-	return privateConvs;
-}
+		userData.blockedUsers = blockedByMe;
+		userData.blockedByUsers = blockedByThem;
+		return privateConvs;
+	}
 
 export async function fetchUserData() {
 	const response = await fetch(`${API_BASE}/api/user/data`, {
@@ -235,7 +237,6 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	// Send button
 	const sendBtn = document.createElement("button");
 	sendBtn.textContent = "Send";
-	
 	sendBtn.style.background = "rgba(10,10,10,0.55)";
 	sendBtn.style.color = "#66ffc8";
 	sendBtn.style.border = "2px solid #00ffc8";

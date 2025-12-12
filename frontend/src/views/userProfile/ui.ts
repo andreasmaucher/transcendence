@@ -134,6 +134,13 @@ export async function renderUserProfile(container: HTMLElement, username?: strin
           sendMessage("block", t("userProfile.youBlocked") + user.username, user.username);
           blockBtn.textContent = t("userProfile.unblock");
         }
+        // send the information to the chat
+        document.dispatchEvent(new CustomEvent('userListsUpdated', { 
+            detail: { 
+                action: isBlocked ? 'unblock' : 'block',
+                username: user.username 
+            }
+        }));
       };
 
       actions.append(blockBtn);

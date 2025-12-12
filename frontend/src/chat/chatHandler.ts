@@ -268,7 +268,7 @@ async function handleDuelChallenge(anchorElement: HTMLElement) {
 			cursor: pointer;
 			border-radius: 3px;
 			transition: background 0.2s;
-			white-space: nowrap;
+			white-space: nowrap;make 
 			overflow: hidden;
 			text-overflow: ellipsis;
 		`;
@@ -425,7 +425,7 @@ export function renderChatHeaderButtons(
 				console.log(`🚫 User ${activeChat} was blocked`);
 			} else {
 				userData.blockedUsers = userData.blockedUsers!.filter(u => u !== activeChat);
-				sendMessage("unblock", `You've unblocked ${activeChat}`, activeChat);
+				sendMessage('unblock', `You've unblocked ${activeChat}`, activeChat);
 				console.log(`♻️ User ${activeChat} was UNBLOCKED`);
 			}
 			renderChatHeaderButtons(chatHeader, activeChat);
@@ -645,6 +645,25 @@ export function wireIncomingChat(
 	renderOnlineUsers(friendList, chatMessages, chatHeader);
 	renderChatHeaderButtons(chatHeader, userData.activePrivateChat);
 
+	// keep chat header in sync when block/unblock happens in userProfile
+	const handleUserListsUpdated = (event: Event) => {
+		const custom = event as CustomEvent<{ action: 'block' | 'unblock'; username: string }>;
+		const { action, username } = custom.detail;
+
+		if (action === 'block') {
+			if (!userData.blockedUsers?.includes(username)) {
+				userData.blockedUsers?.push(username);
+			}
+		} else if (action === 'unblock') {
+			userData.blockedUsers = userData.blockedUsers?.filter(u => u !== username) ?? [];
+		}
+
+		renderChatHeaderButtons(chatHeader, userData.activePrivateChat);
+		renderOnlineUsers(friendList, chatMessages, chatHeader);
+	};
+
+	document.addEventListener('userListsUpdated', handleUserListsUpdated);
+
 	ws.onmessage = (event) => {
 		try {
 			
@@ -668,14 +687,14 @@ export function wireIncomingChat(
 						break;
 					}
 					case "block": {
-						if (msg.receiver === userData.username) {
+						if (msg.receiver === userData.username && msg.sender !== userData.username) {
 							userData.blockedByUsers = addUserToList(msg.sender, userData.blockedByUsers);
 						}
 						appendMessageToHistory(msg);
 						break;
 						}
 					case "unblock": {
-						if (msg.receiver === userData.username) {
+						if (msg.receiver === userData.username && msg.sender !== userData.username) {
 							userData.blockedByUsers = removeUserFromList(msg.sender, userData.blockedByUsers);
 						}
 						appendMessageToHistory(msg);
@@ -759,5 +778,6 @@ export function wireIncomingChat(
 
 	return () => {
 		ws.onmessage = previousHandler ?? null;
+		document.removeEventListener('userListsUpdated', handleUserListsUpdated);
 	};
 }
