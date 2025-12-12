@@ -3,7 +3,7 @@ import { getAllUsersDB } from "../database/users/getters.js";
 import { getAllMatchesDB } from "../database/matches/getters.js";
 import { getAllTournamentsDB } from "../database/tournaments/getters.js";
 import { getAllMessagesDB } from "../database/messages/getters.js";
-import { getAllTournamentsWithPlayersDB } from "../database/tournament_players/getters.js";
+import { getAllTournamentPlayersDB, getAllTournamentsWithPlayersDB } from "../database/tournament_players/getters.js";
 import { createTestSingleGames, createTestTournaments } from "../utils/test.js";
 
 export default async function testRoutes(fastify: FastifyInstance) {
@@ -52,6 +52,18 @@ export default async function testRoutes(fastify: FastifyInstance) {
 		} catch (error: any) {
 			console.error("[testRT]", error.message);
 			return reply.code(500).send({ success: false, message: "Unable to retrieve tournaments" });
+		}
+	});
+
+	// RETURN all tournaments with tournament players and PRINT them in backend logs
+	fastify.get("/api/test/print-tournament-players", async (_request: FastifyRequest, reply: FastifyReply) => {
+		try {
+			const tournamentPlayers = getAllTournamentPlayersDB();
+			console.log(tournamentPlayers);
+			return reply.code(200).send({ success: true, data: tournamentPlayers });
+		} catch (error: any) {
+			console.error("[testRT]", error.message);
+			return reply.code(500).send({ success: false, message: "Unable to retrieve tournamentPlayers" });
 		}
 	});
 

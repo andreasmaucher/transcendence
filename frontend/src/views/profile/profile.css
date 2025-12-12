@@ -1,178 +1,308 @@
 /* PROFILE PAGE -------------------------------------------------------- */
 
 .profile-screen {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  padding-top: 2rem;
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	padding-top: 2rem;
 }
 
 .profile-panel {
-  width: 520px;
-  background: rgba(0,0,0,0.45);
-  border: 2px solid #ff2cfb66;
-  border-radius: 10px;
-  padding: 1.5rem;
-  box-shadow: 0 0 20px #ff2cfb33;
-  backdrop-filter: blur(6px);
+	width: 920px;
+	background: rgba(0, 0, 0, 0.45);
+	border: 2px solid #ff2cfb66;
+	border-radius: 10px;
+	padding: 1.5rem;
+	box-shadow: 0 0 20px #ff2cfb33;
+	backdrop-filter: blur(6px);
 }
 
 /* Header */
 .profile-panel .profile-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  color: #ff2cfb;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	color: #ff2cfb;
 }
 
 .profile-panel .profile-back-btn {
-  padding: 6px 10px;
-  background: rgba(255,44,251,0.2);
-  border: 1px solid #ff2cfb;
-  border-radius: 5px;
-  color: #ff6bff;
-  cursor: pointer;
+	padding: 6px 10px;
+	background: rgba(255, 44, 251, 0.2);
+	border: 1px solid #ff2cfb;
+	border-radius: 5px;
+	color: #ff6bff;
+	cursor: pointer;
 }
 
 /* Status */
 .profile-panel .profile-status {
-  text-align: center;
-  margin-top: 0.5rem;
-  color: #ff6bff;
+	text-align: center;
+	margin-top: 0.5rem;
+	color: #ff6bff;
 }
 
 /* Content */
 .profile-panel .profile-content {
-  margin-top: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
+	margin-top: 1.5rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1.2rem;
 }
 
 /* Cards */
 .profile-panel .profile-card {
-  background: rgba(0,0,0,0.35);
-  border: 1px solid #ff2cfb55;
-  border-radius: 10px;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+	background: rgba(0, 0, 0, 0.35);
+	border: 1px solid #ff2cfb55;
+	border-radius: 10px;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
 }
 
 /* Avatar */
 .profile-panel .profile-avatar-wrapper {
-  position: relative;
+	position: relative;
 }
 
 .profile-panel .profile-avatar {
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  border: 3px solid #5d5fc5;
-  object-fit: cover;
+	width: 140px;
+	height: 140px;
+	border-radius: 50%;
+	border: 3px solid #5d5fc5;
+	object-fit: cover;
 }
 
 .profile-panel .profile-avatar-edit {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  background: #6e70e0;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
+	position: absolute;
+	bottom: 8px;
+	right: 8px;
+	background: #6e70e0;
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	color: white;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
 }
 
 /* Username */
 .profile-panel .profile-username {
-  margin-top: 0.8rem;
-  font-size: 22px;
-  font-weight: bold;
-  color: #ff6bff;
+	margin-top: 0.8rem;
+	font-size: 22px;
+	font-weight: bold;
+	color: #ff6bff;
 }
 
 .profile-panel .profile-subtext {
-  margin-top: 4px;
-  font-size: 12px;
-  opacity: 0.8;
+	margin-top: 4px;
+	font-size: 12px;
+	opacity: 0.8;
 }
 
 /* Section headers */
 .profile-panel .profile-section-title {
-  font-size: 18px;
-  font-weight: bold;
-  color: #ff6bff;
-  margin-bottom: 0.8rem;
+	font-size: 18px;
+	font-weight: bold;
+	color: #ff6bff;
+	margin-bottom: 0.8rem;
 }
 
 /* Inputs */
 .profile-panel .profile-input {
-  padding: 8px;
-  width: 100%;
-  border-radius: 6px;
-  border: 1px solid #ff2cfb55;
-  background: rgba(0,0,0,0.35);
-  color: #ff6bff;
-  margin-bottom: 0.6rem;
+	padding: 8px;
+	width: 100%;
+	border-radius: 6px;
+	border: 1px solid #ff2cfb55;
+	background: rgba(0, 0, 0, 0.35);
+	color: #ff6bff;
+	margin-bottom: 0.6rem;
 }
 
 /* Buttons */
 .profile-panel .profile-btn {
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid #ff2cfbdd;
-  background: rgba(255,44,251,0.25);
-  color: #ff6bff;
-  cursor: pointer;
-  margin-top: 0.5rem;
-  width: 100%;
+	padding: 8px 12px;
+	border-radius: 6px;
+	border: 1px solid #ff2cfbdd;
+	background: rgba(255, 44, 251, 0.25);
+	color: #ff6bff;
+	cursor: pointer;
+	margin-top: 0.5rem;
+	width: 100%;
 }
 
 /* Message */
 .profile-panel .profile-message {
-  text-align: center;
-  margin-top: 6px;
-  color: #ff6bff;
-  font-size: 13px;
+	text-align: center;
+	margin-top: 6px;
+	color: #ff6bff;
+	font-size: 13px;
 }
 
 /* Friend list */
 .profile-panel .profile-friend-list {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
 }
 
 .profile-panel .profile-friend-row {
-  display: flex;
-  align-items: center;
-  padding: 6px 8px;
-  border-radius: 6px;
-  background: rgba(255,255,255,0.06);
-  cursor: pointer;
-  transition: background 0.15s ease;
+	display: flex;
+	align-items: center;
+	padding: 6px 8px;
+	border-radius: 6px;
+	background: rgba(255, 255, 255, 0.06);
+	cursor: pointer;
+	transition: background 0.15s ease;
 }
 
 .profile-panel .profile-friend-row:hover {
-  background: rgba(255,255,255,0.12);
+	background: rgba(255, 255, 255, 0.12);
 }
 
 .profile-panel .profile-friend-avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: 1px solid #6e70e0;
-  object-fit: cover;
+	width: 38px;
+	height: 38px;
+	border-radius: 50%;
+	border: 1px solid #6e70e0;
+	object-fit: cover;
 }
 
 .profile-panel .profile-friend-name {
-  margin-left: 10px;
-  color: #6e70e0;
-  font-weight: bold;
+	margin-left: 10px;
+	color: #6e70e0;
+	font-weight: bold;
+}
+
+/* --- STATS SECTION STYLING --- */
+
+/* Wrapper for tabs */
+.stats-tabs-wrapper {
+	display: flex;
+	width: 100%;
+	gap: 10px;
+	margin-bottom: 1rem;
+}
+
+/* Tab Buttons */
+.stats-tab-btn {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 10px 0;
+	background: rgba(0, 0, 0, 0.35);
+	border: 1px solid #ff2cfb55;
+	border-radius: 6px;
+	color: #ff6bff;
+	font-weight: bold;
+	cursor: pointer;
+	transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.stats-tab-btn:hover {
+	background: rgba(255, 44, 251, 0.15);
+}
+
+.stats-tab-btn.active {
+	background: rgba(255, 44, 251, 0.3);
+	border-color: #ff2cfb;
+	color: #ffffff;
+	box-shadow: 0 0 10px #ff2cfb44;
+}
+
+/* --- MAIN TABLES --- */
+.stats-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 14px;
+	margin-top: 5px;
+	table-layout: fixed;
+}
+
+/* Main Header Cells */
+.stats-table th {
+	text-align: left;
+	padding: 10px 8px;
+	color: #ff6bff;
+	border-bottom: 1px solid #ff2cfb55;
+	font-weight: bold;
+	text-transform: uppercase;
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+/* Column Widths (Updated for "My Place") */
+.stats-table th:nth-child(1) {
+	width: 22%;
+} /* Date */
+.stats-table th:nth-child(2) {
+	width: 22%;
+} /* Name/Adversary */
+.stats-table th:nth-child(3) {
+	width: 20%;
+} /* Winner */
+.stats-table th:nth-child(4) {
+	width: 16%;
+} /* My Place / Mode */
+.stats-table th:nth-child(5) {
+	width: 20%;
+} /* Notes */
+
+/* Main Data Cells */
+.stats-table td {
+	padding: 10px 8px;
+	color: #ddd;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* --- NESTED TOURNAMENT MATCHES STYLING --- */
+
+.tournament-matches-row {
+	background: rgba(0, 0, 0, 0.15);
+}
+
+.sub-stats-table {
+	width: 75%;
+	margin-left: auto;
+	margin-right: 1rem;
+	margin-bottom: 8px;
+	border-collapse: collapse;
+	font-size: 11px;
+}
+
+.sub-stats-table th {
+	text-align: left;
+	padding: 4px 8px;
+	color: #ff6bff;
+	opacity: 0.8;
+	font-weight: bold;
+	border-bottom: 1px solid rgba(255, 44, 251, 0.15);
+	text-transform: uppercase;
+	font-size: 10px;
+}
+
+.sub-stats-table td {
+	padding: 4px 8px;
+	color: #aaa;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.sub-stats-table tr:last-child td {
+	border-bottom: none;
+}
+
+.stats-empty-text {
+	font-size: 12px;
+	opacity: 0.8;
+	text-align: center;
+	width: 100%;
+	margin-top: 1rem;
+	color: #fff;
 }
