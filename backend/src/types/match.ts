@@ -38,10 +38,18 @@ export type TournamentMatchInfo = {
 
 export type MatchMode = "local" | "remote";
 
+export type MatchLastResult = {
+	scoreLeft: number;
+	scoreRight: number;
+	winnerSide: PaddleSide | null;
+	finishedAtMs: number;
+};
+
 export type Match = {
 	id: string;
 	tournament?: TournamentMatchInfo;
 	singleGameId?: string;
+	lastResult?: MatchLastResult;
 	state: MatchState;
 	inputs: Record<PaddleSide, PaddleInput>;
 	players: { left: string | undefined; right: string | undefined };

@@ -9,6 +9,7 @@ export const generalData = {
 
 export const userData = {
 	username: null as string | null,
+	matchId: null as string | null,
 	userSock: null as WebSocket | null,
 	gameSock: null as WebSocket | null,
 	chatHistory: null as chatHistory | null,

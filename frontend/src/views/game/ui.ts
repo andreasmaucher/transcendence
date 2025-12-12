@@ -16,6 +16,17 @@ import { showCountdown } from "../game/countdown";
 import { SNOWTRACE_TX_BASE } from "../../config/contract";
 
 type ChainResult = { ok: true; txHash: string } | { ok: false; error: string };
+type RemoteChainResult =
+	| {
+			ok: true;
+			txHash: string;
+			playerLeft: string;
+			playerRight: string;
+			scoreLeft: number;
+			scoreRight: number;
+			winner: string;
+	  }
+	| { ok: false; error: string };
 
 let GAME_CONSTANTS: GameConstants | null = null;
 
@@ -117,6 +128,50 @@ async function reportLocalGameToBlockchain(params: {
 		return { ok: true, txHash };
 	} catch (err) {
 		console.error("[BLOCKCHAIN] Error calling /api/blockchain/local-game", err);
+		return {
+			ok: false,
+			error: "Network or server error while storing game stats on the blockchain.",
+		};
+	}
+}
+
+async function reportRemoteGameToBlockchain(matchId: string): Promise<RemoteChainResult> {
+	console.log("[BLOCKCHAIN] Sending remote game to backend /api/blockchain/remote-game", { matchId });
+	try {
+		const res = await fetch("/api/blockchain/remote-game", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			credentials: "include",
+			body: JSON.stringify({ matchId }),
+		});
+
+		const body = await res.json().catch(() => null);
+		if (!res.ok || !body?.success) {
+			console.error("[BLOCKCHAIN] Failed to write remote game", res.status, body);
+			const message = body?.message || body?.error || "Game stats could not be stored on the blockchain.";
+			return { ok: false, error: message };
+		}
+
+		const txHash: string | undefined = body.data?.txHash;
+		if (!txHash) {
+			console.warn("[BLOCKCHAIN] Remote response success=true but missing txHash", body);
+			return {
+				ok: false,
+				error: "Game stats may be stored on-chain, but no transaction hash was returned.",
+			};
+		}
+
+		return {
+			ok: true,
+			txHash,
+			playerLeft: body.data?.playerLeft,
+			playerRight: body.data?.playerRight,
+			scoreLeft: body.data?.scoreLeft,
+			scoreRight: body.data?.scoreRight,
+			winner: body.data?.winner,
+		};
+	} catch (err) {
+		console.error("[BLOCKCHAIN] Error calling /api/blockchain/remote-game", err);
 		return {
 			ok: false,
 			error: "Network or server error while storing game stats on the blockchain.",
@@ -355,6 +410,7 @@ export async function renderGame(container: HTMLElement) {
 		player1: string;
 		player2: string;
 		winner: string;
+		modeLabel: string;
 	}) => {
 		chainCard.innerHTML = "";
 
@@ -392,7 +448,7 @@ export async function renderGame(container: HTMLElement) {
 			<div><strong>Player 1:</strong> ${options.player1}</div>
 			<div><strong>Player 2:</strong> ${options.player2}</div>
 			<div><strong>Final score:</strong> ${options.leftScore} - ${options.rightScore}</div>
-			<div><strong>Mode:</strong> local single-player</div>
+			<div><strong>Mode:</strong> ${options.modeLabel}</div>
 		`;
 
 		const loadingLine = document.createElement("div");
@@ -432,6 +488,7 @@ export async function renderGame(container: HTMLElement) {
 			player1: string;
 			player2: string;
 			winner: string;
+			modeLabel: string;
 		}
 	) => {
 		chainCard.innerHTML = "";
@@ -464,7 +521,7 @@ export async function renderGame(container: HTMLElement) {
 			<div><strong>Player 2:</strong> ${options.player2}</div>
 			<div><strong>Final score:</strong> ${options.leftScore} - ${options.rightScore}</div>
 			<div><strong>Winner:</strong> ${options.winner}</div>
-			<div><strong>Mode:</strong> local single-player</div>
+			<div><strong>Mode:</strong> ${options.modeLabel}</div>
 		`;
 		meta.append(dataBlock);
 
@@ -477,7 +534,7 @@ export async function renderGame(container: HTMLElement) {
 		if (result.ok) {
 			title.textContent = "Match saved to the blockchain";
 			title.style.color = "#7dffb2";
-			summary.textContent = "Your local game stats have been written to the smart contract.";
+			summary.textContent = "Your game stats have been written to the smart contract.";
 
 			const hashLine = document.createElement("div");
 			hashLine.style.marginBottom = "8px";
@@ -544,15 +601,15 @@ export async function renderGame(container: HTMLElement) {
 			waitingOverlay.style.display = "none";
 		},
 
-		// game over handler – trigger blockchain write and show overlay for LOCAL games
+		// game over handler – trigger blockchain write and show overlay for local + online games
 		gameOver: (finalState: MatchState) => {
-			if (mode !== "local") return;
+			if (mode === "tournament") return;
 
 			const leftScore = finalState.scoreL;
 			const rightScore = finalState.scoreR;
 
-			const player1 = userData.username || userData.displayName || "LocalPlayer";
-			const player2 = "LocalOpponent";
+			const player1 = userData.username || (userData as any).displayName || "Player";
+			const player2 = mode === "local" ? "LocalOpponent" : "Opponent";
 
 			const winner = leftScore > rightScore ? player1 : rightScore > leftScore ? player2 : "Draw";
 
@@ -572,7 +629,7 @@ export async function renderGame(container: HTMLElement) {
 						ok: false,
 						error: "Game ended in a draw – stats are not stored on the blockchain.",
 					},
-					{ leftScore, rightScore, player1, player2, winner }
+					{ leftScore, rightScore, player1, player2, winner, modeLabel: mode === "local" ? "local single-player" : "online multiplayer" }
 				);
 				return;
 			}
@@ -580,17 +637,78 @@ export async function renderGame(container: HTMLElement) {
 			void (async () => {
 				// Show immediate loading state while the backend persists stats and
 				// publishes the transaction, then update the popup with the result.
-				showChainLoading({ leftScore, rightScore, player1, player2, winner });
-
-				const result = await reportLocalGameToBlockchain({
+				showChainLoading({
+					leftScore,
+					rightScore,
 					player1,
 					player2,
 					winner,
-					mode: "local",
-					score1: leftScore,
-					score2: rightScore,
+					modeLabel: mode === "local" ? "local single-player" : "online multiplayer",
 				});
-				showChainResult(result, { leftScore, rightScore, player1, player2, winner });
+
+				if (mode === "local") {
+					const result = await reportLocalGameToBlockchain({
+						player1,
+						player2,
+						winner,
+						mode: "local",
+						score1: leftScore,
+						score2: rightScore,
+					});
+					showChainResult(result, {
+						leftScore,
+						rightScore,
+						player1,
+						player2,
+						winner,
+						modeLabel: "local single-player",
+					});
+					return;
+				}
+
+				const matchId = userData.matchId;
+				if (!matchId) {
+					showChainResult(
+						{ ok: false, error: "Missing match id; could not store stats on the blockchain." },
+						{
+							leftScore,
+							rightScore,
+							player1,
+							player2,
+							winner,
+							modeLabel: "online multiplayer",
+						}
+					);
+					return;
+				}
+
+				const remote = await reportRemoteGameToBlockchain(matchId);
+				if (!remote.ok) {
+					showChainResult(
+						{ ok: false, error: remote.error },
+						{
+							leftScore,
+							rightScore,
+							player1,
+							player2,
+							winner,
+							modeLabel: "online multiplayer",
+						}
+					);
+					return;
+				}
+
+				showChainResult(
+					{ ok: true, txHash: remote.txHash },
+					{
+						leftScore: remote.scoreLeft,
+						rightScore: remote.scoreRight,
+						player1: remote.playerLeft,
+						player2: remote.playerRight,
+						winner: remote.winner,
+						modeLabel: "online multiplayer",
+					}
+				);
 			})();
 		},
 	});

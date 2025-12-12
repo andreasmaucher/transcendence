@@ -52,6 +52,15 @@ export function resetBall(state: MatchState, direction: -1 | 1): void {
 }
 
 export function resetMatchState(match: Match) {
+	if (match.state.isOver) {
+		match.lastResult = {
+			scoreLeft: match.state.score.left,
+			scoreRight: match.state.score.right,
+			winnerSide: match.state.winner ?? null,
+			finishedAtMs: Date.now(),
+		};
+	}
+
 	match.state = {
 		...match.state,
 		isRunning: false,

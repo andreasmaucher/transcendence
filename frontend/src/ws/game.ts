@@ -152,6 +152,7 @@ export function connectToSingleGameWS(state: MatchState, roomId?: string): () =>
 			case "match-assigned": {
 				// server tells us which side we're playing on
 				const data = (payload as any).data;
+					userData.matchId = data?.matchId || null;
 				console.log(`[WS] Assigned to match ${data?.matchId} as ${data?.playerSide}`);
 				setAssignedSide(data?.playerSide || null);
 				break;
