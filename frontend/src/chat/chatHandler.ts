@@ -30,7 +30,7 @@ export function sendMessage(
 
 // RENDER FUNCTIONS ///////////////////////////////////////////////////////////
 
-export function renderIncomingMessage(message: Message, chatMessages: HTMLElement) {
+export async function renderIncomingMessage(message: Message, chatMessages: HTMLElement) {
 	const messageElement = document.createElement("div");	
 
 	messageElement.classList.add('message', 'chat-message');
@@ -81,15 +81,8 @@ export function renderIncomingMessage(message: Message, chatMessages: HTMLElemen
 		messageElement.appendChild(span);
 	} 
 	else if (message.type === "invite") {
-
-		const MAX_AGE_MS = 5 * 60 * 1000; 
-
-		let timeString = message.sentAt!.replace(' ', 'T');
-		if (!timeString.endsWith('Z'))
-			timeString += 'Z'; 
-		const msgTime = new Date(timeString).getTime();
-		const currentTime = Date.now();
-		const isExpired = (currentTime - msgTime) > MAX_AGE_MS;
+		const isGameStillAvailable = await isGameStillOpen(message.gameId!);
+		const isExpired = !isGameStillAvailable;
 
 		if (isExpired) {
 			const expiredText = document.createElement('div');
@@ -150,6 +143,42 @@ export function renderIncomingMessage(message: Message, chatMessages: HTMLElemen
 	requestAnimationFrame(() => {
 		chatMessages.scrollTop = chatMessages.scrollHeight;
 	});
+}
+
+export async function isGameStillOpen(gameId: string): Promise<boolean> {
+	if (!gameId) {
+		console.warn("isGameStillOpen: gameId ist null/undefined.");
+		return false;
+	}
+
+	try {
+		const openGamesData = await fetchOpenGames();
+		
+		const singleGames = openGamesData.openSingleGames || [];
+		const tournaments = openGamesData.openTournaments || [];
+
+		const isSingleGameOpen = singleGames.some((g: ApiOpenSingleGame) => {
+			return g.id === gameId &&
+				g.match.isRunning === false &&
+				g.playersJoined < 2;
+		});
+
+		if (isSingleGameOpen) {
+			return true;
+		}
+
+		const isTournamentOpen = tournaments.some((t: ApiOpenTournament) => {
+			return t.id === gameId &&
+				t.state.isRunning === false && 
+				t.playersJoined < t.state.size;
+		});
+		
+		return isTournamentOpen;
+
+	} catch (error) {
+		console.error("Error while checking for openGames: ", error);
+		return false; 
+	}
 }
 
 async function fetchOpenGames() {
@@ -633,6 +662,7 @@ export function wireIncomingChat(
 
 	const previousHandler = ws.onmessage;
 
+	// get the last chatPartner
 	const savedChatPartner = localStorage.getItem('activeChatPartner');
 	if (savedChatPartner) {
 		userData.activePrivateChat = savedChatPartner;

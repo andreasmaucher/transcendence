@@ -48,7 +48,6 @@ export function updateLocalBlockState(
 				updateLocalBlockState(blockedUsersLocal, msg.sender!, msg.receiver!, msg.type);
 				
 				if (msg.sender === username) {
-					// I am blocking someone -> goes into my blockedUsers
 					const index = blockedByMe.indexOf(msg.receiver!);
 					if (msg.type === "block") {
 						if (index === -1) blockedByMe.push(msg.receiver!);
@@ -56,7 +55,6 @@ export function updateLocalBlockState(
 						if (index !== -1) blockedByMe.splice(index, 1);
 					}
 				} else if (msg.receiver === username) {
-					// Someone blocks me -> goes into blockedByUsers
 					const index = blockedByThem.indexOf(msg.sender!);
 					if (msg.type === "block") {
 						if (index === -1) blockedByThem.push(msg.sender!);
@@ -321,11 +319,9 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 		if (userData.activePrivateChat === "Global Chat")
 			sendMessage("broadcast", input.value);
 		else {
-			if (userData.blockedUsers?.includes(userData.activePrivateChat!)) {
-				console.log(`Message to ${userData.activePrivateChat} should be blocked`);
+			if (userData.blockedUsers?.includes(userData.activePrivateChat!)) {;
 				sendMessage("blockedByMeMessage", '', userData.activePrivateChat);
 			} else if (userData.blockedByUsers?.includes(userData.activePrivateChat!)) {
-				console.log(`${userData.activePrivateChat} blocked you`);
 				sendMessage("blockedByOthersMessage", '', userData.activePrivateChat);
 			}
 			else
@@ -347,10 +343,8 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 			sendMessage("broadcast", input.value);
 		else {
 			if (userData.blockedUsers?.includes(userData.activePrivateChat!)) {
-				console.log(`Message to ${userData.activePrivateChat} should be blocked`);
 				sendMessage("blockedByMeMessage", '', userData.activePrivateChat);
 			} else if (userData.blockedByUsers?.includes(userData.activePrivateChat!)) {
-				console.log(`${userData.activePrivateChat} blocked you`);
 				sendMessage("blockedByOthersMessage", '', userData.activePrivateChat);
 			}
 			else
