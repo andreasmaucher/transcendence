@@ -236,21 +236,9 @@ export function handleTournamentMatchState(
 			winner === internalBracket.results.semiFinal1Winner ||
 			winner === internalBracket.results.semiFinal2Winner;
 
-		console.log("[Tournament] Round 2 match finished:", {
-			matchId,
-			winner,
-			matchInfo,
-			currentMatchType,
-			semiFinal1Winner: internalBracket.results.semiFinal1Winner,
-			semiFinal2Winner: internalBracket.results.semiFinal2Winner,
-			isFinalMatch
-		});
-
 		if (isFinalMatch) {
 			// FINAL MATCH
-			console.log("[Tournament] FINAL MATCH - Setting finalWinner:", winner);
 			internalBracket.results.finalWinner = winner;
-			console.log("[Tournament] finalWinner set. Full bracket:", JSON.stringify(internalBracket));
 
 			showTournamentOverlay("final", {
 				title: "Tournament Finished",

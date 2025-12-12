@@ -314,21 +314,14 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 				// ANDY: when a match finishes, call handleTournamentMatchState
 				// Find which match this state belongs to by checking all known matches
 				if (state.isOver && state.winner && !wasOver) {
-					// Determine the winner's username from the state
-					let foundMatch = false;
 					for (const [matchId, players] of matchPlayersMap.entries()) {
 						// Check if this state's winner matches one of the players in this match
 						const winnerUsername = state.winner === "left" ? players.left : players.right;
 						if (winnerUsername) {
 							// This is the match that finished - call handleTournamentMatchState
 							handleTournamentMatchState(state, matchId, players.left, players.right);
-							foundMatch = true;
 							break;
 						}
-					}
-					// If no match found, it might be a match we haven't seen yet (shouldn't happen, but log it)
-					if (!foundMatch) {
-						console.warn("[WS Tournament] State message for finished match but couldn't find match in map");
 					}
 				}
 
