@@ -208,7 +208,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				socket.tournamentId = tournament.id; // tracks the tournament this socket belongs to
 
 				// ANDY: broadcast match-assigned for ALL matches in the current round to ALL tournament participants
-				// This ensures all players see the complete bracket (both SF1 and SF2) as players join
+				// This ensures all players see the tournament tree being populated
 				const roundMatches = tournament.matches.get(tournament.state.round);
 				if (roundMatches) {
 					const sentSockets = new Set();
@@ -225,7 +225,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 							playerSide: currentPlayerSide,
 							tournamentMatchType: currentMatch.tournament?.type,
 							round: tournament.state.round,
-							matchIndex: i, // ANDY: index to identify which match (0=SF1, 1=SF2, etc.)
+							matchIndex: i, // ANDY: index in the roundMatches array (0=first match, 1=second match)
 							leftPlayer: {
 								username: currentMatch.players.left?.username || null,
 								displayName: currentMatch.players.left?.displayName || currentMatch.players.left?.username || null,

@@ -232,7 +232,7 @@ export function assignPlayersToRound(tournament: Tournament) {
 				},
 			} as any);
 
-			// ANDY: broadcast to ALL tournament participants so everyone sees round 2 matches being populated
+			// ANDY: broadcast to all tournament players so everyone sees tournament tree being populated
 			for (const player of tournament.players) {
 				if (player.socket && player.socket.readyState === 1) { // WebSocket.OPEN
 					player.socket.send(matchAssignedPayload);

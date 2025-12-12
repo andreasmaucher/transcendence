@@ -80,7 +80,7 @@ export function handleTournamentMatchAssigned(data: any) {
 			if (!semiFinalMatchIds.sf1) {
 				semiFinalMatchIds.sf1 = matchId;
 			}
-			// ANDY: store player display names from ws payload - handle partial matches (when only one player exists)
+			// ANDY: store player display names from ws payload
 			if (leftPlayer?.username) {
 				internalBracket.players[0] = {
 					username: leftPlayer.username,
@@ -97,7 +97,7 @@ export function handleTournamentMatchAssigned(data: any) {
 			if (!semiFinalMatchIds.sf2) {
 				semiFinalMatchIds.sf2 = matchId;
 			}
-			// ANDY: store player display names from ws payload - handle partial matches (when only one player exists)
+			// ANDY: store player display names from ws payload
 			if (leftPlayer?.username) {
 				internalBracket.players[2] = {
 					username: leftPlayer.username,
@@ -124,12 +124,8 @@ export function handleTournamentMatchAssigned(data: any) {
 	// ROUND 2: final / 3rd place
 	// -------------------------------
 	if (currentRound === 2) {
-		// ANDY: update bracket results from match-assigned messages to show final/3rd place players
-		// The bracket overlay computes final/3rd place from results.semiFinal1Winner/2Winner,
-		// so we need to ensure those are set. When round 2 match-assigned arrives, we can infer
-		// the round 1 winners from which players are in the final match.
+		// ANDY: update results from match-assigned messages to show final/3rd place players
 		if (tournamentMatchType === "final") {
-			// Update results if we can infer winners from the final match players
 			// If both players are set, we can determine who won each semifinal
 			if (leftPlayer?.username && rightPlayer?.username) {
 				// Check which semifinal each player came from
@@ -160,9 +156,7 @@ export function handleTournamentMatchAssigned(data: any) {
 		}
 
 		if (tournamentMatchType === "thirdPlace") {
-			// For 3rd place, we can infer the losers from the players in the match
-			// The bracket overlay will compute 3rd place from the losers of SF1 and SF2
-			// which it derives from results.semiFinal1Winner/2Winner
+			// For 3rd place we can infer the losers from the players in the match
 			showTournamentOverlay("match-ready", {
 				roundLabel: "3rd Place Match",
 				bracket: internalBracket as any,
