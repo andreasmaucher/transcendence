@@ -15,6 +15,7 @@ export default {
 
   game: {
     exit: "Quitter le Match",
+    leave: "Retour à la Lobby",
   },
 
   tournaments: {

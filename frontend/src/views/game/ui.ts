@@ -200,10 +200,17 @@ export async function renderGame(container: HTMLElement) {
 	ui.append(tournamentIndicator);
 
 	//
-	// EXIT BUTTON
+	// EXIT/LEAVE BUTTON (context-aware: "Leave" when waiting, "Forfeit Match" when playing)
 	//
+	let isWaiting = mode !== "local"; // Track if we're in waiting mode
 	const exitBtn = document.createElement("button");
-	exitBtn.textContent = t("game.exit");
+	
+	// Function to update button text based on state
+	const updateButtonText = () => {
+		exitBtn.textContent = isWaiting ? t("game.leave") : t("game.exit");
+	};
+	updateButtonText(); // Set initial text
+	
 	exitBtn.style.position = "absolute";
 	exitBtn.style.top = "-60px";
 	exitBtn.style.right = "0";
@@ -234,12 +241,36 @@ export async function renderGame(container: HTMLElement) {
 		cancelled = true;
 		setMatchActive(false); // Show topbar again before navigating
 		if (cancelCountdown) cancelCountdown(); // Stop countdown immediately
-		// Show message overlay for 3 seconds, then navigate
-		// Overlay is added to document.body so it survives view changes
+		
+		if (isWaiting) {
+			// In waiting mode: go back to appropriate lobby
+			userData.gameSock?.close(); // Close socket
+			
+			// Navigate to the lobby based on game mode
+			if (mode === "online") {
+				navigate("#/online");
+			} else if (mode === "tournament") {
+				navigate("#/tournament");
+			} else {
+				// Local game: go to menu (no lobby for local)
+				navigate("#/menu");
+			}
+		} else {
+			// In playing mode: show forfeit overlay, then go back to lobby
 		const overlayPromise = showMessageOverlay("You forfeited the game.");
 		userData.gameSock?.close(); // Close socket (triggers backend forfeit)
 		await overlayPromise; // Wait for overlay to complete
+			
+			// Navigate to the lobby based on game mode
+			if (mode === "online") {
+				navigate("#/online");
+			} else if (mode === "tournament") {
+				navigate("#/tournament");
+			} else {
+				// Local game: go to menu (no lobby for local)
 		navigate("#/menu");
+			}
+		}
 	};
 
 	wrapper.append(exitBtn);
@@ -309,6 +340,8 @@ export async function renderGame(container: HTMLElement) {
 			if (mode !== "local") {
 				waitingOverlay.textContent = "Waiting for opponent...";
 				waitingOverlay.style.display = "flex";
+				isWaiting = true; // Update waiting state
+				updateButtonText(); // Update button to "Leave"
 			}
 		},
 
@@ -321,6 +354,8 @@ export async function renderGame(container: HTMLElement) {
 				onlineCountdownStarted = true;
 				setMatchActive(true); // Hide topbar navigation during match
 				waitingOverlay.style.display = "none";
+				isWaiting = false; // No longer waiting, game is starting
+				updateButtonText(); // Update button to "Forfeit Match"
 
 				// trigger the animated countdown
 				const countdown = showCountdown(wrapper, canvas);
@@ -339,9 +374,13 @@ export async function renderGame(container: HTMLElement) {
 					cancelCountdown = null;
 					if (cancelled) return;
 					waitingOverlay.style.display = "none";
+					isWaiting = false; // Game has started
+					updateButtonText(); // Update button to "Forfeit Match"
 				});
 			} else {
 				waitingOverlay.style.display = "none";
+				isWaiting = false; // Game has started
+				updateButtonText(); // Update button to "Forfeit Match"
 			}
 		},
 
