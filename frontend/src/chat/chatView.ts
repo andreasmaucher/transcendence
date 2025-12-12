@@ -1,6 +1,6 @@
 import { generalData, userData } from "../config/constants";
 import { API_BASE } from "../config/endpoints";
-import { renderBlockMessage, sendMessage, wireIncomingChat } from "./chatHandler";
+import { sanitizeMessageInput, sendMessage, wireIncomingChat } from "./chatHandler";
 import { Message } from "./types";
 
 export function updateLocalBlockState(
@@ -312,24 +312,25 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 
 	// SEND MESSAGE ON CLICK
 	sendBtn.onclick = () => {
-
 		const messageContent = input.value.trim();
 		if (messageContent.length === 0)
 			return; 
+
+		let sanitizeMessage = sanitizeMessageInput(messageContent);
 
 		sendBtn.style.transform = "scale(0.97)";
 		setTimeout(() => sendBtn.style.transform = "scale(1)", 120);
 
 		if (userData.activePrivateChat === "Global Chat")
-			sendMessage("broadcast", input.value);
+			sendMessage("broadcast", sanitizeMessage);
 		else {
-			if (userData.blockedUsers?.includes(userData.activePrivateChat!)) {;
+			if (userData.blockedUsers?.includes(userData.activePrivateChat!)) {
 				sendMessage("blockedByMeMessage", '', userData.activePrivateChat);
 			} else if (userData.blockedByUsers?.includes(userData.activePrivateChat!)) {
 				sendMessage("blockedByOthersMessage", '', userData.activePrivateChat);
 			}
 			else
-				sendMessage("direct", input.value, userData.activePrivateChat);
+				sendMessage("direct", sanitizeMessage, userData.activePrivateChat);
 		}
 
 		input.value = "";
@@ -344,12 +345,13 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 		if (messageContent.length === 0)
 			return; 
 
+		let sanitizeMessage = sanitizeMessageInput(messageContent);
 
 		sendBtn.style.transform = "scale(0.97)";
 		setTimeout(() => sendBtn.style.transform = "scale(1)", 120);
 
 		if (userData.activePrivateChat === "Global Chat")
-			sendMessage("broadcast", input.value);
+			sendMessage("broadcast", sanitizeMessage);
 		else {
 			if (userData.blockedUsers?.includes(userData.activePrivateChat!)) {
 				sendMessage("blockedByMeMessage", '', userData.activePrivateChat);
@@ -357,7 +359,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 				sendMessage("blockedByOthersMessage", '', userData.activePrivateChat);
 			}
 			else
-				sendMessage("direct", input.value, userData.activePrivateChat);
+				sendMessage("direct", sanitizeMessage, userData.activePrivateChat);
 		}
 
 		input.value = "";

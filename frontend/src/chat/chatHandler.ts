@@ -437,7 +437,7 @@ export function renderChatHeaderButtons(
 	};
 
 	const btnProfile = createIconBtn("👤", "Open profile", () => {
-		navigate(`#/user/${activeChat}`);
+		navigate(`#/user/${encodeURIComponent(activeChat!)}`);
 	});
 
 	const btnDuel = createIconBtn("⚔️", "Challenge to match", (clickedButton) => {
@@ -571,6 +571,18 @@ export function renderOnlineUsers(
 }
 
 // METHODS /////////////////////////////////////////////////////////////////////
+
+export function sanitizeMessageInput(input: string): string {
+	if (!input) {
+		return "";
+	}
+	let sanitized = input.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+	sanitized = sanitized.replace(/'/g, '&#39;');
+	sanitized = sanitized.replace(/"/g, '&quot;');
+	sanitized = sanitized.replace(/;/g, '');
+	sanitized = sanitized.replace(/--/g, '');
+	return sanitized;
+}
 
 export function setupPrivateChathistory(username: string): Message[] {
 	if (!userData.chatHistory!.private.has(username)) {
