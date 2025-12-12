@@ -4,6 +4,7 @@ import fastify from "./server.js";
 import cors from "@fastify/cors";
 import fs from "fs";
 import { createTournamentDB } from "./database/tournaments/setters.js";
+import blockchainRoutes from "./routes/blockchain.js";
 
 const PORT = Number(process.env.PORT ?? 4000);
 const HOST = process.env.HOST ?? "0.0.0.0";
@@ -14,6 +15,7 @@ const HOST = process.env.HOST ?? "0.0.0.0";
 // USER_MANAGEMENT
 // enable credentials so browsers can send/receive cookies (required for session cookie)
 await fastify.register(cors, { origin: true, credentials: true });
+await fastify.register(blockchainRoutes);
 
 try {
 	// starts the server

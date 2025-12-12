@@ -1,3 +1,4 @@
+//// filepath: /Users/mrizhakov/Documents/42/transcendence/frontend/src/ws/game.ts
 import { userData } from "../config/constants";
 import { ROOM_ID, WS_BASE } from "../config/endpoints";
 import { flushInputs, queueInput, setActiveSocket, setAssignedSide } from "../game/input";
@@ -6,10 +7,12 @@ import { MatchState } from "../types/game";
 import { Payload } from "../types/ws_message";
 
 // no-op functions to avoid errors as long as the UI has not registered handlers by calling registerGameUiHandlers
+
 let waitingForPlayers: () => void = () => {};
 let countdownToGame: (n: number, side?: "left" | "right") => void = () => {};
 let startGame: () => void = () => {};
 let tournamentMatchType: (type: string, round: number) => void = () => {};
+let gameOver: (state: MatchState) => void = () => {};
 
 // function that registers the UI handlers (replaces the no-op functions above with the actual handlers)
 export function registerGameUiHandlers(handlers: {
@@ -17,11 +20,13 @@ export function registerGameUiHandlers(handlers: {
 	countdownToGame?: (n: number, side?: "left" | "right") => void;
 	startGame?: () => void;
 	tournamentMatchType?: (type: string, round: number) => void;
+	gameOver?: (state: MatchState) => void;
 }) {
 	if (handlers.waitingForPlayers) waitingForPlayers = handlers.waitingForPlayers;
 	if (handlers.countdownToGame) countdownToGame = handlers.countdownToGame;
 	if (handlers.startGame) startGame = handlers.startGame;
 	if (handlers.tournamentMatchType) tournamentMatchType = handlers.tournamentMatchType;
+	if (handlers.gameOver) gameOver = handlers.gameOver;
 }
 
 export function connectToLocalSingleGameWS(state: MatchState): () => void {
@@ -61,6 +66,12 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 				// payload.data is now MatchState
 				applyBackendState(state, payload.data);
 
+				// notify UI once, when match just became "over"
+				if (state.isOver && !wasOver) {
+					console.log("[WS] Local game over, calling gameOver handler");
+					gameOver(state);
+				}
+
 				// Reset game
 				if (state.isOver && !wasOver && !resetRequested) {
 					ws.send(JSON.stringify({ type: "reset" }));
@@ -91,10 +102,6 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 				break;
 			}
 
-			/* 	case "chat":
-				addChatMessage(payload.data.from, payload.data.message);
-				break; */
-
 			default:
 				console.warn("[WS] Unknown payload:", payload);
 				break;
@@ -104,7 +111,6 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 	ws.addEventListener("close", () => {
 		setActiveSocket(null);
 		resetRequested = false;
-		//setTimeout(() => connectToLocalSingleGameWS(state), 1000);
 	});
 
 	ws.addEventListener("error", () => ws.close());
@@ -157,6 +163,12 @@ export function connectToSingleGameWS(state: MatchState, roomId?: string): () =>
 				// payload.data is now MatchState
 				applyBackendState(state, payload.data);
 
+				// notify UI once, when match just became "over"
+				if (state.isOver && !wasOver) {
+					console.log("[WS] Online game over, calling gameOver handler");
+					gameOver(state);
+				}
+
 				// Reset game
 				if (state.isOver && !wasOver && !resetRequested) {
 					ws.send(JSON.stringify({ type: "reset" }));
@@ -184,10 +196,6 @@ export function connectToSingleGameWS(state: MatchState, roomId?: string): () =>
 				break;
 			}
 
-			/* 	case "chat":
-				addChatMessage(payload.data.from, payload.data.message);
-				break; */
-
 			default:
 				console.warn("[WS] Unknown payload:", payload);
 				break;
@@ -197,7 +205,6 @@ export function connectToSingleGameWS(state: MatchState, roomId?: string): () =>
 	ws.addEventListener("close", () => {
 		setActiveSocket(null);
 		resetRequested = false;
-		//setTimeout(() => connectToSingleGameWS(state), 1000);
 	});
 
 	ws.addEventListener("error", () => ws.close());
@@ -256,6 +263,12 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 				// payload.data is now MatchState
 				applyBackendState(state, payload.data);
 
+				// notify UI once, when match just became "over"
+				if (state.isOver && !wasOver) {
+					console.log("[WS] Tournament game over, calling gameOver handler");
+					gameOver(state);
+				}
+
 				// Reset game
 				if (state.isOver && !wasOver && !resetRequested) {
 					ws.send(JSON.stringify({ type: "reset" }));
@@ -282,9 +295,6 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 				startGame();
 				break;
 			}
-			/* 	case "chat":
-				addChatMessage(payload.data.from, payload.data.message);
-				break; */
 
 			default:
 				console.warn("[WS] Unknown payload:", payload);
@@ -295,7 +305,6 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 	ws.addEventListener("close", () => {
 		setActiveSocket(null);
 		resetRequested = false;
-		//setTimeout(() => connectToTournamentWS(state), 1000);
 	});
 
 	ws.addEventListener("error", () => ws.close());

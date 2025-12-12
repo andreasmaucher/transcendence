@@ -1,11 +1,10 @@
 // src/views/game/ui.ts
 import { type GameConstants } from "../../constants";
 import { navigate } from "../../router/router";
-import { fetchGameConstants } from "../../api/http";
+import { fetchGameConstants, fetchMe } from "../../api/http";
 import { draw } from "../../rendering/canvas";
 import { setupInputs, setActiveSocket } from "../../game/input";
 import { MatchState } from "../../types/game";
-import { userData } from "../../config/constants";
 import {
 	connectToLocalSingleGameWS,
 	connectToSingleGameWS,
@@ -17,13 +16,9 @@ import { showCountdown } from "../game/countdown";
 
 let GAME_CONSTANTS: GameConstants | null = null;
 
-// -------------------------------
-// Existing logic (unchanged)
-// -------------------------------
 function createInitialState(): MatchState {
 	if (!GAME_CONSTANTS) throw new Error("Game constants not loaded");
-	const centerY =
-		(GAME_CONSTANTS.fieldHeight - GAME_CONSTANTS.paddleHeight) / 2;
+	const centerY = (GAME_CONSTANTS.fieldHeight - GAME_CONSTANTS.paddleHeight) / 2;
 
 	const left = {
 		x: GAME_CONSTANTS.paddleMargin,
@@ -34,10 +29,7 @@ function createInitialState(): MatchState {
 	};
 
 	const right = {
-		x:
-			GAME_CONSTANTS.fieldWidth -
-			GAME_CONSTANTS.paddleMargin -
-			GAME_CONSTANTS.paddleWidth,
+		x: GAME_CONSTANTS.fieldWidth - GAME_CONSTANTS.paddleMargin - GAME_CONSTANTS.paddleWidth,
 		y: centerY,
 		w: GAME_CONSTANTS.paddleWidth,
 		h: GAME_CONSTANTS.paddleHeight,
@@ -66,10 +58,7 @@ function createInitialState(): MatchState {
 	};
 }
 
-function startGameLoop(
-	canvas: HTMLCanvasElement,
-	state: MatchState
-): () => void {
+function startGameLoop(canvas: HTMLCanvasElement, state: MatchState): () => void {
 	const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
 	let running = true;
@@ -87,6 +76,38 @@ function startGameLoop(
 	};
 }
 
+async function reportLocalGameToBlockchain(params: {
+	player1: string;
+	player2: string;
+	winner: string;
+	mode: string;
+	score1: number;
+	score2: number;
+}) {
+	console.log("[BLOCKCHAIN] Sending local game to backend /api/blockchain/local-game", params);
+	try {
+		const res = await fetch("/api/blockchain/local-game", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			credentials: "include",
+			body: JSON.stringify(params),
+		});
+
+		const body = await res.json().catch(() => null);
+
+		if (!res.ok || !body?.success) {
+			console.error("[BLOCKCHAIN] Failed to write local game", res.status, body);
+			alert("Warning: game stats could not be stored on the blockchain.");
+			return;
+		}
+
+		console.log("[BLOCKCHAIN] Local game stored on-chain. Tx:", body.data?.txHash);
+	} catch (err) {
+		console.error("[BLOCKCHAIN] Error calling /api/blockchain/local-game", err);
+		alert("Warning: game stats could not be stored on the blockchain.");
+	}
+}
+
 export async function renderGame(container: HTMLElement) {
 	container.innerHTML = "";
 	let cancelled = false;
@@ -97,9 +118,7 @@ export async function renderGame(container: HTMLElement) {
 	const modeParam = params.get("mode");
 	// properly extracting mode and room id from the URL
 	const mode: "tournament" | "online" | "local" =
-		modeParam === "tournament" || modeParam === "online" || modeParam === "local"
-			? modeParam
-			: "local";
+		modeParam === "tournament" || modeParam === "online" || modeParam === "local" ? modeParam : "local";
 	const roomId = params.get("id") || undefined;
 	const tournamentName = params.get("name") || undefined;
 
@@ -195,7 +214,8 @@ export async function renderGame(container: HTMLElement) {
 	if (mode !== "local") {
 		import("../../game/input.js").then(({ onSideAssigned }) => {
 			onSideAssigned((side) => {
-				sideIndicator.textContent = side === "left" ? "You control: LEFT paddle (W/S)" : "You control: RIGHT paddle (↑/↓)";
+				sideIndicator.textContent =
+					side === "left" ? "You control: LEFT paddle (W/S)" : "You control: RIGHT paddle (↑/↓)";
 				sideIndicator.style.display = "block";
 			});
 		});
@@ -221,13 +241,11 @@ export async function renderGame(container: HTMLElement) {
 	exitBtn.style.backdropFilter = "blur(5px)";
 	exitBtn.style.cursor = "pointer";
 
-	exitBtn.style.transition =
-		"background-color 0.25s ease, box-shadow 0.25s ease, transform 0.12s ease";
+	exitBtn.style.transition = "background-color 0.25s ease, box-shadow 0.25s ease, transform 0.12s ease";
 
 	exitBtn.onmouseenter = () => {
 		exitBtn.style.backgroundColor = "rgba(255,44,251,0.15)";
-		exitBtn.style.boxShadow =
-			"0 0 14px #ff6bff, 0 0 22px #ff2cfb66";
+		exitBtn.style.boxShadow = "0 0 14px #ff6bff, 0 0 22px #ff2cfb66";
 	};
 
 	exitBtn.onmouseleave = () => {
@@ -271,7 +289,7 @@ export async function renderGame(container: HTMLElement) {
 	//
 	const state = createInitialState();
 	state.mode = mode;
-	
+
 	// create waiting overlay (only shown for online/tournament modes)
 	const waitingOverlay = document.createElement("div");
 	waitingOverlay.style.position = "absolute";
@@ -307,6 +325,41 @@ export async function renderGame(container: HTMLElement) {
 		},
 		startGame: () => {
 			waitingOverlay.style.display = "none";
+		},
+
+		// NEW: game over handler – trigger blockchain write for LOCAL games
+		gameOver: (finalState: MatchState) => {
+			if (mode !== "local") return;
+
+			const leftScore = finalState.scoreL;
+			const rightScore = finalState.scoreR;
+
+			const player1 = userData.username || userData.displayName || "LocalPlayer";
+			const player2 = "LocalOpponent";
+
+			const winner = leftScore > rightScore ? player1 : rightScore > leftScore ? player2 : "Draw";
+
+			console.log("[BLOCKCHAIN] gameOver handler in UI", {
+				leftScore,
+				rightScore,
+				player1,
+				player2,
+				winner,
+			});
+			// If it's a draw, you may choose to skip blockchain write
+			if (winner === "Draw") {
+				console.log("[BLOCKCHAIN] Local game ended in draw – not writing to chain");
+				return;
+			}
+
+			void reportLocalGameToBlockchain({
+				player1,
+				player2,
+				winner,
+				mode: "local",
+				score1: leftScore,
+				score2: rightScore,
+			});
 		},
 	});
 
