@@ -5,6 +5,7 @@ import { applyBackendState } from "../game/state";
 import { MatchState } from "../types/game";
 import { Payload } from "../types/ws_message";
 import { navigate } from "../router/router";
+import { setMatchActive } from "../config/matchState";
 
 // no-op functions to avoid errors as long as the UI has not registered handlers by calling registerGameUiHandlers
 let waitingForPlayers: () => void = () => {};
@@ -121,6 +122,7 @@ ws.addEventListener("close", (event) => {
 	// If socket closed unexpectedly (not by us) AND we're not handling forfeit, navigate to menu
 	if (!isHandlingForfeit && (event.code !== 1000 || event.reason)) {
 		console.log("[WS] Connection closed:", event.reason);
+		setMatchActive(false); // Show topbar again before navigating
 		navigate("#/menu");
 	}
 	//setTimeout(() => connectToLocalSingleGameWS(state), 1000);
@@ -207,6 +209,7 @@ export function connectToSingleGameWS(state: MatchState, roomId?: string): () =>
 		case "player-left": {
 			// Other player left - show overlay message then navigate
 			isHandlingForfeit = true;
+			setMatchActive(false); // Show topbar again before showing overlay
 			await showPlayerLeftMessage("Your opponent forfeited the game.");
 			navigate("#/menu");
 			ws.close();
@@ -229,6 +232,7 @@ ws.addEventListener("close", (event) => {
 	// If socket closed unexpectedly (not by us) AND we're not handling forfeit, navigate to menu
 	if (!isHandlingForfeit && (event.code !== 1000 || event.reason)) {
 		console.log("[WS] Connection closed:", event.reason);
+		setMatchActive(false); // Show topbar again before navigating
 		navigate("#/menu");
 	}
 	//setTimeout(() => connectToSingleGameWS(state), 1000);
@@ -321,6 +325,7 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 		case "player-left": {
 			// Other player left - show overlay message then navigate
 			isHandlingForfeit = true;
+			setMatchActive(false); // Show topbar again before showing overlay
 			await showPlayerLeftMessage("Your opponent forfeited the game.");
 			navigate("#/menu");
 			ws.close();
@@ -343,6 +348,7 @@ ws.addEventListener("close", (event) => {
 	// If socket closed unexpectedly (not by us) AND we're not handling forfeit, navigate to menu
 	if (!isHandlingForfeit && (event.code !== 1000 || event.reason)) {
 		console.log("[WS] Connection closed:", event.reason);
+		setMatchActive(false); // Show topbar again before navigating
 		navigate("#/menu");
 	}
 	//setTimeout(() => connectToTournamentWS(state), 1000);

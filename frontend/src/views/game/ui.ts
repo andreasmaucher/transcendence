@@ -15,6 +15,7 @@ import {
 import { showCountdown } from "../game/countdown";
 import { showMessageOverlay } from "./forfeit_overlay";
 import { t } from "../../i18n";
+import { setMatchActive } from "../../config/matchState";
 
 
 let GAME_CONSTANTS: GameConstants | null = null;
@@ -231,6 +232,7 @@ export async function renderGame(container: HTMLElement) {
 
 	exitBtn.onclick = async () => {
 		cancelled = true;
+		setMatchActive(false); // Show topbar again before navigating
 		if (cancelCountdown) cancelCountdown(); // Stop countdown immediately
 		// Show message overlay for 3 seconds, then navigate
 		// Overlay is added to document.body so it survives view changes
@@ -265,6 +267,7 @@ export async function renderGame(container: HTMLElement) {
 	// Local game countdown
 	//
 	if (mode === "local") {
+		setMatchActive(true); // Hide topbar navigation during match
 		const countdown = showCountdown(wrapper, canvas);
 		cancelCountdown = countdown.cancel;
 		await countdown.promise;
@@ -316,6 +319,7 @@ export async function renderGame(container: HTMLElement) {
 			if (cancelled) return;
 			if (mode !== "local" && n > 0 && !onlineCountdownStarted) {
 				onlineCountdownStarted = true;
+				setMatchActive(true); // Hide topbar navigation during match
 				waitingOverlay.style.display = "none";
 
 				// trigger the animated countdown
@@ -347,6 +351,7 @@ export async function renderGame(container: HTMLElement) {
 				cancelCountdown();
 				cancelCountdown = null;
 			}
+			setMatchActive(false); // Show topbar again
 			await showMessageOverlay(message);
 		},
 	});
@@ -363,6 +368,7 @@ export async function renderGame(container: HTMLElement) {
 
 	return () => {
 		cancelled = true;
+		setMatchActive(false); // Show topbar again when leaving game view
 		cleanupLoop();
 		cleanupWS();
 		setActiveSocket(null);
