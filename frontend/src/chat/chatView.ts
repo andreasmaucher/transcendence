@@ -313,6 +313,10 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	// SEND MESSAGE ON CLICK
 	sendBtn.onclick = () => {
 
+		const messageContent = input.value.trim();
+		if (messageContent.length === 0)
+			return; 
+
 		sendBtn.style.transform = "scale(0.97)";
 		setTimeout(() => sendBtn.style.transform = "scale(1)", 120);
 
@@ -335,6 +339,11 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	input.addEventListener("keydown", (e) => {
 		if (e.key === "Enter") {
 			e.preventDefault();
+
+		const messageContent = input.value.trim();
+		if (messageContent.length === 0)
+			return; 
+
 
 		sendBtn.style.transform = "scale(0.97)";
 		setTimeout(() => sendBtn.style.transform = "scale(1)", 120);

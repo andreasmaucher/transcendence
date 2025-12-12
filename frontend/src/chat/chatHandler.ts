@@ -30,7 +30,7 @@ export function sendMessage(
 
 // RENDER FUNCTIONS ///////////////////////////////////////////////////////////
 
-export async function renderIncomingMessage(message: Message, chatMessages: HTMLElement) {
+export async function renderIncomingMessage(message: Message) {
 	const messageElement = document.createElement("div");	
 
 	messageElement.classList.add('message', 'chat-message');
@@ -139,10 +139,19 @@ export async function renderIncomingMessage(message: Message, chatMessages: HTML
 		messageElement.appendChild(contentSpan);
 	}
 
-	chatMessages.append(messageElement);
+	/*chatMessages.append(messageElement);
 	requestAnimationFrame(() => {
 		chatMessages.scrollTop = chatMessages.scrollHeight;
-	});
+	});*/
+	return messageElement;
+}
+
+export async function displayIncomingMessage(msg: Message, chatMessages: HTMLElement) {
+	const messageElement = await renderIncomingMessage(msg);
+	chatMessages.append(messageElement);
+	requestAnimationFrame(() => {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
 }
 
 export async function isGameStillOpen(gameId: string): Promise<boolean> {
@@ -610,7 +619,7 @@ export function addUserToList(userToBlock: string, list: string[] | null): strin
 	return list
 }
 
-export function populateChatWindow(
+export async function populateChatWindow(
 	chatHistory: chatHistory,
 	chatMessages: HTMLElement,
 ) {
@@ -624,8 +633,18 @@ export function populateChatWindow(
 	} else {
 		chatHistoryToAdd = setupPrivateChathistory(activeChat!);
 	}
-	chatHistoryToAdd.forEach((message) => {
-		renderIncomingMessage(message, chatMessages);
+	const renderPromises = chatHistoryToAdd.map((message) => {
+		return renderIncomingMessage(message);
+	});
+
+	const messageElements = await Promise.all(renderPromises!);
+
+	messageElements.forEach(element => {
+		chatMessages.append(element);
+	});
+
+	requestAnimationFrame(() => {
+		chatMessages.scrollTop = chatMessages.scrollHeight;
 	});
 }
 
@@ -694,7 +713,7 @@ export function wireIncomingChat(
 
 	document.addEventListener('userListsUpdated', handleUserListsUpdated);
 
-	ws.onmessage = (event) => {
+	ws.onmessage = async (event) => {
 		try {
 			
 			const payload = JSON.parse(event.data);
@@ -705,14 +724,14 @@ export function wireIncomingChat(
 				switch (msg.type) {
 					case "broadcast": {
 						if (userData.activePrivateChat === "Global Chat")
-							renderIncomingMessage(msg, chatMessages);
+							await displayIncomingMessage(msg, chatMessages);
 						appendMessageToHistory(msg);
 						break;
 					}
 					case "direct": {
 						if ((userData.activePrivateChat === msg.sender || userData.activePrivateChat === msg.receiver)
 						&& (!userData.blockedUsers?.includes(msg.sender) && !userData.blockedByUsers?.includes(msg.receiver!)))
-							renderIncomingMessage(msg, chatMessages);
+							await displayIncomingMessage(msg, chatMessages);
 						appendMessageToHistory(msg);
 						break;
 					}
@@ -732,24 +751,21 @@ export function wireIncomingChat(
 					}
 					case "blockedByMeMessage": {
 						if (userData.activePrivateChat === msg.receiver) {
-								console.log(`blockedByMeMessage from ${msg.sender} for ${msg.receiver}`);
-								renderIncomingMessage(msg, chatMessages);
+								await displayIncomingMessage(msg, chatMessages);
 						}
 						appendMessageToHistory(msg);
 						break;
 						}
 					case "blockedByOthersMessage": {
 						if (userData.activePrivateChat === msg.receiver){
-								console.log(`blockedByOthersMessage from ${msg.sender} for ${msg.receiver}`);
-								renderIncomingMessage(msg, chatMessages);
+								await displayIncomingMessage(msg, chatMessages);
 							}
 						appendMessageToHistory(msg);
 						break;
 						}
 					case "invite": {
 						if (userData.username === msg.receiver){
-								console.log(`Got a game invite from ${msg.sender} for ${msg.receiver}`);
-								renderIncomingMessage(msg, chatMessages);
+								await displayIncomingMessage(msg, chatMessages);
 							}
 						appendMessageToHistory(msg);
 						break;

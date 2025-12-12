@@ -2,6 +2,14 @@ import { navigate } from "../../router/router";
 import { fetchTournamentList, fetchMe, type Tournament } from "../../api/http";
 import { t } from "../../i18n";
 import "./tournament.css";
+import { initChat } from "../../chat/chatView";
+
+export let disposeChat: (() => void | Promise<void>) | null = null;
+
+export function teardownChat() {
+  disposeChat?.();
+  disposeChat = null;
+}
 
 export async function renderTournament(container: HTMLElement) {
 	container.innerHTML = "";
@@ -129,11 +137,13 @@ export async function renderTournament(container: HTMLElement) {
 	}
 
 	loadTournaments();
+	disposeChat = await initChat();
 
 	// AUTO REFRESH
 	const interval = setInterval(() => loadTournaments(), 2000);
 
 	return () => {
+		teardownChat();
 		cancelled = true;
 		clearInterval(interval);
 		backBtn.onclick = null;
