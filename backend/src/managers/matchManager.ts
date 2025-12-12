@@ -5,6 +5,7 @@ import {
 	createMatchDB,
 	endMatchDB,
 	forfeitMatchDB,
+	removePlayerFromMatchDB,
 	startMatchDB,
 } from "../database/matches/setters.js";
 import { forfeitSingleGame, getSingleGame } from "./singleGameManager.js";
@@ -178,6 +179,24 @@ export function checkMatchFull(match: Match) {
 
 export function forfeitMatch(match: Match, playerId: string) {
 	if (match.singleGameId) {
+		// ANDY: Check if match is full/started - if not, just remove the player and keep the game open
+		// this was needed to avoid forfeiting when players go from waiting mode back to the lobby in online games
+		const isMatchFull = checkMatchFull(match);
+		const isMatchStarted = match.state.isRunning;
+		
+		if (!isMatchFull && !isMatchStarted) {
+			// Remove player from match in memory
+			if (match.players.left?.username === playerId) {
+				match.players.left = undefined;
+				removePlayerFromMatchDB(match.id, playerId, "left");
+			} else if (match.players.right?.username === playerId) {
+				match.players.right = undefined;
+				removePlayerFromMatchDB(match.id, playerId, "right");
+			}
+			return;
+		}
+		
+		// If theatch is full/started - forfeit the entire match
 		match.state.isRunning = false;
 		for (const client of match.clients) {
 			// Send a message BEFORE closing

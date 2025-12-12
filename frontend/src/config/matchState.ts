@@ -1,34 +1,26 @@
 // ANDY: added this to track when a match is active so we can disable navigation buttons in the topbar
 // a match is defined as currently active as soon as the countdown started and until the user gets sent back to the main menu after the game finished 
 
+// true: Countdown started or game is running (hide navigation)
+// false: In menu, profile, or match ended (show navigation)
 let isMatchActive = false;
 const listeners: Array<(active: boolean) => void> = [];
 
-/**
- * Set the match active state
- * - true: Countdown started or game is running (hide navigation)
- * - false: In menu, profile, or match ended (show navigation)
- */
+// when match starts set match state to active
 export function setMatchActive(active: boolean) {
 	if (isMatchActive === active) return;
 	isMatchActive = active;
-	console.log("[MatchState] Match active:", active);
 	
-	// Notify all listeners
+	// notify all listeners
 	listeners.forEach(listener => listener(active));
 }
 
-/**
- * Get current match active state
- */
+// Get current match active state
 export function getMatchActive(): boolean {
 	return isMatchActive;
 }
 
-/**
- * Subscribe to match state changes
- * Returns unsubscribe function
- */
+// subscribe to match state changes to be notified when it changes
 export function onMatchStateChange(listener: (active: boolean) => void): () => void {
 	listeners.push(listener);
 	// Immediately call with current state

@@ -199,9 +199,6 @@ export async function renderGame(container: HTMLElement) {
 	tournamentIndicator.style.fontWeight = "bold";
 	ui.append(tournamentIndicator);
 
-	//
-	// EXIT/LEAVE BUTTON (context-aware: "Leave" when waiting, "Forfeit Match" when playing)
-	//
 	let isWaiting = mode !== "local"; // Track if we're in waiting mode
 	const exitBtn = document.createElement("button");
 	
