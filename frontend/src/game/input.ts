@@ -32,6 +32,10 @@ export function setAssignedSide(side: PaddleSide | null): void {
 	}
 }
 
+export function getAssignedSide(): PaddleSide | null {
+	return assignedSide;
+}
+
 // register a callback to be notified when player side is assigned
 export function onSideAssigned(callback: (side: PaddleSide) => void): void {
 	onSideAssignedCallback = callback;

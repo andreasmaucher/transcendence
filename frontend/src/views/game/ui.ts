@@ -3,7 +3,7 @@ import { type GameConstants } from "../../constants";
 import { navigate } from "../../router/router";
 import { fetchGameConstants, fetchMe } from "../../api/http";
 import { draw } from "../../rendering/canvas";
-import { setupInputs, setActiveSocket } from "../../game/input";
+import { getAssignedSide, setupInputs, setActiveSocket } from "../../game/input";
 import { MatchState } from "../../types/game";
 import {
 	connectToLocalSingleGameWS,
@@ -608,16 +608,22 @@ export async function renderGame(container: HTMLElement) {
 			const leftScore = finalState.scoreL;
 			const rightScore = finalState.scoreR;
 
-			const player1 = userData.username || (userData as any).displayName || "Player";
-			const player2 = mode === "local" ? "LocalOpponent" : "Opponent";
+			const me = userData.username || (userData as any).displayName || "Player";
+			const opponent = mode === "local" ? "LocalOpponent" : "Opponent";
 
-			const winner = leftScore > rightScore ? player1 : rightScore > leftScore ? player2 : "Draw";
+			// For online games, scores are always left/right, but "me" may be either side.
+			// Use assigned side + winner side from the backend state so the loading popup winner is correct.
+			const assignedSide = mode === "online" ? getAssignedSide() : null;
+			const playerLeft = assignedSide === "right" ? opponent : me;
+			const playerRight = assignedSide === "right" ? me : opponent;
+			const winnerSide = finalState.winner;
+			const winner = winnerSide === "left" ? playerLeft : winnerSide === "right" ? playerRight : "Draw";
 
 			console.log("[BLOCKCHAIN] gameOver handler in UI", {
 				leftScore,
 				rightScore,
-				player1,
-				player2,
+				playerLeft,
+				playerRight,
 				winner,
 			});
 
@@ -629,7 +635,14 @@ export async function renderGame(container: HTMLElement) {
 						ok: false,
 						error: "Game ended in a draw – stats are not stored on the blockchain.",
 					},
-					{ leftScore, rightScore, player1, player2, winner, modeLabel: mode === "local" ? "local single-player" : "online multiplayer" }
+					{
+						leftScore,
+						rightScore,
+						player1: playerLeft,
+						player2: playerRight,
+						winner,
+						modeLabel: mode === "local" ? "local single-player" : "online multiplayer",
+					}
 				);
 				return;
 			}
@@ -640,16 +653,16 @@ export async function renderGame(container: HTMLElement) {
 				showChainLoading({
 					leftScore,
 					rightScore,
-					player1,
-					player2,
+					player1: playerLeft,
+					player2: playerRight,
 					winner,
 					modeLabel: mode === "local" ? "local single-player" : "online multiplayer",
 				});
 
 				if (mode === "local") {
 					const result = await reportLocalGameToBlockchain({
-						player1,
-						player2,
+						player1: playerLeft,
+						player2: playerRight,
 						winner,
 						mode: "local",
 						score1: leftScore,
@@ -658,8 +671,8 @@ export async function renderGame(container: HTMLElement) {
 					showChainResult(result, {
 						leftScore,
 						rightScore,
-						player1,
-						player2,
+						player1: playerLeft,
+						player2: playerRight,
 						winner,
 						modeLabel: "local single-player",
 					});
@@ -673,8 +686,8 @@ export async function renderGame(container: HTMLElement) {
 						{
 							leftScore,
 							rightScore,
-							player1,
-							player2,
+							player1: playerLeft,
+							player2: playerRight,
 							winner,
 							modeLabel: "online multiplayer",
 						}
@@ -689,8 +702,8 @@ export async function renderGame(container: HTMLElement) {
 						{
 							leftScore,
 							rightScore,
-							player1,
-							player2,
+							player1: playerLeft,
+							player2: playerRight,
 							winner,
 							modeLabel: "online multiplayer",
 						}
