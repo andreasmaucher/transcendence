@@ -1,5 +1,6 @@
 import { showTournamentOverlay, hideTournamentOverlay } from "./tournament_overlay";
 import { userData } from "../../../config/constants";
+import { t } from "../../../i18n";
 
 /**
  * INTERNAL STATE
@@ -122,7 +123,7 @@ export function handleTournamentMatchAssigned(data: any) {
 		}
 
 		showTournamentOverlay("match-ready", {
-			roundLabel: "Semi-finals",
+			roundLabel: t("tournaments.semiFinals"),
 			bracket: internalBracket as any,
 			focusedPlayerUsername: me,
 		});
@@ -157,7 +158,7 @@ export function handleTournamentMatchAssigned(data: any) {
 			}
 			
 			showTournamentOverlay("match-ready", {
-				roundLabel: "Final Match",
+				roundLabel: t("tournaments.finalMatch"),
 				bracket: internalBracket as any,
 				focusedPlayerUsername: me,
 			});
@@ -167,7 +168,7 @@ export function handleTournamentMatchAssigned(data: any) {
 		if (tournamentMatchType === "thirdPlace") {
 			// For 3rd place we can infer the losers from the players in the match
 			showTournamentOverlay("match-ready", {
-				roundLabel: "3rd Place Match",
+				roundLabel: t("tournaments.thirdPlaceFinal"),
 				bracket: internalBracket as any,
 				focusedPlayerUsername: me,
 			});
@@ -218,7 +219,7 @@ export function handleTournamentMatchState(
 		}
 
 		showTournamentOverlay("between-rounds", {
-			title: "Round complete",
+			title: t("tournaments.roundComplete"),
 			bracket: internalBracket as any,
 			focusedPlayerUsername: focused,
 		});
@@ -241,7 +242,7 @@ export function handleTournamentMatchState(
 			internalBracket.results.finalWinner = winner;
 
 			showTournamentOverlay("final", {
-				title: "Tournament Finished",
+				title: t("tournaments.tournamentFinished"),
 				bracket: internalBracket as any,
 				focusedPlayerUsername: focused,
 			});
@@ -253,7 +254,7 @@ export function handleTournamentMatchState(
 			// Only show 3rd place overlay if final hasn't finished yet
 			if (!internalBracket.results.finalWinner) {
 				showTournamentOverlay("between-rounds", {
-					title: "3rd Place Decided",
+					title: t("tournaments.thirdPlaceDecided"),
 					bracket: internalBracket as any,
 					focusedPlayerUsername: focused,
 				});

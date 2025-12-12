@@ -27,6 +27,12 @@ export default {
     details: "Details",
     join: "Beitreten",
     failed: "Fehler beim Laden.",
+    semiFinals: "Halbfinale",
+    finalMatch: "Finale",
+    thirdPlaceFinal: "3. Platz + Finale",
+    roundComplete: "Runde abgeschlossen",
+    tournamentFinished: "Turnier beendet",
+    thirdPlaceDecided: "3. Platz entschieden",
   },
 
   auth: {
