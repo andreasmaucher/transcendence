@@ -119,7 +119,10 @@ setInterval(() => {
 		const match = singleGame.match;
 		if (match.state.isRunning) {
 			stepMatch(match, dt || 1 / UPDATE_FPS);
-			gameBroadcast(buildPayload("state", match.state), match);
+			gameBroadcast(
+				buildPayload("state", { ...match.state, playerLeft: match.players.left, playerRight: match.players.right }),
+				match
+			);
 		}
 	});
 	// Tournaments loop
@@ -133,7 +136,10 @@ setInterval(() => {
 			for (const match of matches) {
 				if (match.state.isRunning) {
 					stepMatch(match, dt || 1 / UPDATE_FPS);
-					gameBroadcast(buildPayload("state", match.state), match);
+					gameBroadcast(
+						buildPayload("state", { ...match.state, playerLeft: match.players.left, playerRight: match.players.right }),
+						match
+					);
 				}
 			}
 		}

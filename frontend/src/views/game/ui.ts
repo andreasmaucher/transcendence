@@ -611,11 +611,13 @@ export async function renderGame(container: HTMLElement) {
 			const me = userData.username || (userData as any).displayName || "Player";
 			const opponent = mode === "local" ? "LocalOpponent" : "Opponent";
 
-			// For online games, scores are always left/right, but "me" may be either side.
-			// Use assigned side + winner side from the backend state so the loading popup winner is correct.
+			// Prefer real usernames from the backend state payload.
+			// Fallback to assigned side mapping (and ultimately "Opponent") if missing.
 			const assignedSide = mode === "online" ? getAssignedSide() : null;
-			const playerLeft = assignedSide === "right" ? opponent : me;
-			const playerRight = assignedSide === "right" ? me : opponent;
+			const fallbackLeft = assignedSide === "right" ? opponent : me;
+			const fallbackRight = assignedSide === "right" ? me : opponent;
+			const playerLeft = finalState.playerLeft ?? fallbackLeft;
+			const playerRight = finalState.playerRight ?? fallbackRight;
 			const winnerSide = finalState.winner;
 			const winner = winnerSide === "left" ? playerLeft : winnerSide === "right" ? playerRight : "Draw";
 

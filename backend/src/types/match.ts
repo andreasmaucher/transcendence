@@ -25,6 +25,8 @@ export type MatchState = {
 	isOver: boolean;
 	winner: PaddleSide | undefined;
 	winningScore: number;
+	playerLeft?: string;
+	playerRight?: string;
 };
 
 export type TournamentMatchType = "normal" | "final" | "thirdPlace" | "placement"; // Types for tournament matches

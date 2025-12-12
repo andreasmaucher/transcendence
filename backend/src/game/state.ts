@@ -85,7 +85,7 @@ export function resetMatchState(match: Match) {
 	};
 	match.inputs = { left: 0, right: 0 };
 	console.log(`[game] match=${match.id} reset`);
-	gameBroadcast(buildPayload("state", match.state), match);
+	gameBroadcast(buildPayload("state", { ...match.state, playerLeft: match.players.left, playerRight: match.players.right }), match);
 }
 
 export function clamp(value: number, min: number, max: number): number {

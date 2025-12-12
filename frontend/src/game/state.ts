@@ -63,6 +63,8 @@ export function applyBackendState(state: MatchState, remote: BackendStateMessage
 	state.isOver = remote.isOver;
 	state.winner = remote.winner;
 	state.winningScore = remote.winningScore;
+	state.playerLeft = remote.playerLeft;
+	state.playerRight = remote.playerRight;
 	// update the tick counter to the latest tick from the backend (helps with syncing the game state)
 	state.tick = remote.tick;
 }

@@ -11,6 +11,8 @@ export type BackendStateMessage = {
 	winner: "left" | "right" | null;
 	winningScore: number;
 	tick: number;
+	playerLeft?: string;
+	playerRight?: string;
 };
 
 export type PayloadTypes = "state" | "waiting" | "countdown" | "start" | "chat";

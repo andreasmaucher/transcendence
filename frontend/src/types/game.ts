@@ -22,4 +22,6 @@ export type MatchState = {
 	winningScore: number;
 	tick: number;
 	mode?: "local" | "online" | "tournament"; // track game mode to conditionally show blockchain popup
+	playerLeft?: string;
+	playerRight?: string;
 };

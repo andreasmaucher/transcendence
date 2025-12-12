@@ -71,7 +71,9 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			match.clients.add(socket);
 			startMatch(match);
 
-			socket.send(buildPayload("state", match.state));
+			socket.send(
+				buildPayload("state", { ...match.state, playerLeft: match.players.left, playerRight: match.players.right })
+			);
 
 			socket.on("message", (raw: RawData) => handleGameMessages(raw, match));
 
@@ -131,7 +133,9 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				})
 			);
 
-			socket.send(buildPayload("state", match.state));
+			socket.send(
+				buildPayload("state", { ...match.state, playerLeft: match.players.left, playerRight: match.players.right })
+			);
 
 			// if the match is not full yet, send "waiting" message to all clients
 			if (!checkMatchFull(match)) {
@@ -212,7 +216,9 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				} as any)
 			);
 
-			socket.send(buildPayload("state", match.state));
+			socket.send(
+				buildPayload("state", { ...match.state, playerLeft: match.players.left, playerRight: match.players.right })
+			);
             // ANDY: for tournaments using socket.currentMatch which will be updated between rounds
 			// wrapper ensures every incoming message (player input, reset, etc.) is routed to whichever match the socket is currently assigned to
 			socket.on("message", (raw: RawData) => {
