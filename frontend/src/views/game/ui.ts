@@ -384,6 +384,17 @@ export async function renderGame(container: HTMLElement) {
 				: `Winner: ${options.winner} (${options.leftScore}:${options.rightScore})`;
 		scoreLine.textContent = winnerLabel;
 
+		const meta = document.createElement("div");
+		meta.style.marginBottom = "14px";
+		meta.style.fontSize = "13px";
+		meta.style.opacity = "0.9";
+		meta.innerHTML = `
+			<div><strong>Player 1:</strong> ${options.player1}</div>
+			<div><strong>Player 2:</strong> ${options.player2}</div>
+			<div><strong>Final score:</strong> ${options.leftScore} - ${options.rightScore}</div>
+			<div><strong>Mode:</strong> local single-player</div>
+		`;
+
 		const loadingLine = document.createElement("div");
 		loadingLine.style.marginTop = "8px";
 		loadingLine.style.fontSize = "13px";
@@ -409,7 +420,7 @@ export async function renderGame(container: HTMLElement) {
 
 		buttonsRow.append(backBtn);
 
-		chainCard.append(title, summary, scoreLine, loadingLine, buttonsRow);
+		chainCard.append(title, summary, scoreLine, meta, loadingLine, buttonsRow);
 		chainOverlay.style.display = "flex";
 	};
 
@@ -445,6 +456,17 @@ export async function renderGame(container: HTMLElement) {
 		meta.style.marginBottom = "14px";
 		meta.style.fontSize = "13px";
 		meta.style.opacity = "0.9";
+
+		const dataBlock = document.createElement("div");
+		dataBlock.style.marginBottom = "8px";
+		dataBlock.innerHTML = `
+			<div><strong>Player 1:</strong> ${options.player1}</div>
+			<div><strong>Player 2:</strong> ${options.player2}</div>
+			<div><strong>Final score:</strong> ${options.leftScore} - ${options.rightScore}</div>
+			<div><strong>Winner:</strong> ${options.winner}</div>
+			<div><strong>Mode:</strong> local single-player</div>
+		`;
+		meta.append(dataBlock);
 
 		const winnerLabel =
 			options.winner === "Draw"
