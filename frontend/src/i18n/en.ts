@@ -13,9 +13,10 @@ export default {
 		onlineMatch: "Play Online",
 	},
 
-	game: {
-		exit: "Forfeit Match",
-	},
+  game: {
+    exit: "Forfeit Match",
+    leave: "Back to Lobby",
+  },
 
 	tournaments: {
 		title: "Tournaments",
