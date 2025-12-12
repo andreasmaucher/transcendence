@@ -124,7 +124,7 @@ export function endMatch(match: Match) {
 // Add player to open match
 export function addPlayerToMatch(match: Match, playerId: string) {
 	try {
-		// ANDY: had to update in-memory object here since checkMatchFull was returning undefined 
+		// ANDY: had to update in-memory object here since checkMatchFull was returning undefined
 		// previously it only updated the database but did not update the in-memory match.players object
 		if (!match.players.left) {
 			addPlayerMatchDB(match.id, playerId, "left");

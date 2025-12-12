@@ -62,8 +62,10 @@ export function draw(ctx: CanvasRenderingContext2D, s: MatchState): void {
 			ctx.fillText(t("gameOver.refresh"), s.width / 2, s.height / 2 + 40);
 		}
 
-		// Only show blockchain save prompt for non-tournament matches
-		if (s.mode !== "tournament") {
+		// Only show wallet-based blockchain save prompt for ONLINE matches.
+		// Local single-player games now use the backend-driven overlay in views/game/ui.ts
+		// after the gameOver handler fires.
+		if (s.mode === "online") {
 			showSaveMatchPrompt(s, async ({ address, state: gameState }) => {
 			// Build the payload for the smart contract.
 			// NOTE: Contract address/ABI/function are placeholders in config/contract.ts
@@ -102,7 +104,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: MatchState): void {
 				txHash,
 			};
 		});
-		} // Close the "if (s.mode !== "tournament")" block
+		} // Close the "if (s.mode === "online")" block
 		ctx.textAlign = "left"; // reset text alignment
 	}
 }

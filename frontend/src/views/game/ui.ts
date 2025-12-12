@@ -349,6 +349,70 @@ export async function renderGame(container: HTMLElement) {
 	chainOverlay.append(chainCard);
 	wrapper.append(chainOverlay);
 
+	const showChainLoading = (options: {
+		leftScore: number;
+		rightScore: number;
+		player1: string;
+		player2: string;
+		winner: string;
+	}) => {
+		chainCard.innerHTML = "";
+
+		const title = document.createElement("h2");
+		title.style.margin = "0 0 8px 0";
+		title.style.fontSize = "20px";
+		title.style.fontWeight = "700";
+		title.style.letterSpacing = "0.04em";
+		title.textContent = "Saving match to the blockchain";
+		title.style.color = "#9ad4ff";
+
+		const summary = document.createElement("p");
+		summary.style.margin = "0 0 10px 0";
+		summary.style.fontSize = "14px";
+		summary.style.opacity = "0.9";
+		summary.textContent =
+			"Please wait while your game stats are being written to the smart contract.";
+
+		const scoreLine = document.createElement("p");
+		scoreLine.style.margin = "0 0 12px 0";
+		scoreLine.style.fontSize = "15px";
+		scoreLine.style.fontWeight = "500";
+
+		const winnerLabel =
+			options.winner === "Draw"
+				? "Game ended in a draw."
+				: `Winner: ${options.winner} (${options.leftScore}:${options.rightScore})`;
+		scoreLine.textContent = winnerLabel;
+
+		const loadingLine = document.createElement("div");
+		loadingLine.style.marginTop = "8px";
+		loadingLine.style.fontSize = "13px";
+		loadingLine.style.opacity = "0.85";
+		loadingLine.textContent = "Submitting transaction to the blockchain...";
+
+		const buttonsRow = document.createElement("div");
+		buttonsRow.style.display = "flex";
+		buttonsRow.style.justifyContent = "flex-end";
+		buttonsRow.style.gap = "8px";
+
+		const backBtn = document.createElement("button");
+		backBtn.textContent = "Back to menu";
+		backBtn.style.padding = "6px 14px";
+		backBtn.style.borderRadius = "6px";
+		backBtn.style.border = "1px solid rgba(255,255,255,0.35)";
+		backBtn.style.background = "rgba(15,15,30,0.9)";
+		backBtn.style.color = "#fdfdff";
+		backBtn.style.cursor = "pointer";
+		backBtn.onclick = () => {
+			navigate("#/menu");
+		};
+
+		buttonsRow.append(backBtn);
+
+		chainCard.append(title, summary, scoreLine, loadingLine, buttonsRow);
+		chainOverlay.style.display = "flex";
+	};
+
 	const showChainResult = (
 		result: ChainResult,
 		options: {
@@ -492,6 +556,10 @@ export async function renderGame(container: HTMLElement) {
 			}
 
 			void (async () => {
+				// Show immediate loading state while the backend persists stats and
+				// publishes the transaction, then update the popup with the result.
+				showChainLoading({ leftScore, rightScore, player1, player2, winner });
+
 				const result = await reportLocalGameToBlockchain({
 					player1,
 					player2,
