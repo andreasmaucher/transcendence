@@ -7,9 +7,11 @@ import { setLanguage, getLanguage } from "../../i18n";
 import { t } from "../../i18n";
 import { connectToUserWS } from "../../ws/user";
 import { teardownChat } from "../menu/ui";
+import { onMatchStateChange } from "../../config/matchState";
 
 let initialized = false;
 let disconnectUserWS: (() => void) | null = null;
+let unsubscribeMatchState: (() => void) | null = null;
 
 export function initTopBar() {
   if (initialized) return;
@@ -158,6 +160,16 @@ function renderLoggedIn(userBox: HTMLDivElement, me: any) {
   };
 
   submenu.append(big, username, profileBtn, logoutBtn);
+
+  // Subscribe to match state changes to hide user box during active matches
+  if (unsubscribeMatchState) {
+    unsubscribeMatchState();
+  }
+  
+  unsubscribeMatchState = onMatchStateChange((isActive) => {
+    // Hide entire user box during match, show when match is not active
+    userBox.style.display = isActive ? "none" : "flex";
+  });
 
   /* ==========================================================
      AUTO-POSITIONING (FIXES OVERFLOW RIGHT SIDE)
