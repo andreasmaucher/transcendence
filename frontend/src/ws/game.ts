@@ -9,6 +9,7 @@ import { navigate } from "../router/router";
 import {
 	handleTournamentMatchAssigned,
 	handleTournamentMatchState,
+	resetTournamentOrchestrator,
 } from "../views/tournament/overlays/tournament_orchestrator";
 
 
@@ -260,6 +261,7 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 	let isHandlingForfeit = false;
 
 	ws.addEventListener("open", () => {
+		resetTournamentOrchestrator();
 		queueInput("left", "stop");
 		queueInput("right", "stop");
 		flushInputs();

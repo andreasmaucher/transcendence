@@ -207,23 +207,48 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				socket.currentTournamentMatch = match; // track which match the socket belongs to
 				socket.tournamentId = tournament.id; // tracks the tournament this socket belongs to
 
-				// ANDY: include player display names for the tournament tree overlay
-				socket.send(
-					buildPayload("match-assigned", {
-						matchId: match.id,
-						playerSide: playerSide,
-						tournamentMatchType: match.tournament?.type,
-						round: tournament.state.round,
-						leftPlayer: {
-							username: match.players.left?.username || null,
-							displayName: match.players.left?.displayName || match.players.left?.username || null,
-						},
-						rightPlayer: {
-							username: match.players.right?.username || null,
-							displayName: match.players.right?.displayName || match.players.right?.username || null,
-						},
-					} as any)
-				);
+				// ANDY: broadcast match-assigned for ALL matches in the current round to ALL tournament participants
+				// This ensures all players see the complete bracket (both SF1 and SF2) as players join
+				const roundMatches = tournament.matches.get(tournament.state.round);
+				if (roundMatches) {
+					const sentSockets = new Set();
+					
+					// Build and send match-assigned for each match in the round
+					for (let i = 0; i < roundMatches.length; i++) {
+						const currentMatch = roundMatches[i];
+						
+						// Determine playerSide for the current socket (only relevant for the match they joined)
+						const currentPlayerSide = currentMatch.id === match.id ? playerSide : null;
+						
+						const matchAssignedPayload = buildPayload("match-assigned", {
+							matchId: currentMatch.id,
+							playerSide: currentPlayerSide,
+							tournamentMatchType: currentMatch.tournament?.type,
+							round: tournament.state.round,
+							matchIndex: i, // ANDY: index to identify which match (0=SF1, 1=SF2, etc.)
+							leftPlayer: {
+								username: currentMatch.players.left?.username || null,
+								displayName: currentMatch.players.left?.displayName || currentMatch.players.left?.username || null,
+							},
+							rightPlayer: {
+								username: currentMatch.players.right?.username || null,
+								displayName: currentMatch.players.right?.displayName || currentMatch.players.right?.username || null,
+							},
+						} as any);
+
+						// Send to all tournament participants
+						for (const player of tournament.players) {
+							if (player.socket && player.socket.readyState === 1) { // WebSocket.OPEN
+								player.socket.send(matchAssignedPayload);
+								sentSockets.add(player.socket);
+							}
+						}
+						// Also send to current socket if not already in tournament.players (e.g., round 2 players)
+						if (!sentSockets.has(socket) && socket.readyState === 1) {
+							socket.send(matchAssignedPayload);
+						}
+					}
+				}
 
 				socket.send(buildPayload("state", match.state));
 				// ANDY: for tournaments using socket.currentMatch which will be updated between rounds

@@ -73,27 +73,38 @@ export function handleTournamentMatchAssigned(data: any) {
 	// ROUND 1: identify SF1 / SF2 and store player display names
 	// -------------------------------
 	if (currentRound === 1 && tournamentMatchType === "normal") {
-		if (!semiFinalMatchIds.sf1) {
-			semiFinalMatchIds.sf1 = matchId;
-			// ANDY: store player display names from ws payload
-			if (leftPlayer?.username && rightPlayer?.username) {
+		// ANDY: use matchIndex from backend to identify which match (0=SF1, 1=SF2)
+		const matchIndex = data.matchIndex;
+		
+		if (matchIndex === 0) {
+			if (!semiFinalMatchIds.sf1) {
+				semiFinalMatchIds.sf1 = matchId;
+			}
+			// ANDY: store player display names from ws payload - handle partial matches (when only one player exists)
+			if (leftPlayer?.username) {
 				internalBracket.players[0] = {
 					username: leftPlayer.username,
 					displayName: leftPlayer.displayName || leftPlayer.username,
 				};
+			}
+			if (rightPlayer?.username) {
 				internalBracket.players[1] = {
 					username: rightPlayer.username,
 					displayName: rightPlayer.displayName || rightPlayer.username,
 				};
 			}
-		} else if (!semiFinalMatchIds.sf2 && semiFinalMatchIds.sf1 !== matchId) {
-			semiFinalMatchIds.sf2 = matchId;
-			// ANDY: store player display names from ws payload
-			if (leftPlayer?.username && rightPlayer?.username) {
+		} else if (matchIndex === 1) {
+			if (!semiFinalMatchIds.sf2) {
+				semiFinalMatchIds.sf2 = matchId;
+			}
+			// ANDY: store player display names from ws payload - handle partial matches (when only one player exists)
+			if (leftPlayer?.username) {
 				internalBracket.players[2] = {
 					username: leftPlayer.username,
 					displayName: leftPlayer.displayName || leftPlayer.username,
 				};
+			}
+			if (rightPlayer?.username) {
 				internalBracket.players[3] = {
 					username: rightPlayer.username,
 					displayName: rightPlayer.displayName || rightPlayer.username,
