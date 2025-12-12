@@ -41,6 +41,9 @@ let semiFinalMatchIds: {
 	sf2?: string;
 } = {};
 
+// ANDY: track match type by matchId (so we can determine match type even if currentMatchType was overwritten)
+const matchTypeMap = new Map<string, { round: number; type: string }>();
+
 /**
  * Reset when entering a new tournament
  */
@@ -50,6 +53,7 @@ export function resetTournamentOrchestrator() {
 	semiFinalMatchIds = {};
 	currentRound = 1;
 	currentMatchType = null;
+	matchTypeMap.clear();
 }
 
 /**
@@ -66,6 +70,11 @@ export function handleTournamentMatchAssigned(data: any) {
 
 	currentRound = round ?? 1;
 	currentMatchType = tournamentMatchType;
+	
+	// ANDY: store match type by matchId so we can look it up later
+	if (matchId && round && tournamentMatchType) {
+		matchTypeMap.set(matchId, { round, type: tournamentMatchType });
+	}
 
 	const me = userData.username ?? undefined;
 
@@ -217,29 +226,50 @@ export function handleTournamentMatchState(
 	}
 
 	// -------------------------------
-	// FINAL RESULT
+	// ROUND 2: FINAL OR 3RD PLACE
 	// -------------------------------
-	if (currentRound === 2 && currentMatchType === "final") {
-		internalBracket.results.finalWinner = winner;
+	if (currentRound === 2) {
+		// ANDY: determine match type from matchId (more reliable than currentMatchType which can be overwritten)
+		const matchInfo = matchTypeMap.get(matchId);
+		const isFinalMatch = matchInfo?.type === "final" || 
+			// Fallback: check if winner is a semifinal winner (final match has semifinal winners)
+			winner === internalBracket.results.semiFinal1Winner ||
+			winner === internalBracket.results.semiFinal2Winner;
 
-		showTournamentOverlay("final", {
-			title: "Tournament Finished",
-			bracket: internalBracket as any,
-			focusedPlayerUsername: focused,
+		console.log("[Tournament] Round 2 match finished:", {
+			matchId,
+			winner,
+			matchInfo,
+			currentMatchType,
+			semiFinal1Winner: internalBracket.results.semiFinal1Winner,
+			semiFinal2Winner: internalBracket.results.semiFinal2Winner,
+			isFinalMatch
 		});
-		return;
-	}
 
-	// -------------------------------
-	// THIRD PLACE RESULT
-	// -------------------------------
-	if (currentRound === 2 && currentMatchType === "thirdPlace") {
-		internalBracket.results.thirdPlaceWinner = winner;
+		if (isFinalMatch) {
+			// FINAL MATCH
+			console.log("[Tournament] FINAL MATCH - Setting finalWinner:", winner);
+			internalBracket.results.finalWinner = winner;
+			console.log("[Tournament] finalWinner set. Full bracket:", JSON.stringify(internalBracket));
 
-		showTournamentOverlay("between-rounds", {
-			title: "3rd Place Decided",
-			bracket: internalBracket as any,
-			focusedPlayerUsername: focused,
-		});
+			showTournamentOverlay("final", {
+				title: "Tournament Finished",
+				bracket: internalBracket as any,
+				focusedPlayerUsername: focused,
+			});
+			return;
+		} else {
+			// 3RD PLACE MATCH
+			internalBracket.results.thirdPlaceWinner = winner;
+
+			// Only show 3rd place overlay if final hasn't finished yet
+			if (!internalBracket.results.finalWinner) {
+				showTournamentOverlay("between-rounds", {
+					title: "3rd Place Decided",
+					bracket: internalBracket as any,
+					focusedPlayerUsername: focused,
+				});
+			}
+		}
 	}
 }

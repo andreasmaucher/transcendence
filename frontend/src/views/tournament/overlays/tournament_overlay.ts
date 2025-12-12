@@ -255,11 +255,34 @@ function buildBracketView(
 
     const avatarWrap = document.createElement("div");
     avatarWrap.className = "tournament-bracket-trophy-avatar-wrap";
+    
     const avatarImg = document.createElement("img");
     avatarImg.className = "tournament-bracket-trophy-avatar";
     avatarImg.src = "/default-avatar.png";
     avatarImg.style.display = "none";
     avatarWrap.appendChild(avatarImg);
+    
+    // ANDY: add champion name inside the circle if final is finished
+    console.log("[Tournament Overlay] Building champion circle:", {
+        finalWinner: results.finalWinner,
+        players: players.map(p => ({ username: p?.username, displayName: p?.displayName }))
+    });
+    if (results.finalWinner) {
+        const championNameInCircle = document.createElement("div");
+        // ANDY: style name to fit nicely below avatar within the 90px circle
+        championNameInCircle.style.cssText = "color: white; font-size: 10px; font-weight: bold; text-align: center; padding: 0 2px; word-break: break-word; line-height: 1.1; max-width: 82px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; flex-shrink: 0;";
+        
+        // Find champion in players array to get display name
+        const championPlayer = players.find(p => p?.username === results.finalWinner);
+        const championName = championPlayer?.displayName || championPlayer?.username || results.finalWinner;
+        championNameInCircle.textContent = championName;
+        console.log("[Tournament Overlay] Champion name set to:", championName);
+        
+        avatarWrap.appendChild(championNameInCircle);
+    } else {
+        console.log("[Tournament Overlay] No finalWinner - circle will be empty");
+    }
+    
     trophyBox.appendChild(avatarWrap);
 
     const championLabel = document.createElement("div");

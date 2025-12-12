@@ -259,6 +259,8 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 
 	let resetRequested = false;
 	let isHandlingForfeit = false;
+	// ANDY: store match info (players) for each match we see
+	const matchPlayersMap = new Map<string, { left: string | null; right: string | null }>();
 
 	ws.addEventListener("open", () => {
 		resetTournamentOrchestrator();
@@ -286,6 +288,14 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 				const data = (payload as any).data;
 				setAssignedSide(data?.playerSide || null);
 				
+				// ANDY: store match players so we can determine winner later
+				if (data?.matchId) {
+					matchPlayersMap.set(data.matchId, {
+						left: data?.leftPlayer?.username || null,
+						right: data?.rightPlayer?.username || null
+					});
+				}
+				
 				handleTournamentMatchAssigned(data); 
 
 				// notify UI about tournament match type
@@ -300,6 +310,27 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 
 				// payload.data is now MatchState
 				applyBackendState(state, payload.data);
+
+				// ANDY: when a match finishes, call handleTournamentMatchState
+				// Find which match this state belongs to by checking all known matches
+				if (state.isOver && state.winner && !wasOver) {
+					// Determine the winner's username from the state
+					let foundMatch = false;
+					for (const [matchId, players] of matchPlayersMap.entries()) {
+						// Check if this state's winner matches one of the players in this match
+						const winnerUsername = state.winner === "left" ? players.left : players.right;
+						if (winnerUsername) {
+							// This is the match that finished - call handleTournamentMatchState
+							handleTournamentMatchState(state, matchId, players.left, players.right);
+							foundMatch = true;
+							break;
+						}
+					}
+					// If no match found, it might be a match we haven't seen yet (shouldn't happen, but log it)
+					if (!foundMatch) {
+						console.warn("[WS Tournament] State message for finished match but couldn't find match in map");
+					}
+				}
 
 				// Reset game
 				if (state.isOver && !wasOver && !resetRequested) {
