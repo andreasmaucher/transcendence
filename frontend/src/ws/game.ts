@@ -6,6 +6,12 @@ import { MatchState } from "../types/game";
 import { Payload } from "../types/ws_message";
 import { navigate } from "../router/router";
 
+import {
+	handleTournamentMatchAssigned,
+	handleTournamentMatchState,
+} from "../views/tournament/overlays/tournament_orchestrator";
+
+
 // no-op functions to avoid errors as long as the UI has not registered handlers by calling registerGameUiHandlers
 let waitingForPlayers: () => void = () => {};
 let countdownToGame: (n: number, side?: "left" | "right") => void = () => {};
@@ -65,7 +71,7 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 
 				// payload.data is now MatchState
 				applyBackendState(state, payload.data);
-
+				
 				// Reset game
 				if (state.isOver && !wasOver && !resetRequested) {
 					ws.send(JSON.stringify({ type: "reset" }));
@@ -278,6 +284,8 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 				const data = (payload as any).data;
 				setAssignedSide(data?.playerSide || null);
 				
+				handleTournamentMatchAssigned(data); 
+
 				// notify UI about tournament match type
 				if (data?.tournamentMatchType) {
 					tournamentMatchType(data.tournamentMatchType, data.round || 1);

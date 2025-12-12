@@ -15,6 +15,8 @@ import {
 import { showCountdown } from "../game/countdown";
 import { showMessageOverlay } from "./forfeit_overlay";
 import { t } from "../../i18n";
+import { createTournamentOverlay } from "../../views/tournament/overlays/tournament_overlay";
+import { hideTournamentOverlay } from "../../views/tournament/overlays/tournament_overlay";
 
 
 let GAME_CONSTANTS: GameConstants | null = null;
@@ -113,7 +115,6 @@ export async function renderGame(container: HTMLElement) {
 	wrapper.style.padding = "14px";
 	wrapper.style.borderRadius = "12px";
 	wrapper.style.background = "rgba(10, 10, 10, 0.45)";
-	wrapper.style.backdropFilter = "blur(6px)";
 
 	wrapper.style.border = "2px solid rgba(255, 44, 251, 0.25)";
 	wrapper.style.boxShadow = `
@@ -123,12 +124,16 @@ export async function renderGame(container: HTMLElement) {
 	`;
 
 	container.append(wrapper);
+	createTournamentOverlay(container);
+
 
 	// Floating UI (top-right)
 	const ui = document.createElement("div");
 	ui.style.position = "absolute";
-	ui.style.top = "-150px";
-	ui.style.right = "10px";
+	ui.style.top = "-60px";
+	ui.style.left = "50%";
+	ui.style.transform = "translateX(-50%)";
+
 	ui.style.display = "flex";
 	ui.style.flexDirection = "column";
 	ui.style.gap = "8px";
@@ -144,6 +149,10 @@ export async function renderGame(container: HTMLElement) {
 	userBox.style.padding = "4px 8px";
 	userBox.style.borderRadius = "6px";
 	userBox.style.color = "#fff";
+	userBox.style.border = "1px solid rgba(221, 238, 33, 0.71)";
+	userBox.style.boxShadow = "0 0 10px rgba(251, 255, 44, 0.4)";
+	userBox.style.backdropFilter = "blur(6px)";
+
 	ui.append(userBox);
 
 	(async () => {
@@ -152,13 +161,16 @@ export async function renderGame(container: HTMLElement) {
 
 		const avatar = document.createElement("img");
 		avatar.src = me.avatar || "/default-avatar.png";
-		avatar.width = 32;
-		avatar.height = 32;
+		avatar.width = 36;
+		avatar.height = 36;
 		avatar.style.borderRadius = "50%";
 		avatar.style.objectFit = "cover";
 
 		const name = document.createElement("span");
 		name.textContent = me.username;
+		name.style.color = "#e4cc2fff"; // blue
+		name.style.fontWeight = "600";
+
 
 		userBox.append(avatar, name);
 	})();
@@ -169,20 +181,34 @@ export async function renderGame(container: HTMLElement) {
 	sideIndicator.style.background = "rgba(0,0,0,0.5)";
 	sideIndicator.style.padding = "4px 8px";
 	sideIndicator.style.borderRadius = "6px";
-	sideIndicator.style.color = "#fff";
+	sideIndicator.style.color = "#9ad1ff";
 	sideIndicator.style.fontSize = "14px";
 	sideIndicator.style.textAlign = "center";
 	sideIndicator.style.fontWeight = "bold";
-	ui.append(sideIndicator);
 
 	if (mode !== "local") {
 		import("../../game/input.js").then(({ onSideAssigned }) => {
 			onSideAssigned((side) => {
-				sideIndicator.textContent = side === "left"
-					? "You control: LEFT paddle (W/S)"
-					: "You control: RIGHT paddle (↑/↓)";
-				sideIndicator.style.display = "block";
-			});
+	if (side === "left") {
+		ui.style.left = "10px";
+		ui.style.right = "";
+		ui.style.transform = "none";
+		userBox.style.flexDirection = "row";
+	} else {
+		ui.style.right = "10px";
+		ui.style.left = "";
+		ui.style.transform = "none";
+		userBox.style.flexDirection = "row-reverse";
+	}
+
+	sideIndicator.textContent =
+		side === "left"
+		? "You control: LEFT paddle (W/S)"
+		: "You control: RIGHT paddle (↑/↓)";
+
+	sideIndicator.style.display = "block";
+	});
+
 		});
 	}
 
@@ -203,9 +229,27 @@ export async function renderGame(container: HTMLElement) {
 	//
 	const exitBtn = document.createElement("button");
 	exitBtn.textContent = t("game.exit");
+
+	// attach to wrapper (same as user info)
+	wrapper.append(exitBtn);
+
+	wrapper.append(sideIndicator);
+
+	sideIndicator.style.position = "absolute";
+	sideIndicator.style.bottom = "-34px";
+	sideIndicator.style.left = "50%";
+	sideIndicator.style.transform = "translateX(-50%)";
+
 	exitBtn.style.position = "absolute";
 	exitBtn.style.top = "-60px";
-	exitBtn.style.right = "0";
+	exitBtn.style.left = "50%";
+	exitBtn.style.transform = "translateX(-50%)";
+
+	// keep it above tournament overlay
+	exitBtn.style.zIndex = "10001";
+
+
+
 
 	exitBtn.style.padding = "8px 16px";
 	exitBtn.style.fontSize = "16px";
@@ -314,22 +358,30 @@ export async function renderGame(container: HTMLElement) {
 		//
 		countdownToGame: (n, _side) => {
 			if (cancelled) return;
+
 			if (mode !== "local" && n > 0 && !onlineCountdownStarted) {
 				onlineCountdownStarted = true;
-				waitingOverlay.style.display = "none";
 
-				// trigger the animated countdown
+				// hide overlay BEFORE countdown starts
+				hideTournamentOverlay();
+
+				waitingOverlay.style.display = "none";
 				const countdown = showCountdown(wrapper, canvas);
 				cancelCountdown = countdown.cancel;
 				onlineCountdownPromise = countdown.promise;
 			}
 		},
 
+
 		//
 		// FIX: Start only after animation fully completes
 		//
 		startGame: () => {
 			if (cancelled) return;
+
+			// HIDE TOURNAMENT OVERLAY WHEN GAME STARTS
+			hideTournamentOverlay();
+
 			if (onlineCountdownPromise) {
 				onlineCountdownPromise.then(() => {
 					cancelCountdown = null;
@@ -340,6 +392,7 @@ export async function renderGame(container: HTMLElement) {
 				waitingOverlay.style.display = "none";
 			}
 		},
+
 
 		showPlayerLeftMessage: async (message: string) => {
 			// Cancel countdown if it's running (so the countdown overlay is not running in the background)

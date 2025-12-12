@@ -2,6 +2,13 @@ import { navigate } from "../../router/router";
 import { fetchTournamentList, fetchMe, type Tournament } from "../../api/http";
 import { t } from "../../i18n";
 import "./tournament.css";
+import "./overlays/overlays.css";
+import {
+  createTournamentOverlay,
+  showTournamentOverlay,
+  hideTournamentOverlay
+} from "./overlays/tournament_overlay";
+
 
 export async function renderTournament(container: HTMLElement) {
 	container.innerHTML = "";
@@ -11,6 +18,8 @@ export async function renderTournament(container: HTMLElement) {
 	const root = document.createElement("div");
 	root.className = "tournament-screen";
 	container.append(root);
+	// Initialize overlays
+	createTournamentOverlay(root);
 
 	// BOX
 	const box = document.createElement("div");
