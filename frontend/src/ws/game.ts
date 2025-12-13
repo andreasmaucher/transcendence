@@ -286,7 +286,12 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 			case "match-assigned": {
 				// server tells us which side we're playing on
 				const data = (payload as any).data;
-				setAssignedSide(data?.playerSide || null);
+				
+				// ANDY: only update assignedSide if playerSide is explicitly set (not null)
+				// This prevents overwriting the correct side when receiving match-assigned for other matches
+				if (data?.playerSide !== null && data?.playerSide !== undefined) {
+					setAssignedSide(data.playerSide);
+				}
 				
 				// ANDY: store match players so we can determine winner later
 				if (data?.matchId) {

@@ -179,21 +179,6 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			socket.username = payload.username;
 
 		const tournament = getOrCreateTournament(tournamentId, tournamentName, tournamentSize, payload.username);
-			// ANDY: added this part to ensure that in the second round of the tournament the sides are correctly assigned to the players
-			// Find which match this player will join and determine their side BEFORE adding them
-			let playerSide: "left" | "right" = "left";
-			const matches = tournament.matches.get(tournament.state.round);
-			// scan the matches to find one with an open slot and then determine the side the player will be assigned to
-			if (matches) {
-				for (const m of matches) {
-					if (!m.players.left || !m.players.right) {
-						// this is the match the player will join
-						playerSide = !m.players.left ? "left" : "right";
-						console.log(`[WS] Player ${payload.username} will be assigned to match ${m.id} as ${playerSide}`);
-						break;
-					}
-				}
-			}
 
 			const match = addPlayerToTournament({
 				tournament: tournament,
@@ -207,6 +192,12 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				socket.currentTournamentMatch = match; // track which match the socket belongs to
 				socket.tournamentId = tournament.id; // tracks the tournament this socket belongs to
 
+				// ANDY: determine playerSide AFTER adding player (to get the actual assigned side)
+				const playerSide: "left" | "right" | null = 
+					match.players.left?.username === socket.username ? "left" :
+					match.players.right?.username === socket.username ? "right" :
+					null;
+
 				// ANDY: broadcast match-assigned for ALL matches in the current round to ALL tournament participants
 				// This ensures all players see the tournament tree being populated
 				const roundMatches = tournament.matches.get(tournament.state.round);
@@ -217,12 +208,9 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 					for (let i = 0; i < roundMatches.length; i++) {
 						const currentMatch = roundMatches[i];
 						
-						// Determine playerSide for the current socket (only relevant for the match they joined)
-						const currentPlayerSide = currentMatch.id === match.id ? playerSide : null;
-						
-						const matchAssignedPayload = buildPayload("match-assigned", {
+						// ANDY: Build base payload without playerSide (will be customized per recipient)
+						const basePayload = {
 							matchId: currentMatch.id,
-							playerSide: currentPlayerSide,
 							tournamentMatchType: currentMatch.tournament?.type,
 							round: tournament.state.round,
 							matchIndex: i, // ANDY: index in the roundMatches array (0=first match, 1=second match)
@@ -234,17 +222,33 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 								username: currentMatch.players.right?.username || null,
 								displayName: currentMatch.players.right?.displayName || currentMatch.players.right?.username || null,
 							},
-						} as any);
+						};
 
-						// Send to all tournament participants
+						// Send to all tournament participants with their individual playerSide
 						for (const player of tournament.players) {
 							if (player.socket && player.socket.readyState === 1) { // WebSocket.OPEN
+								// ANDY: Determine playerSide for THIS specific player for THIS specific match
+								// needed for broadcasting match-assigned messages to all players
+								const recipientPlayerSide: "left" | "right" | null = 
+									currentMatch.players.left?.username === player.username ? "left" :
+									currentMatch.players.right?.username === player.username ? "right" :
+									null;
+								
+								const matchAssignedPayload = buildPayload("match-assigned", {
+									...basePayload,
+									playerSide: recipientPlayerSide,
+								} as any);
+								
 								player.socket.send(matchAssignedPayload);
 								sentSockets.add(player.socket);
 							}
 						}
 						// Also send to current socket if not already in tournament.players (e.g., round 2 players)
 						if (!sentSockets.has(socket) && socket.readyState === 1) {
+							const matchAssignedPayload = buildPayload("match-assigned", {
+								...basePayload,
+								playerSide: playerSide, // Use the playerSide we determined for the joining player
+							} as any);
 							socket.send(matchAssignedPayload);
 						}
 					}

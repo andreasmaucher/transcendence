@@ -140,9 +140,6 @@ export function addPlayerToMatch(match: Match, playerId: string, socket: any, di
 	try {
 		// ANDY: had to update in-memory object here since checkMatchFull was returning undefined
 		// previously it only updated the database but did not update the in-memory match.players object
-		console.log(`[MM] addPlayerToMatch: adding ${playerId} to match ${match.id}`);
-		console.log(`[MM]   Before: left=${match.players.left?.username || 'empty'}, right=${match.players.right?.username || 'empty'}`);
-		
 		if (!match.players.left) {
 			addPlayerMatchDB(match.id, playerId, "left");
 			match.players.left = {
@@ -150,7 +147,6 @@ export function addPlayerToMatch(match: Match, playerId: string, socket: any, di
 				displayName: displayName,
 				socket: socket,
 			}; // Update in-memory object
-			console.log(`[MM]   Added ${playerId} as LEFT`);
 		} else if (!match.players.right) {
 			addPlayerMatchDB(match.id, playerId, "right");
 			match.players.right = {
@@ -158,12 +154,7 @@ export function addPlayerToMatch(match: Match, playerId: string, socket: any, di
 				displayName: displayName,
 				socket: socket,
 			};
-			console.log(`[MM]   Added ${playerId} as RIGHT`);
-		} else {
-			console.log(`[MM]   ERROR: Match ${match.id} is already FULL!`);
 		}
-		
-		console.log(`[MM]   After: left=${match.players.left?.username || 'empty'}, right=${match.players.right?.username || 'empty'}`);
 		
 		if (match.singleGameId && checkMatchFull(match)) {
 			startGameCountdown(match);
