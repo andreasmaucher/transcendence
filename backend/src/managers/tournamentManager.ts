@@ -15,6 +15,8 @@ import {
 	extractMatchWinner,
 	getTournament,
 	initTournamentMatches,
+	isRoundOver,
+	isTournamentOver,
 } from "./tournamentManagerHelpers.js";
 import crypto from "crypto";
 import { Match } from "../types/match.js";
@@ -39,6 +41,7 @@ export function getOrCreateTournament(id: string, name?: string, size?: number):
 			state: createInitialTournamentState(size || 4),
 			matches: new Map<number, Match[]>(),
 			clients: new Set(),
+			uiBlockers: new Set<string>(),
 		} as Tournament;
 
 		try {
@@ -85,6 +88,26 @@ export function getOrCreateTournament(id: string, name?: string, size?: number):
 	return tournament;
 }
 
+export function blockTournamentProgressForMatch(tournament: Tournament, match: Match): void {
+	if (!tournament.uiBlockers) tournament.uiBlockers = new Set<string>();
+	if (match.players.left) tournament.uiBlockers.add(match.players.left);
+	if (match.players.right) tournament.uiBlockers.add(match.players.right);
+}
+
+export function markTournamentUiReady(tournament: Tournament, username: string): void {
+	if (!tournament.uiBlockers) return;
+	tournament.uiBlockers.delete(username);
+	tryAdvanceTournament(tournament);
+}
+
+export function tryAdvanceTournament(tournament: Tournament): void {
+	if (tournament.state.isOver) return;
+	if (tournament.uiBlockers && tournament.uiBlockers.size > 0) return;
+
+	if (isTournamentOver(tournament)) endTournament(tournament);
+	else if (isRoundOver(tournament)) goToNextRound(tournament);
+}
+
 // Start a tournament
 export function startTournament(tournament: Tournament) {
 	try {
@@ -109,9 +132,11 @@ export function addPlayerToTournament(tournament: Tournament, playerId: string, 
 		if (matches) {
 			for (const match of matches) {
 				if (!checkMatchFull(match)) {
+					if (socket) {
+						match.clients.add(socket);
+						if (tournament.state.round === 1) tournament.clients.add(socket);
+					}
 					addPlayerToMatch(match, playerId);
-					if (tournament.state.round === 1) tournament.clients.add(socket);
-					if (checkTournamentFull(tournament)) startTournament(tournament);
 					return match;
 				}
 			}

@@ -24,5 +24,6 @@ export type Tournament = {
 	state: TournamentState;
 	matches: Map<number, Match[]>;
 	clients: Set<WebSocket>;
+	uiBlockers?: Set<string>; // usernames that must acknowledge UI before advancing rounds
 	expirationTimer?: NodeJS.Timeout;
 };

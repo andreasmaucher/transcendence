@@ -7,6 +7,8 @@ import { userBroadcast } from "./broadcaster.js";
 import { createUTCTimestamp } from "../utils/time.js";
 import { convertToMessage } from "../chat/utils.js";
 import { ChatMessage } from "../types/chat.js";
+import { tournaments } from "../config/structures.js";
+import { markTournamentUiReady } from "../managers/tournamentManager.js";
 
 // Handles the "message" type of socket messages for the user sockets
 export function handleChatMessages(raw: RawData) {
@@ -31,7 +33,7 @@ export function handleChatMessages(raw: RawData) {
 }
 
 // Handles the "message" type of socket messages for the game sockets
-export function handleGameMessages(raw: RawData, match: Match) {
+export function handleGameMessages(raw: RawData, match: Match, socket?: any) {
 	let msg;
 	try {
 		msg = JSON.parse(raw.toString());
@@ -47,5 +49,12 @@ export function handleGameMessages(raw: RawData, match: Match) {
 		if (!match.tournament) {
 			resetMatchState(match);
 		}
+	} else if (msg.type === "tournament-ui-ready") {
+		if (!match.tournament) return;
+		const username = socket?.username;
+		if (!username) return;
+		const tournament = tournaments.get(match.tournament.id);
+		if (!tournament) return;
+		markTournamentUiReady(tournament, username);
 	}
 }

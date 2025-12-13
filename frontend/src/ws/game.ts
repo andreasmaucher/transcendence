@@ -296,7 +296,7 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 		} catch {
 			return; // ignore invalid JSON
 		}
-
+		if (!parsed || typeof parsed !== "object") return;
 
 		const payload = parsed as Payload;
 
@@ -313,7 +313,6 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 				tournamentMatchSaveFailed((payload as any).data);
 				break;
 			}
-		switch (payload.type) {
 			case "tournament-finished": {
 				const data = (payload as any).data;
 				tournamentFinished({
@@ -323,10 +322,10 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 				});
 				break;
 			}
-
 			case "match-assigned": {
-				// server tells us which side we're playing on
+				// server tells us which match + side we're playing on
 				const data = (payload as any).data;
+				userData.matchId = data?.matchId || null;
 				setAssignedSide(data?.playerSide || null);
 
 				// notify UI about tournament match type
@@ -335,7 +334,6 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 				}
 				break;
 			}
-
 			case "state": {
 				const wasOver = state.isOver;
 
@@ -357,27 +355,23 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 				}
 				break;
 			}
-
 			case "waiting": {
 				waitingForPlayers();
 				break;
 			}
-
 			case "countdown": {
 				const n = (payload as any).data?.value as number | undefined;
 				const side = (payload as any).data?.side as "left" | "right" | undefined;
 				countdownToGame(n ?? 0, side);
 				break;
 			}
-
 			case "start": {
 				startGame();
 				break;
 			}
-
 			default:
 				console.warn("[WS] Unknown payload:", payload);
-		}
+				break;
 		}
 	});
 

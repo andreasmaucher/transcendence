@@ -831,6 +831,22 @@ export async function renderGame(container: HTMLElement) {
 		scoreRight: number;
 		winner: string;
 	}) => {
+		const sendTournamentUiReady = () => {
+			try {
+				const ws = userData.gameSock as WebSocket | null | undefined;
+				if (ws && ws.readyState === WebSocket.OPEN) {
+					ws.send(
+						JSON.stringify({
+							type: "tournament-ui-ready",
+							data: { tournamentId: data.tournamentId, matchId: data.matchId, gameIndex: data.gameIndex },
+						})
+					)
+				}
+			} catch {
+				// best-effort only
+			}
+		};
+
 		chainCard.innerHTML = "";
 
 		const title = document.createElement("h2");
@@ -885,6 +901,7 @@ export async function renderGame(container: HTMLElement) {
 		closeBtn.style.cursor = "pointer";
 		closeBtn.onclick = () => {
 			chainOverlay.style.display = "none";
+			sendTournamentUiReady();
 		};
 		buttonsRow.append(closeBtn);
 
@@ -911,6 +928,22 @@ export async function renderGame(container: HTMLElement) {
 			}
 			| { ok: false; error: string; data: { tournamentId: string; matchId: string; gameIndex: number } }
 	) => {
+		const sendTournamentUiReady = () => {
+			try {
+				const ws = userData.gameSock as WebSocket | null | undefined;
+				if (ws && ws.readyState === WebSocket.OPEN) {
+					ws.send(
+						JSON.stringify({
+							type: "tournament-ui-ready",
+							data: { tournamentId: result.data.tournamentId, matchId: result.data.matchId, gameIndex: result.data.gameIndex },
+						})
+					)
+				}
+			} catch {
+				// best-effort only
+			}
+		};
+
 		chainCard.innerHTML = "";
 
 		const title = document.createElement("h2");
@@ -1001,6 +1034,7 @@ export async function renderGame(container: HTMLElement) {
 		closeBtn.style.cursor = "pointer";
 		closeBtn.onclick = () => {
 			chainOverlay.style.display = "none";
+			sendTournamentUiReady();
 		};
 		buttonsRow.append(closeBtn);
 		chainCard.append(buttonsRow);

@@ -9,8 +9,7 @@ import {
 } from "../database/matches/setters.js";
 import { forfeitSingleGame, getSingleGame } from "./singleGameManager.js";
 import { tournaments } from "../config/structures.js";
-import { isRoundOver, isTournamentOver } from "./tournamentManagerHelpers.js";
-import { endTournament, forfeitTournament, goToNextRound } from "./tournamentManager.js";
+import { blockTournamentProgressForMatch, forfeitTournament, tryAdvanceTournament } from "./tournamentManager.js";
 import { Match, TournamentMatchInfo, TournamentMatchType } from "../types/match.js";
 import { buildPayload, gameBroadcast } from "../transport/broadcaster.js";
 import { triggerTournamentMatchSave } from "../blockchain/tournamentMatchSaver.js";
@@ -118,11 +117,12 @@ export function endMatch(match: Match) {
 	if (!match.tournament) return;
 	const tournament = tournaments.get(match.tournament.id);
 	if (!tournament) return;
+	// Block round progression until both players acknowledge closing the on-chain popup.
+	blockTournamentProgressForMatch(tournament, match);
 	// Save this finished tournament match on-chain asynchronously.
-	// Important: do not await, so the next match can start immediately even if the tx is pending.
+	// This still does not block the server tick; it only blocks advancing to the next round.
 	triggerTournamentMatchSave(match, tournament);
-	if (isTournamentOver(tournament)) endTournament(tournament);
-	else if (isRoundOver(tournament)) goToNextRound(tournament);
+	tryAdvanceTournament(tournament);
 }
 
 // Add player to open match

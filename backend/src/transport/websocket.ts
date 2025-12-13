@@ -2,13 +2,14 @@ import { RawData } from "ws";
 import type { FastifyInstance } from "fastify";
 import { buildPayload } from "./broadcaster.js";
 import { getOrCreateSingleGame } from "../managers/singleGameManager.js";
-import { getOrCreateTournament, addPlayerToTournament } from "../managers/tournamentManager.js";
+import { addPlayerToTournament, getOrCreateTournament, startTournament } from "../managers/tournamentManager.js";
 import { addPlayerToMatch, checkMatchFull, forfeitMatch, startMatch } from "../managers/matchManager.js";
 import { Match } from "../types/match.js";
 import { addGameToUser, addUserOnline, removeGameFromUser, removeUserOnline } from "../user/online.js";
 import { handleChatMessages, handleGameMessages } from "./messages.js";
 import { authenticateWebSocket } from "../auth/verify.js";
 import { createTournamentPlayerDB } from "../database/tournament_players/setters.js";
+import { checkTournamentFull } from "../managers/tournamentManagerHelpers.js";
 
 export function registerWebsocketRoute(fastify: FastifyInstance) {
 	// Register user socket
@@ -75,7 +76,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				buildPayload("state", { ...match.state, playerLeft: match.players.left, playerRight: match.players.right })
 			);
 
-			socket.on("message", (raw: RawData) => handleGameMessages(raw, match));
+			socket.on("message", (raw: RawData) => handleGameMessages(raw, match, socket));
 
 			socket.on("close", () => {
 				match.clients.delete(socket);
@@ -147,7 +148,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			// add player to match (this may trigger countdown if match becomes full)
 			addPlayerToMatch(match, socket.username);
 
-			socket.on("message", (raw: RawData) => handleGameMessages(raw, match));
+			socket.on("message", (raw: RawData) => handleGameMessages(raw, match, socket));
 
 			socket.on("close", () => {
 				match.clients.delete(socket);
@@ -202,7 +203,11 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 		
 		const match = addPlayerToTournament(tournament, socket.username, socket);
 		if (match) {
-			match.clients.add(socket);
+			// Only start the tournament once (Round 1) and only after this socket is registered
+			// so everyone receives countdown/start messages.
+			if (!tournament.state.isRunning && !tournament.state.isOver && checkTournamentFull(tournament)) {
+				startTournament(tournament);
+			}
 			// ANDY: store reference for Round 2 reassignment so we can pick a socket up after a match is over and drop it into the next match
 			socket.currentTournamentMatch = match; // track wich match the socket belongs to
 			socket.tournamentId = tournament.id; // tracks the tournament this socket belongs to
@@ -223,7 +228,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			// wrapper ensures every incoming message (player input, reset, etc.) is routed to whichever match the socket is currently assigned to
 			socket.on("message", (raw: RawData) => {
 				const currentMatch = socket.currentTournamentMatch || match;
-				handleGameMessages(raw, currentMatch);
+				handleGameMessages(raw, currentMatch, socket);
 			});
 
 			socket.on("close", () => {
