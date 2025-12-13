@@ -101,6 +101,7 @@ export async function renderGame(container: HTMLElement) {
 		modeParam === "tournament" || modeParam === "online" || modeParam === "local" ? modeParam : "local";
 	const roomId = params.get("id") || undefined;
 	const tournamentName = params.get("name") || undefined;
+	const displayName = params.get("displayName") || undefined;
 
 	console.log("GAME MODE =", mode, "ROOM ID =", roomId, "TOURNAMENT NAME =", tournamentName);
 
@@ -409,7 +410,7 @@ export async function renderGame(container: HTMLElement) {
 			? connectToLocalSingleGameWS(state)
 			: mode === "online"
 			? connectToSingleGameWS(state, roomId)
-			: connectToTournamentWS(state, roomId, tournamentName);
+			: connectToTournamentWS(state, roomId, tournamentName, displayName);
 
 	setupInputs();
 	const cleanupLoop = startGameLoop(canvas, state);

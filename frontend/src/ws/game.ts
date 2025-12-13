@@ -247,10 +247,18 @@ ws.addEventListener("close", (event) => {
 	return () => ws.close();
 }
 
-export function connectToTournamentWS(state: MatchState, roomId?: string, tournamentName?: string): () => void {
+export function connectToTournamentWS(state: MatchState, roomId?: string, tournamentName?: string, displayName?: string): () => void {
 	const targetRoomId = roomId ?? ROOM_ID;
-	// add tournament name as query parameter if provided
-	const nameParam = tournamentName ? `?name=${encodeURIComponent(tournamentName)}` : '';
+	// ANDY: add tournament name and display name as query parameters if provided
+	const queryParams = new URLSearchParams();
+	if (tournamentName) {
+		queryParams.set("name", tournamentName);
+	}
+	if (displayName) {
+		queryParams.set("displayName", displayName);
+	}
+	const queryString = queryParams.toString();
+	const nameParam = queryString ? `?${queryString}` : '';
 	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/tournament/${targetRoomId}/ws${nameParam}`;
 
 	const ws = new WebSocket(wsUrl);

@@ -125,6 +125,20 @@ export async function renderTournament(container: HTMLElement) {
 		nameLabel.appendChild(nameInput);
 		modalContent.appendChild(nameLabel);
 
+		// ANDY: Display name input field that allows the tournament creator to set a custom display name for themselves
+		const displayNameLabel = document.createElement("label");
+		displayNameLabel.className = "tournament-name-label";
+		displayNameLabel.textContent = t("tournaments.displayNameLabel");
+		
+		const displayNameInput = document.createElement("input");
+		displayNameInput.type = "text";
+		displayNameInput.className = "tournament-name-input";
+		displayNameInput.placeholder = t("tournaments.displayNamePlaceholder");
+		displayNameInput.maxLength = 30;
+		
+		displayNameLabel.appendChild(displayNameInput);
+		modalContent.appendChild(displayNameLabel);
+
 		// Button container
 		const buttonContainer = document.createElement("div");
 		buttonContainer.style.cssText = `
@@ -198,11 +212,15 @@ export async function renderTournament(container: HTMLElement) {
 					? `${me.username} Tournament`
 					: `Tournament ${tournamentId.slice(0, 8)}`;
 
+			// ANDY: get custom display name from input if provided, otherwise it will be empty and backend will use username
+			const customDisplayName = displayNameInput.value.trim();
+
 			modalOverlay.remove();
+			const displayNameParam = customDisplayName ? `&displayName=${encodeURIComponent(customDisplayName)}` : '';
 			navigate(
 				`#/game?mode=tournament&id=${tournamentId}&name=${encodeURIComponent(
 					tournamentName
-				)}`
+				)}${displayNameParam}`
 			);
 		};
 

@@ -36,6 +36,8 @@ export default {
     nameLabel: "Nom du tournoi",
     namePlaceholder: "Entrez le nom du tournoi (optionnel)",
     nameError: "Seuls les caractères alphanumériques sont autorisés",
+    displayNameLabel: "Votre nom d'affichage",
+    displayNamePlaceholder: "Entrez votre nom d'affichage (optionnel)",
   },
 
   auth: {

@@ -180,10 +180,12 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 
 		const tournament = getOrCreateTournament(tournamentId, tournamentName, tournamentSize, payload.username);
 
+			// ANDY: use custom display name from query parameter if provided, otherwise use username
+			const playerDisplayName = userDisplayName || socket.username;
 			const match = addPlayerToTournament({
 				tournament: tournament,
 				playerId: socket.username,
-				playerDisplayName: socket.username,
+				playerDisplayName: playerDisplayName,
 				socket: socket,
 			});
 			if (match) {

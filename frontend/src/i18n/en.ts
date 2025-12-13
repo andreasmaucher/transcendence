@@ -36,6 +36,8 @@ export default {
 		nameLabel: "Tournament Name",
 		namePlaceholder: "Enter tournament name (optional)",
 		nameError: "Only alphanumeric characters allowed",
+		displayNameLabel: "Your Display Name",
+		displayNamePlaceholder: "Enter your display name (optional)",
 	},
 
 	auth: {
