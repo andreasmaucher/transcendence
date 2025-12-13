@@ -28,6 +28,17 @@ export default {
     details: "Détails",
     join: "Rejoindre",
     failed: "Erreur de chargement.",
+    semiFinals: "Demi-finales",
+    finalMatch: "Finale",
+    thirdPlaceFinal: "3e Place + Finale",
+    roundComplete: "Round terminé",
+    tournamentFinished: "Tournoi terminé",
+    thirdPlaceDecided: "3e Place décidée",
+    nameLabel: "Nom du tournoi",
+    namePlaceholder: "Entrez le nom du tournoi (optionnel)",
+    nameError: "Seuls les caractères alphanumériques sont autorisés",
+    displayNameLabel: "Votre nom d'affichage",
+    displayNamePlaceholder: "Entrez votre nom d'affichage (optionnel)",
   },
 
   auth: {
