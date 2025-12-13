@@ -33,6 +33,9 @@ export default {
     roundComplete: "Round terminé",
     tournamentFinished: "Tournoi terminé",
     thirdPlaceDecided: "3e Place décidée",
+    nameLabel: "Nom du tournoi",
+    namePlaceholder: "Entrez le nom du tournoi (optionnel)",
+    nameError: "Seuls les caractères alphanumériques sont autorisés",
   },
 
   auth: {

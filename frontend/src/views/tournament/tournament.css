@@ -196,3 +196,51 @@
 .tournament-create-btn:active {
   transform: scale(0.97);
 }
+
+/* ==========================================================
+   Tournament name input (used in modal)
+========================================================== */
+
+.tournament-name-label {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: #9bd4ff;
+  font-size: 14px;
+  font-family: Orbitron, sans-serif;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.tournament-name-input {
+  background: rgba(10, 10, 10, 0.7);
+  border: 2px solid #ff2cfb;
+  padding: 14px 16px;
+  border-radius: 6px;
+  color: #ff6bff;
+  font-size: 16px;
+  font-family: Orbitron, sans-serif;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+
+  transition: 
+    border-color 0.2s ease,
+    box-shadow 0.25s ease,
+    transform 0.1s ease,
+    background-color 0.2s ease;
+}
+
+.tournament-name-input::placeholder {
+  color: #ff6bff66;
+  opacity: 0.6;
+}
+
+.tournament-name-input:focus {
+  border-color: #ff6bff;
+  background: rgba(10, 10, 10, 0.85);
+  box-shadow:
+    0 0 12px #ff6bff88,
+    0 0 20px #ff2cfb55;
+  transform: scale(1.01);
+}
