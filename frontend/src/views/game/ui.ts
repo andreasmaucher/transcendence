@@ -28,6 +28,31 @@ type RemoteChainResult =
 	  }
 	| { ok: false; error: string };
 
+type TournamentGameSaved = {
+	gameId: string;
+	round: number;
+	type?: string;
+	playerLeft: string;
+	playerRight: string;
+	scoreLeft: number;
+	scoreRight: number;
+	winner: string;
+	txHash?: string;
+	alreadySaved?: boolean;
+};
+
+type TournamentSavedData = {
+	tournamentId: string;
+	tournamentName?: string;
+	winner?: string;
+	games: TournamentGameSaved[];
+	txHashes: string[];
+};
+
+type TournamentChainResult =
+	| { ok: true; data: TournamentSavedData }
+	| { ok: false; error: string };
+
 let GAME_CONSTANTS: GameConstants | null = null;
 
 function createInitialState(): MatchState {
@@ -175,6 +200,42 @@ async function reportRemoteGameToBlockchain(matchId: string): Promise<RemoteChai
 		return {
 			ok: false,
 			error: "Network or server error while storing game stats on the blockchain.",
+		};
+	}
+}
+
+async function reportTournamentToBlockchain(tournamentId: string): Promise<TournamentChainResult> {
+	console.log("[BLOCKCHAIN] Sending tournament to backend /api/blockchain/tournament", { tournamentId });
+	try {
+		const res = await fetch("/api/blockchain/tournament", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			credentials: "include",
+			body: JSON.stringify({ tournamentId }),
+		});
+
+		const body = await res.json().catch(() => null);
+		if (!res.ok || !body?.success) {
+			console.error("[BLOCKCHAIN] Failed to write tournament", res.status, body);
+			const message = body?.message || body?.error || "Tournament could not be stored on the blockchain.";
+			return { ok: false, error: message };
+		}
+
+		const data: TournamentSavedData | undefined = body.data;
+		if (!data?.tournamentId || !Array.isArray(data.games)) {
+			console.warn("[BLOCKCHAIN] Tournament response success=true but missing expected data", body);
+			return {
+				ok: false,
+				error: "Tournament may be stored on-chain, but the server response was incomplete.",
+			};
+		}
+
+		return { ok: true, data };
+	} catch (err) {
+		console.error("[BLOCKCHAIN] Error calling /api/blockchain/tournament", err);
+		return {
+			ok: false,
+			error: "Network or server error while storing tournament stats on the blockchain.",
 		};
 	}
 }
@@ -581,6 +642,371 @@ export async function renderGame(container: HTMLElement) {
 		chainOverlay.style.display = "flex";
 	};
 
+	const showTournamentChainLoading = (options: { tournamentId: string; tournamentName?: string; winner?: string }) => {
+		chainCard.innerHTML = "";
+
+		const title = document.createElement("h2");
+		title.style.margin = "0 0 8px 0";
+		title.style.fontSize = "20px";
+		title.style.fontWeight = "700";
+		title.style.letterSpacing = "0.04em";
+		title.textContent = "Saving tournament to the blockchain";
+		title.style.color = "#9ad4ff";
+
+		const summary = document.createElement("p");
+		summary.style.margin = "0 0 10px 0";
+		summary.style.fontSize = "14px";
+		summary.style.opacity = "0.9";
+		summary.textContent = "Please wait while tournament results are written to the smart contract.";
+
+		const meta = document.createElement("div");
+		meta.style.marginBottom = "14px";
+		meta.style.fontSize = "13px";
+		meta.style.opacity = "0.9";
+		meta.innerHTML = `
+			<div><strong>Tournament:</strong> ${options.tournamentName ?? options.tournamentId}</div>
+			<div><strong>ID:</strong> ${options.tournamentId}</div>
+			<div><strong>Winner:</strong> ${options.winner ?? "Unknown"}</div>
+		`;
+
+		const loadingLine = document.createElement("div");
+		loadingLine.style.marginTop = "8px";
+		loadingLine.style.fontSize = "13px";
+		loadingLine.style.opacity = "0.85";
+		loadingLine.textContent = "Submitting tournament transactions to the blockchain...";
+
+		const buttonsRow = document.createElement("div");
+		buttonsRow.style.display = "flex";
+		buttonsRow.style.justifyContent = "flex-end";
+		buttonsRow.style.gap = "8px";
+
+		const backBtn = document.createElement("button");
+		backBtn.textContent = "Back to menu";
+		backBtn.style.padding = "6px 14px";
+		backBtn.style.borderRadius = "6px";
+		backBtn.style.border = "1px solid rgba(255,255,255,0.35)";
+		backBtn.style.background = "rgba(15,15,30,0.9)";
+		backBtn.style.color = "#fdfdff";
+		backBtn.style.cursor = "pointer";
+		backBtn.onclick = () => {
+			navigate("#/menu");
+		};
+
+		buttonsRow.append(backBtn);
+		chainCard.append(title, summary, meta, loadingLine, buttonsRow);
+		chainOverlay.style.display = "flex";
+	};
+
+	const showTournamentChainResult = (
+		result: TournamentChainResult,
+		fallback: { tournamentId: string; tournamentName?: string; winner?: string }
+	) => {
+		chainCard.innerHTML = "";
+
+		const title = document.createElement("h2");
+		title.style.margin = "0 0 8px 0";
+		title.style.fontSize = "20px";
+		title.style.fontWeight = "700";
+		title.style.letterSpacing = "0.04em";
+
+		const summary = document.createElement("p");
+		summary.style.margin = "0 0 10px 0";
+		summary.style.fontSize = "14px";
+		summary.style.opacity = "0.9";
+
+		const data = result.ok ? result.data : undefined;
+		const tournamentId = data?.tournamentId ?? fallback.tournamentId;
+		const tournamentName = data?.tournamentName ?? fallback.tournamentName;
+		const winner = data?.winner ?? fallback.winner;
+
+		const meta = document.createElement("div");
+		meta.style.marginBottom = "12px";
+		meta.style.fontSize = "13px";
+		meta.style.opacity = "0.9";
+		meta.innerHTML = `
+			<div><strong>Tournament:</strong> ${tournamentName ?? tournamentId}</div>
+			<div><strong>ID:</strong> ${tournamentId}</div>
+			<div><strong>Winner:</strong> ${winner ?? "Unknown"}</div>
+		`;
+
+		if (result.ok) {
+			title.textContent = "Tournament saved to the blockchain";
+			title.style.color = "#7dffb2";
+			summary.textContent = "Tournament results have been written to the smart contract.";
+		} else {
+			title.textContent = "Could not store tournament on the blockchain";
+			title.style.color = "#ff9a9a";
+			summary.textContent = result.error || "Tournament finished normally, but the blockchain write failed.";
+		}
+
+		const gamesWrap = document.createElement("div");
+		gamesWrap.style.marginBottom = "14px";
+		gamesWrap.style.fontSize = "13px";
+		gamesWrap.style.opacity = "0.95";
+		gamesWrap.style.maxHeight = "220px";
+		gamesWrap.style.overflow = "auto";
+		gamesWrap.style.border = "1px solid rgba(255,255,255,0.12)";
+		gamesWrap.style.borderRadius = "8px";
+		gamesWrap.style.padding = "10px";
+		gamesWrap.style.background = "rgba(0,0,0,0.18)";
+
+		const games = data?.games ?? [];
+		if (!games.length) {
+			gamesWrap.textContent = result.ok ? "No tournament games found to save." : "";
+		} else {
+			for (const g of games) {
+				const row = document.createElement("div");
+				row.style.padding = "8px 0";
+				row.style.borderBottom = "1px solid rgba(255,255,255,0.08)";
+
+				const header = document.createElement("div");
+				header.style.fontWeight = "600";
+				header.textContent = `Round ${g.round}${g.type ? ` • ${g.type}` : ""}`;
+
+				const line1 = document.createElement("div");
+				line1.textContent = `${g.playerLeft} vs ${g.playerRight}`;
+
+				const line2 = document.createElement("div");
+				line2.textContent = `Score: ${g.scoreLeft}-${g.scoreRight} • Winner: ${g.winner}`;
+
+				const txLine = document.createElement("div");
+				txLine.style.marginTop = "4px";
+				if (g.txHash) {
+					if (SNOWTRACE_TX_BASE) {
+						const link = document.createElement("a");
+						link.href = `${SNOWTRACE_TX_BASE.replace(/\/+$/, "")}/${g.txHash}`;
+						link.target = "_blank";
+						link.rel = "noreferrer";
+						link.style.color = "#9ad4ff";
+						link.style.textDecoration = "none";
+						link.style.fontWeight = "500";
+						link.textContent = `View tx on Snowtrace (${g.txHash})`;
+						txLine.append(link);
+					} else {
+						txLine.textContent = `Tx hash: ${g.txHash}`;
+					}
+				} else if (g.alreadySaved) {
+					txLine.textContent = "Already saved on-chain (tx hash unavailable).";
+				} else {
+					txLine.textContent = result.ok ? "No tx hash returned for this game." : "";
+				}
+
+				row.append(header, line1, line2, txLine);
+				gamesWrap.append(row);
+			}
+			// remove border on last child
+			const last = gamesWrap.lastElementChild as HTMLElement | null;
+			if (last) last.style.borderBottom = "none";
+		}
+
+		const buttonsRow = document.createElement("div");
+		buttonsRow.style.display = "flex";
+		buttonsRow.style.justifyContent = "flex-end";
+		buttonsRow.style.gap = "8px";
+
+		const backBtn = document.createElement("button");
+		backBtn.textContent = "Back to menu";
+		backBtn.style.padding = "6px 14px";
+		backBtn.style.borderRadius = "6px";
+		backBtn.style.border = "1px solid rgba(255,255,255,0.35)";
+		backBtn.style.background = "rgba(15,15,30,0.9)";
+		backBtn.style.color = "#fdfdff";
+		backBtn.style.cursor = "pointer";
+		backBtn.onclick = () => {
+			navigate("#/menu");
+		};
+		buttonsRow.append(backBtn);
+
+		chainCard.append(title, summary, meta, gamesWrap, buttonsRow);
+		chainOverlay.style.display = "flex";
+	};
+
+	const showTournamentMatchChainLoading = (data: {
+		tournamentId: string;
+		matchId: string;
+		gameIndex: number;
+		playerLeft: string;
+		playerRight: string;
+		scoreLeft: number;
+		scoreRight: number;
+		winner: string;
+	}) => {
+		chainCard.innerHTML = "";
+
+		const title = document.createElement("h2");
+		title.style.margin = "0 0 8px 0";
+		title.style.fontSize = "20px";
+		title.style.fontWeight = "700";
+		title.style.letterSpacing = "0.04em";
+		title.textContent = "Saving tournament match to the blockchain";
+		title.style.color = "#9ad4ff";
+
+		const summary = document.createElement("p");
+		summary.style.margin = "0 0 10px 0";
+		summary.style.fontSize = "14px";
+		summary.style.opacity = "0.9";
+		summary.textContent = "Please wait while match stats are written to the smart contract.";
+
+		const round = Math.floor((data.gameIndex ?? 0) / 100);
+		const matchNo = (data.gameIndex ?? 0) % 100;
+		const positionLabel = round > 0 ? `Round ${round} • Match ${matchNo}` : `Index ${data.gameIndex}`;
+
+		const meta = document.createElement("div");
+		meta.style.marginBottom = "14px";
+		meta.style.fontSize = "13px";
+		meta.style.opacity = "0.9";
+		meta.innerHTML = `
+			<div><strong>Tournament:</strong> ${data.tournamentId}</div>
+			<div><strong>Match:</strong> ${data.matchId}</div>
+			<div><strong>Position:</strong> ${positionLabel}</div>
+			<div><strong>Players:</strong> ${data.playerLeft} vs ${data.playerRight}</div>
+			<div><strong>Final score:</strong> ${data.scoreLeft} - ${data.scoreRight}</div>
+			<div><strong>Winner:</strong> ${data.winner}</div>
+		`;
+
+		const loadingLine = document.createElement("div");
+		loadingLine.style.marginTop = "8px";
+		loadingLine.style.fontSize = "13px";
+		loadingLine.style.opacity = "0.85";
+		loadingLine.textContent = "Submitting transaction to the blockchain...";
+
+		const buttonsRow = document.createElement("div");
+		buttonsRow.style.display = "flex";
+		buttonsRow.style.justifyContent = "flex-end";
+		buttonsRow.style.gap = "8px";
+
+		const closeBtn = document.createElement("button");
+		closeBtn.textContent = "Close";
+		closeBtn.style.padding = "6px 14px";
+		closeBtn.style.borderRadius = "6px";
+		closeBtn.style.border = "1px solid rgba(255,255,255,0.35)";
+		closeBtn.style.background = "rgba(15,15,30,0.9)";
+		closeBtn.style.color = "#fdfdff";
+		closeBtn.style.cursor = "pointer";
+		closeBtn.onclick = () => {
+			chainOverlay.style.display = "none";
+		};
+		buttonsRow.append(closeBtn);
+
+		chainCard.append(title, summary, meta, loadingLine, buttonsRow);
+		chainOverlay.style.display = "flex";
+	};
+
+	const showTournamentMatchChainResult = (
+		result:
+			| {
+				ok: true;
+				data: {
+					tournamentId: string;
+					matchId: string;
+					gameIndex: number;
+					playerLeft: string;
+					playerRight: string;
+					scoreLeft: number;
+					scoreRight: number;
+					winner: string;
+					txHash?: string;
+					alreadySaved?: boolean;
+				};
+			}
+			| { ok: false; error: string; data: { tournamentId: string; matchId: string; gameIndex: number } }
+	) => {
+		chainCard.innerHTML = "";
+
+		const title = document.createElement("h2");
+		title.style.margin = "0 0 8px 0";
+		title.style.fontSize = "20px";
+		title.style.fontWeight = "700";
+		title.style.letterSpacing = "0.04em";
+
+		const summary = document.createElement("p");
+		summary.style.margin = "0 0 10px 0";
+		summary.style.fontSize = "14px";
+		summary.style.opacity = "0.9";
+
+		const data = result.data;
+		const round = Math.floor((data.gameIndex ?? 0) / 100);
+		const matchNo = (data.gameIndex ?? 0) % 100;
+		const positionLabel = round > 0 ? `Round ${round} • Match ${matchNo}` : `Index ${data.gameIndex}`;
+
+		const meta = document.createElement("div");
+		meta.style.marginBottom = "14px";
+		meta.style.fontSize = "13px";
+		meta.style.opacity = "0.9";
+		meta.innerHTML = `
+			<div><strong>Tournament:</strong> ${data.tournamentId}</div>
+			<div><strong>Match:</strong> ${data.matchId}</div>
+			<div><strong>Position:</strong> ${positionLabel}</div>
+		`;
+
+		if (result.ok) {
+			title.textContent = "Match saved to the blockchain";
+			title.style.color = "#7dffb2";
+			summary.textContent = "Tournament match stats have been written to the smart contract.";
+
+			const details = document.createElement("div");
+			details.style.marginBottom = "12px";
+			details.style.fontSize = "13px";
+			details.style.opacity = "0.95";
+			details.innerHTML = `
+				<div><strong>Players:</strong> ${result.data.playerLeft} vs ${result.data.playerRight}</div>
+				<div><strong>Final score:</strong> ${result.data.scoreLeft} - ${result.data.scoreRight}</div>
+				<div><strong>Winner:</strong> ${result.data.winner}</div>
+			`;
+
+			const txLine = document.createElement("div");
+			txLine.style.marginBottom = "12px";
+			txLine.style.fontSize = "13px";
+			if (result.data.txHash) {
+				txLine.textContent = `Tx hash: ${result.data.txHash}`;
+				if (SNOWTRACE_TX_BASE) {
+					const link = document.createElement("a");
+					link.href = `${SNOWTRACE_TX_BASE.replace(/\/+$/, "")}/${result.data.txHash}`;
+					link.target = "_blank";
+					link.rel = "noreferrer";
+					link.style.display = "inline-block";
+					link.style.marginLeft = "10px";
+					link.style.color = "#9ad4ff";
+					link.style.textDecoration = "none";
+					link.style.fontWeight = "500";
+					link.textContent = "View on Snowtrace";
+					txLine.append(link);
+				}
+			} else if ((result.data as any).alreadySaved) {
+				txLine.textContent = "Already saved on-chain (tx hash unavailable).";
+			} else {
+				txLine.textContent = "No tx hash returned for this match.";
+			}
+
+			chainCard.append(title, summary, meta, details, txLine);
+		} else {
+			title.textContent = "Could not store match on the blockchain";
+			title.style.color = "#ff9a9a";
+			summary.textContent = result.error || "Tournament match finished normally, but the blockchain write failed.";
+			chainCard.append(title, summary, meta);
+		}
+
+		const buttonsRow = document.createElement("div");
+		buttonsRow.style.display = "flex";
+		buttonsRow.style.justifyContent = "flex-end";
+		buttonsRow.style.gap = "8px";
+
+		const closeBtn = document.createElement("button");
+		closeBtn.textContent = "Close";
+		closeBtn.style.padding = "6px 14px";
+		closeBtn.style.borderRadius = "6px";
+		closeBtn.style.border = "1px solid rgba(255,255,255,0.35)";
+		closeBtn.style.background = "rgba(15,15,30,0.9)";
+		closeBtn.style.color = "#fdfdff";
+		closeBtn.style.cursor = "pointer";
+		closeBtn.onclick = () => {
+			chainOverlay.style.display = "none";
+		};
+		buttonsRow.append(closeBtn);
+		chainCard.append(buttonsRow);
+		chainOverlay.style.display = "flex";
+	};
+
 	// register UI handlers for WS events
 	registerGameUiHandlers({
 		waitingForPlayers: () => {
@@ -599,6 +1025,28 @@ export async function renderGame(container: HTMLElement) {
 		},
 		startGame: () => {
 			waitingOverlay.style.display = "none";
+		},
+		tournamentFinished: (data) => {
+			if (mode !== "tournament") return;
+			// Tournament matches are now saved on-chain automatically by the backend
+			// after each game finishes, to avoid blocking the next match while tx is pending.
+			console.log("[BLOCKCHAIN] Tournament finished; backend already saved matches on-chain", data);
+		},
+		tournamentMatchSaveStarted: (data) => {
+			if (mode !== "tournament") return;
+			showTournamentMatchChainLoading(data);
+		},
+		tournamentMatchSaved: (data) => {
+			if (mode !== "tournament") return;
+			showTournamentMatchChainResult({ ok: true, data });
+		},
+		tournamentMatchSaveFailed: (data) => {
+			if (mode !== "tournament") return;
+			showTournamentMatchChainResult({
+				ok: false,
+				error: data?.error || "Tournament match save failed",
+				data: { tournamentId: data?.tournamentId, matchId: data?.matchId, gameIndex: data?.gameIndex },
+			});
 		},
 
 		// game over handler – trigger blockchain write and show overlay for local + online games

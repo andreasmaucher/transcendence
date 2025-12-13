@@ -12,6 +12,31 @@ let waitingForPlayers: () => void = () => {};
 let countdownToGame: (n: number, side?: "left" | "right") => void = () => {};
 let startGame: () => void = () => {};
 let tournamentMatchType: (type: string, round: number) => void = () => {};
+let tournamentMatchSaveStarted: (data: {
+	tournamentId: string;
+	matchId: string;
+	gameIndex: number;
+	playerLeft: string;
+	playerRight: string;
+	scoreLeft: number;
+	scoreRight: number;
+	winner: string;
+}) => void = () => {};
+let tournamentMatchSaved: (data: {
+	tournamentId: string;
+	matchId: string;
+	gameIndex: number;
+	playerLeft: string;
+	playerRight: string;
+	scoreLeft: number;
+	scoreRight: number;
+	winner: string;
+	txHash?: string;
+	alreadySaved?: boolean;
+}) => void = () => {};
+let tournamentMatchSaveFailed: (data: { tournamentId: string; matchId: string; gameIndex: number; error: string }) =>
+	void = () => {};
+let tournamentFinished: (data: { tournamentId: string; name?: string; winner?: string }) => void = () => {};
 let gameOver: (state: MatchState) => void = () => {};
 
 // function that registers the UI handlers (replaces the no-op functions above with the actual handlers)
@@ -20,12 +45,45 @@ export function registerGameUiHandlers(handlers: {
 	countdownToGame?: (n: number, side?: "left" | "right") => void;
 	startGame?: () => void;
 	tournamentMatchType?: (type: string, round: number) => void;
+	tournamentMatchSaveStarted?: (data: {
+		tournamentId: string;
+		matchId: string;
+		gameIndex: number;
+		playerLeft: string;
+		playerRight: string;
+		scoreLeft: number;
+		scoreRight: number;
+		winner: string;
+	}) => void;
+	tournamentMatchSaved?: (data: {
+		tournamentId: string;
+		matchId: string;
+		gameIndex: number;
+		playerLeft: string;
+		playerRight: string;
+		scoreLeft: number;
+		scoreRight: number;
+		winner: string;
+		txHash?: string;
+		alreadySaved?: boolean;
+	}) => void;
+	tournamentMatchSaveFailed?: (data: {
+		tournamentId: string;
+		matchId: string;
+		gameIndex: number;
+		error: string;
+	}) => void;
+	tournamentFinished?: (data: { tournamentId: string; name?: string; winner?: string }) => void;
 	gameOver?: (state: MatchState) => void;
 }) {
 	if (handlers.waitingForPlayers) waitingForPlayers = handlers.waitingForPlayers;
 	if (handlers.countdownToGame) countdownToGame = handlers.countdownToGame;
 	if (handlers.startGame) startGame = handlers.startGame;
 	if (handlers.tournamentMatchType) tournamentMatchType = handlers.tournamentMatchType;
+	if (handlers.tournamentMatchSaveStarted) tournamentMatchSaveStarted = handlers.tournamentMatchSaveStarted;
+	if (handlers.tournamentMatchSaved) tournamentMatchSaved = handlers.tournamentMatchSaved;
+	if (handlers.tournamentMatchSaveFailed) tournamentMatchSaveFailed = handlers.tournamentMatchSaveFailed;
+	if (handlers.tournamentFinished) tournamentFinished = handlers.tournamentFinished;
 	if (handlers.gameOver) gameOver = handlers.gameOver;
 }
 
@@ -52,7 +110,6 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 		try {
 			parsed = JSON.parse(event.data);
 		} catch {
-			return; // ignore invalid JSON
 		}
 
 		if (!parsed || typeof parsed !== "object") return;
@@ -231,7 +288,6 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 		queueInput("right", "stop");
 		flushInputs();
 	});
-
 	ws.addEventListener("message", (event) => {
 		let parsed: any;
 
@@ -241,11 +297,33 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 			return; // ignore invalid JSON
 		}
 
-		if (!parsed || typeof parsed !== "object") return;
 
 		const payload = parsed as Payload;
 
 		switch (payload.type) {
+			case "tournament-match-save-started": {
+				tournamentMatchSaveStarted((payload as any).data);
+				break;
+			}
+			case "tournament-match-saved": {
+				tournamentMatchSaved((payload as any).data);
+				break;
+			}
+			case "tournament-match-save-failed": {
+				tournamentMatchSaveFailed((payload as any).data);
+				break;
+			}
+		switch (payload.type) {
+			case "tournament-finished": {
+				const data = (payload as any).data;
+				tournamentFinished({
+					tournamentId: data?.tournamentId,
+					name: data?.name,
+					winner: data?.winner,
+				});
+				break;
+			}
+
 			case "match-assigned": {
 				// server tells us which side we're playing on
 				const data = (payload as any).data;
@@ -299,7 +377,7 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 
 			default:
 				console.warn("[WS] Unknown payload:", payload);
-				break;
+		}
 		}
 	});
 

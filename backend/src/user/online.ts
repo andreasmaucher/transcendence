@@ -13,30 +13,35 @@ export function isUserOnline(username: string): boolean {
 // Add user to the usersOnline map structure (if not already there)
 export function addUserOnline(username: string, socket: WebSocket): User | undefined {
 	const userDB = getUserByUsernameDB(username);
-	if (userDB && !isUserOnline(userDB.username)) {
-		const user: User = {
-			username: userDB.username,
-			provider: userDB.provider,
-			providerId: userDB.provider_id,
-			avatar: userDB.avatar,
-			userWS: socket,
-			isAlive: true,
-			//friends: JSON.parse(userDB.friends),
-			//blocked: JSON.parse(userDB.blocked),
-			createdAt: userDB.created_at,
-		};
+	if (!userDB) return undefined;
 
-		if (usersOnline.has(user.username)) {
-			console.log("USER ALREADY ONLINE → will disconnect previous socket");
-		}
-		usersOnline.set(user.username, user);
+	const existing = usersOnline.get(userDB.username);
+	if (existing?.userWS && existing.userWS !== socket) {
+		console.log(`USER ALREADY ONLINE → replacing socket for ${userDB.username}`);
+		try {
+			existing.userWS.close(4000, "Replaced by new connection");
+		} catch {}
+	}
+
+	const user: User = {
+		username: userDB.username,
+		provider: userDB.provider,
+		providerId: userDB.provider_id,
+		avatar: userDB.avatar,
+		userWS: socket,
+		isAlive: true,
+		createdAt: userDB.created_at,
+	};
+
+	const wasOnline = usersOnline.has(user.username);
+	usersOnline.set(user.username, user);
+	if (!wasOnline) {
 		console.log(`User ${user.username} is now online`);
-
 		// Notify that user is online to other online users
 		userBroadcast("user-online", { username: user.username });
+	}
 
-		return user;
-	} else return undefined;
+	return user;
 }
 
 // Add the game socket and the game id to the userOnline structure
@@ -78,8 +83,15 @@ export function updateUserOnline({
 }
 
 // Remove user from usersOnline map structure
-export function removeUserOnline(username: string) {
+
+export function removeUserOnline(username: string, socket?: WebSocket) {
 	if (!isUserOnline(username)) return;
+
+	if (socket) {
+		const current = usersOnline.get(username);
+		// Only remove if the closing socket is still the active one
+		if (current?.userWS && current.userWS !== socket) return;
+	}
 
 	usersOnline.delete(username);
 	console.log(`User ${username} is now offline`);

@@ -2,6 +2,7 @@ import type { Tournament } from "../types/game.js";
 import { tournaments } from "../config/structures.js";
 import { checkMatchFull, createMatch } from "./matchManager.js";
 import { Match, TournamentMatchType } from "../types/match.js";
+import crypto from "crypto";
 
 export function resetTournamentsForTest(): void {
 	tournaments.clear();

@@ -53,7 +53,10 @@ export async function renderTournament(container: HTMLElement) {
     // generate a unique tournament ID and name
     const tournamentId = self.crypto?.randomUUID?.() || Math.random().toString(36).slice(2);
     const me = await fetchMe();
-    const tournamentName = me ? `${me.username} Tournament` : `Tournament ${tournamentId.slice(0, 8)}`;
+    // Backend DB schema enforces UNIQUE tournament names; include an id suffix to avoid collisions.
+    const tournamentName = me
+      ? `${me.username} Tournament ${tournamentId.slice(0, 8)}`
+      : `Tournament ${tournamentId.slice(0, 8)}`;
     // navigate to game view in tournament mode (name will be passed via query params)
     navigate(`#/game?mode=tournament&id=${tournamentId}&name=${encodeURIComponent(tournamentName)}`);
   };

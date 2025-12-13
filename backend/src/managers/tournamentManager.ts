@@ -26,10 +26,15 @@ import { createTournamentPlayerDB } from "../database/tournament_players/setters
 export function getOrCreateTournament(id: string, name?: string, size?: number): Tournament {
 	let tournament = tournaments.get(id);
 	if (!tournament) {
+		// DB schema requires a non-null, UNIQUE tournament name.
+		// Default and/or disambiguate with a short id suffix so repeated creations don't fail.
+		const nameBase = (name && name.trim().length > 0 ? name.trim() : "Tournament").slice(0, 64);
+		const safeName = `${nameBase} ${id.slice(0, 8)}`;
+
 		// use the provided id from URL so players can find each other
 		tournament = {
 			id: id,
-			name: name,
+			name: safeName,
 			isRunning: false,
 			state: createInitialTournamentState(size || 4),
 			matches: new Map<number, Match[]>(),
@@ -37,10 +42,9 @@ export function getOrCreateTournament(id: string, name?: string, size?: number):
 		} as Tournament;
 
 		try {
-			// Add new tournament to database (without starting it)
+			// Create tournament row first so subsequent match inserts don't violate the foreign key.
+			// If this fails because the tournament already exists, we still proceed with in-memory setup.
 			createTournamentDB(tournament.id, tournament.name, tournament.state.size);
-			const matches = initTournamentMatches(tournament, tournament.state.size);
-			tournament.matches.set(1, matches);
 			console.log(`[TM] Starting 5-minute timeout for tournament ${tournament.id}`);
 
 			// Set timer to wait for players
@@ -70,6 +74,12 @@ export function getOrCreateTournament(id: string, name?: string, size?: number):
 		} catch (error: any) {
 			console.error("[TM]", error.message);
 		}
+
+		// Always initialize in-memory matches so the tournament can be discovered via /api/tournaments/open
+		// even if DB insert fails (e.g., name uniqueness constraint).
+		const matches = initTournamentMatches(tournament, tournament.state.size);
+		tournament.matches.set(1, matches);
+
 		tournaments.set(id, tournament);
 	}
 	return tournament;
@@ -303,9 +313,30 @@ export function endTournament(tournament: Tournament) {
 		return;
 	}
 
-	endTournamentDB(tournament.id, finalMatch.state.winner);
+	const winnerSide = finalMatch.state.isOver
+		? finalMatch.state.winner
+		: finalMatch.lastResult?.winnerSide ?? finalMatch.state.winner;
+	const winnerUsername =
+		winnerSide === "left" ? finalMatch.players.left : winnerSide === "right" ? finalMatch.players.right : undefined;
+
+	endTournamentDB(tournament.id, winnerSide);
 	tournament.state.isRunning = false;
 	tournament.state.isOver = true;
+
+	// Notify all tournament participants (not just the final match) that the tournament is finished.
+	for (const client of tournament.clients) {
+		try {
+			client.send(
+				buildPayload("tournament-finished", {
+					tournamentId: tournament.id,
+					name: tournament.name,
+					winner: winnerUsername,
+				} as any)
+			);
+		} catch {
+			// ignore send errors
+		}
+	}
 }
 
 export function forfeitTournament(tournamentId: string, playerId: string) {

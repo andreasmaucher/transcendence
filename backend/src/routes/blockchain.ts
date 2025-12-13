@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { isBlockchainConfigured, saveMatchOnChain } from "../config/blockchain.js";
 import { getMatchInSingleGame } from "../managers/singleGameManager.js";
+import { getTournament } from "../managers/tournamentManagerHelpers.js";
 
 type RemoteSavedData = {
 	txHash: string;
@@ -17,6 +18,30 @@ type RemoteSavedData = {
 const remoteSaveCache = new Map<string, RemoteSavedData>();
 const remoteSaveInflight = new Map<string, Promise<RemoteSavedData>>();
 
+type TournamentGameSaved = {
+	gameId: string;
+	round: number;
+	type?: string;
+	playerLeft: string;
+	playerRight: string;
+	scoreLeft: number;
+	scoreRight: number;
+	winner: string;
+	txHash?: string;
+	alreadySaved?: boolean;
+};
+
+type TournamentSavedData = {
+	tournamentId: string;
+	tournamentName?: string;
+	winner?: string;
+	games: TournamentGameSaved[];
+	txHashes: string[];
+};
+
+const tournamentSaveCache = new Map<string, TournamentSavedData>();
+const tournamentSaveInflight = new Map<string, Promise<TournamentSavedData>>();
+
 type LocalGameBody = {
 	player1: string;
 	player2: string;
@@ -28,6 +53,10 @@ type LocalGameBody = {
 
 type RemoteGameBody = {
 	matchId: string;
+};
+
+type TournamentBody = {
+	tournamentId: string;
 };
 
 export default async function blockchainRoutes(app: FastifyInstance) {
@@ -228,5 +257,18 @@ export default async function blockchainRoutes(app: FastifyInstance) {
 		} finally {
 			remoteSaveInflight.delete(body.matchId);
 		}
+	});
+
+	app.post("/api/blockchain/tournament", async (request: FastifyRequest, reply: FastifyReply) => {
+		// Deprecated: tournament matches are now saved incrementally by the backend after each match ends.
+		// Keeping this endpoint so older frontends don't trigger a burst of transactions at tournament end.
+		const body = request.body as TournamentBody;
+		return reply.code(410).send({
+			success: false,
+			error: "TOURNAMENT_SAVE_DEPRECATED",
+			message:
+				"Tournament saving is now performed automatically by the backend after each match finishes. No end-of-tournament batch save is required.",
+			data: { tournamentId: body?.tournamentId },
+		});
 	});
 }

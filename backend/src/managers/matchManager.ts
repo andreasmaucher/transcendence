@@ -13,6 +13,7 @@ import { isRoundOver, isTournamentOver } from "./tournamentManagerHelpers.js";
 import { endTournament, forfeitTournament, goToNextRound } from "./tournamentManager.js";
 import { Match, TournamentMatchInfo, TournamentMatchType } from "../types/match.js";
 import { buildPayload, gameBroadcast } from "../transport/broadcaster.js";
+import { triggerTournamentMatchSave } from "../blockchain/tournamentMatchSaver.js";
 
 // Set the starting state of the tournament match info
 export function initTournamentMatchInfo(
@@ -117,29 +118,37 @@ export function endMatch(match: Match) {
 	if (!match.tournament) return;
 	const tournament = tournaments.get(match.tournament.id);
 	if (!tournament) return;
+	// Save this finished tournament match on-chain asynchronously.
+	// Important: do not await, so the next match can start immediately even if the tx is pending.
+	triggerTournamentMatchSave(match, tournament);
 	if (isTournamentOver(tournament)) endTournament(tournament);
 	else if (isRoundOver(tournament)) goToNextRound(tournament);
 }
 
 // Add player to open match
 export function addPlayerToMatch(match: Match, playerId: string) {
-	try {
-		// ANDY: had to update in-memory object here since checkMatchFull was returning undefined
-		// previously it only updated the database but did not update the in-memory match.players object
-		if (!match.players.left) {
+	// Always update in-memory assignment even if DB write fails.
+	// The in-memory state is the source of truth for gameplay and lobby counts.
+	if (!match.players.left) {
+		match.players.left = playerId;
+		try {
 			addPlayerMatchDB(match.id, playerId, "left");
-			match.players.left = playerId; // Update in-memory object
-		} else if (!match.players.right) {
+		} catch (error: any) {
+			console.error("[MM]", error.message);
+		}
+	} else if (!match.players.right) {
+		match.players.right = playerId;
+		try {
 			addPlayerMatchDB(match.id, playerId, "right");
-			match.players.right = playerId; // Update in-memory object
-		} else {
-			return; // Temporary error handling, match full
+		} catch (error: any) {
+			console.error("[MM]", error.message);
 		}
-		if (match.singleGameId && checkMatchFull(match)) {
-			startGameCountdown(match);
-		}
-	} catch (error: any) {
-		console.error("[MM]", error.message);
+	} else {
+		return; // match full
+	}
+
+	if (match.singleGameId && checkMatchFull(match)) {
+		startGameCountdown(match);
 	}
 }
 

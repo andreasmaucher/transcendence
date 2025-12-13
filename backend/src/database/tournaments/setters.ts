@@ -58,6 +58,6 @@ export function forfeitTournamentDB(id: string, playerId: string) {
 }
 
 export function removeTournamentDB(id: string): void {
-	const stmt = db.prepare("DELETE FROM users WHERE id = ?");
+	const stmt = db.prepare("DELETE FROM tournaments WHERE id = ?");
 	stmt.run(id);
 }

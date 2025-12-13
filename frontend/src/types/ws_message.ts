@@ -15,7 +15,17 @@ export type BackendStateMessage = {
 	playerRight?: string;
 };
 
-export type PayloadTypes = "state" | "waiting" | "countdown" | "start" | "chat";
+export type PayloadTypes =
+	| "state"
+	| "waiting"
+	| "countdown"
+	| "start"
+	| "chat"
+	| "match-assigned"
+	| "tournament-finished"
+	| "tournament-match-save-started"
+	| "tournament-match-saved"
+	| "tournament-match-save-failed";
 export type PayloadDataTypes = { value: number } | BackendStateMessage | undefined;
 
 export type Payload = {

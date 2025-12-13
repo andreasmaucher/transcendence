@@ -37,7 +37,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 		});
 
 		socket.on("close", () => {
-			removeUserOnline(socket.username);
+			removeUserOnline(socket.username, socket);
 		});
 	});
 
