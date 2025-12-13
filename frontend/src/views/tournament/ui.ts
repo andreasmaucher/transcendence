@@ -53,6 +53,165 @@ export async function renderTournament(container: HTMLElement) {
 	list.className = "tournament-list";
 	box.append(list);
 
+	// ANDY: Function to show modal for joining a tournament with custom display name
+	// Modal appears when user clicks "Join" button on a tournament
+	function showJoinTournamentModal(tournamentId: string, tournamentName?: string) {
+		// Create modal overlay (full screen dark background)
+		const modalOverlay = document.createElement("div");
+		modalOverlay.className = "tournament-modal-overlay";
+		modalOverlay.style.cssText = `
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background-color: rgba(0, 0, 0, 0.75);
+			z-index: 1000;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		`;
+		
+		// Close modal when clicking outside of it
+		modalOverlay.onclick = () => {
+			modalOverlay.remove();
+		};
+
+		// Create modal content box
+		const modalContent = document.createElement("div");
+		modalContent.className = "tournament-modal-content";
+		modalContent.style.cssText = `
+			background: rgba(0, 0, 0, 0.6);
+			backdrop-filter: blur(8px);
+			padding: 32px;
+			border-radius: 12px;
+			border: 2px solid #ff2cfb;
+			box-shadow:
+				0 0 20px #ff6bff66,
+				0 0 30px #ff2cfb55,
+				inset 0 0 18px #ff2cfb22;
+			max-width: 480px;
+			width: 90%;
+			color: #ff6bff;
+			font-family: Orbitron, sans-serif;
+		`;
+		
+		// Prevent modal from closing when clicking inside it
+		modalContent.onclick = (e) => e.stopPropagation();
+
+		// Modal title
+		const modalTitle = document.createElement("h2");
+		modalTitle.className = "tournament-modal-title";
+		modalTitle.textContent = tournamentName || `Join Tournament`;
+		modalTitle.style.cssText = `
+			margin: 0 0 20px 0;
+			font-size: 24px;
+			font-weight: 700;
+			color: #ff2cfb;
+			text-shadow: 0 0 10px #ff6bff;
+		`;
+		modalContent.appendChild(modalTitle);
+
+		// ANDY: Display name input field that allows the player to set a custom display name for themselves
+		const displayNameLabel = document.createElement("label");
+		displayNameLabel.className = "tournament-name-label";
+		displayNameLabel.textContent = t("tournaments.displayNameLabel");
+		
+		const displayNameInput = document.createElement("input");
+		displayNameInput.type = "text";
+		displayNameInput.className = "tournament-name-input";
+		displayNameInput.placeholder = t("tournaments.displayNamePlaceholder");
+		displayNameInput.maxLength = 30;
+		
+		displayNameLabel.appendChild(displayNameInput);
+		modalContent.appendChild(displayNameLabel);
+
+		// Button container
+		const buttonContainer = document.createElement("div");
+		buttonContainer.style.cssText = `
+			display: flex;
+			gap: 12px;
+			margin-top: 24px;
+			justify-content: flex-end;
+		`;
+
+		// Cancel button
+		const cancelBtn = document.createElement("button");
+		cancelBtn.textContent = t("tournaments.back");
+		cancelBtn.style.cssText = `
+			padding: 10px 16px;
+			font-size: 14px;
+			font-weight: bold;
+			border: 2px solid #ff2cfb;
+			border-radius: 6px;
+			background: rgba(10,10,10,0.55);
+			backdrop-filter: blur(5px);
+			color: #ff6bff;
+			cursor: pointer;
+			font-family: Orbitron, sans-serif;
+			transition: background-color 0.25s ease, box-shadow 0.25s ease, transform 0.1s ease;
+		`;
+		cancelBtn.onmouseenter = () => {
+			cancelBtn.style.backgroundColor = "rgba(255,44,251,0.15)";
+			cancelBtn.style.boxShadow = "0 0 14px #ff6bff, 0 0 22px #ff2cfb55";
+		};
+		cancelBtn.onmouseleave = () => {
+			cancelBtn.style.backgroundColor = "rgba(10,10,10,0.55)";
+			cancelBtn.style.boxShadow = "none";
+		};
+		cancelBtn.onclick = () => {
+			modalOverlay.remove();
+		};
+
+		// Join button
+		const joinBtn = document.createElement("button");
+		joinBtn.textContent = t("tournaments.join");
+		joinBtn.style.cssText = `
+			padding: 10px 16px;
+			font-size: 14px;
+			font-weight: bold;
+			border: 2px solid #ff2cfb;
+			border-radius: 6px;
+			background: rgba(10,10,10,0.55);
+			backdrop-filter: blur(5px);
+			color: #ff6bff;
+			cursor: pointer;
+			font-family: Orbitron, sans-serif;
+			transition: background-color 0.25s ease, box-shadow 0.25s ease, transform 0.1s ease;
+		`;
+		joinBtn.onmouseenter = () => {
+			joinBtn.style.backgroundColor = "rgba(255,44,251,0.15)";
+			joinBtn.style.boxShadow = "0 0 14px #ff6bff, 0 0 22px #ff2cfb55";
+		};
+		joinBtn.onmouseleave = () => {
+			joinBtn.style.backgroundColor = "rgba(10,10,10,0.55)";
+			joinBtn.style.boxShadow = "none";
+		};
+		joinBtn.onclick = () => {
+			// ANDY: get custom display name from input if provided, otherwise it will be empty and backend will use username
+			const customDisplayName = displayNameInput.value.trim();
+			const displayNameParam = customDisplayName ? `&displayName=${encodeURIComponent(customDisplayName)}` : '';
+			
+			modalOverlay.remove();
+			navigate(`#/game?mode=tournament&id=${tournamentId}${displayNameParam}`);
+		};
+
+		// ANDY: allow Enter key to submit the form
+		displayNameInput.addEventListener("keydown", (e) => {
+			if (e.key === "Enter") {
+				joinBtn.click();
+			}
+		});
+
+		buttonContainer.append(cancelBtn, joinBtn);
+		modalContent.appendChild(buttonContainer);
+		modalOverlay.appendChild(modalContent);
+		document.body.appendChild(modalOverlay);
+		
+		// Focus the input field when modal opens
+		setTimeout(() => displayNameInput.focus(), 100);
+	}
+
 	// ANDY: Function to show modal for tournament name input
 	// Modal appears when user clicks "Create Tournament" button
 	function showCreateTournamentModal() {
@@ -299,7 +458,8 @@ export async function renderTournament(container: HTMLElement) {
 				joinBtn.className = "tournament-row-btn";
 				joinBtn.textContent = t("tournaments.join");
 				joinBtn.onclick = () => {
-					navigate(`#/game?mode=tournament&id=${tour.id}`);
+					// ANDY: show modal to allow player to set custom display name before joining
+					showJoinTournamentModal(tour.id, tour.name);
 				};
 
 				right.append(joinBtn);
