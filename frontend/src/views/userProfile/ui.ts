@@ -4,7 +4,7 @@ import { t } from "../../i18n";
 import { fetchUserPublic } from "../../api/http";
 import { userData } from "../../config/constants";
 import { API_BASE } from "../../config/endpoints";
-import { sendMessage } from "../../chat/chatHandler";
+import { appendMessageToHistory, sendMessage } from "../../chat/chatHandler";
 
 export async function renderUserProfile(container: HTMLElement, username?: string) {
 	container.innerHTML = "";
@@ -102,25 +102,35 @@ export async function renderUserProfile(container: HTMLElement, username?: strin
 			};
 			actions.append(friendBtn);
 
-			const blockBtn = document.createElement("button");
-			blockBtn.className = "profile-action-btn secondary";
-			blockBtn.textContent = userData.blockedUsers?.includes(user.username)
-				? t("userProfile.unblock")
-				: t("userProfile.block");
-			blockBtn.onclick = () => {
-				const isBlocked = userData.blockedUsers?.includes(user.username);
-				if (isBlocked) {
-					userData.blockedUsers = userData.blockedUsers!.filter((b) => b !== user.username);
-					sendMessage("unblock", t("userProfile.youUnblocked") + user.username, user.username);
-					blockBtn.textContent = t("userProfile.block");
-				} else {
-					userData.blockedUsers?.push(user.username);
-					sendMessage("block", t("userProfile.youBlocked") + user.username, user.username);
-					blockBtn.textContent = t("userProfile.unblock");
-				}
-			};
-			actions.append(blockBtn);
-		}
+      // BLOCK BTN
+      const blockBtn = document.createElement("button");
+      blockBtn.className = "profile-action-btn secondary";
+      blockBtn.textContent = userData.blockedUsers.includes(user.username)
+        ? t("userProfile.unblock")
+        : t("userProfile.block");
+
+      blockBtn.onclick = () => {
+        const isBlocked = userData.blockedUsers.includes(user.username);
+        if (isBlocked) {
+          userData.blockedUsers = userData.blockedUsers.filter(b => b !== user.username);
+          sendMessage("unblock", t("userProfile.youUnblocked") + user.username, user.username);
+          blockBtn.textContent = t("userProfile.block");
+        } else {
+          userData.blockedUsers.push(user.username);
+          sendMessage("block", t("userProfile.youBlocked") + user.username, user.username);
+          blockBtn.textContent = t("userProfile.unblock");
+        }
+        // send the information to the chat
+        document.dispatchEvent(new CustomEvent('userListsUpdated', { 
+            detail: { 
+                action: isBlocked ? 'unblock' : 'block',
+                username: user.username 
+            }
+        }));
+      };
+
+      actions.append(blockBtn);
+    }
 
 		const friendCard = document.createElement("div");
 		friendCard.className = "profile-section-card";

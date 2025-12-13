@@ -12,9 +12,9 @@ export const userData = {
 	userSock: null as WebSocket | null,
 	gameSock: null as WebSocket | null,
 	chatHistory: null as chatHistory | null,
-	friends: null as string[] | null,
-	blockedUsers: null as string[] | null,
-	blockedByUsers: null as string[] | null,
+	friends: [] as string[],
+	blockedUsers: [] as string[],
+	blockedByUsers: [] as string[],
 	activePrivateChat: "Global Chat" as string
 };
 
