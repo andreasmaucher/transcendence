@@ -287,8 +287,10 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 				// server tells us which side we're playing on
 				const data = (payload as any).data;
 				
-				// ANDY: only update assignedSide if playerSide is explicitly set (not null)
-				// This prevents overwriting the correct side when receiving match-assigned for other matches
+				// ANDY: only update assignedSide if playerSide is explicitly set meaning the player is in the match
+				// This prevents overwriting the correct side when receiving match-assigned for for matches the player is not in
+				// the backend sends playerSide:null for matches the player is not in and we need it to show the tournament bracket correctly
+				// but it will not change the paddle they control
 				if (data?.playerSide !== null && data?.playerSide !== undefined) {
 					setAssignedSide(data.playerSide);
 				}
@@ -317,13 +319,11 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 				applyBackendState(state, payload.data);
 
 				// ANDY: when a match finishes, call handleTournamentMatchState
-				// Find which match this state belongs to by checking all known matches
+				// Find which match this state belongs to by checking all known matches (because we don't have matchid here)
 				if (state.isOver && state.winner && !wasOver) {
 					for (const [matchId, players] of matchPlayersMap.entries()) {
-						// Check if this state's winner matches one of the players in this match
 						const winnerUsername = state.winner === "left" ? players.left : players.right;
 						if (winnerUsername) {
-							// This is the match that finished - call handleTournamentMatchState
 							handleTournamentMatchState(state, matchId, players.left, players.right);
 							break;
 						}

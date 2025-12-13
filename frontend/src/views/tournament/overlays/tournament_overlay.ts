@@ -265,7 +265,6 @@ function buildBracketView(
     // ANDY: add champion name inside the circle if final is finished
     if (results.finalWinner) {
         const championNameInCircle = document.createElement("div");
-        // ANDY: style name to fit nicely below avatar within the 90px circle
         championNameInCircle.style.cssText = "color: white; font-size: 10px; font-weight: bold; text-align: center; padding: 0 2px; word-break: break-word; line-height: 1.1; max-width: 82px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; flex-shrink: 0;";
         
         // Find champion in players array to get display name

@@ -230,10 +230,10 @@ export function handleTournamentMatchState(
 	// ROUND 2: FINAL OR 3RD PLACE
 	// -------------------------------
 	if (currentRound === 2) {
-		// ANDY: determine match type from matchId (more reliable than currentMatchType which can be overwritten)
+		// ANDY: determine match type from matchId
 		const matchInfo = matchTypeMap.get(matchId);
 		const isFinalMatch = matchInfo?.type === "final" || 
-			// Fallback: check if winner is a semifinal winner (final match has semifinal winners)
+			// final match always has semifinal winners, while 3rd place match has semifinal losers
 			winner === internalBracket.results.semiFinal1Winner ||
 			winner === internalBracket.results.semiFinal2Winner;
 

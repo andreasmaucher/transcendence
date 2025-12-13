@@ -157,6 +157,42 @@ export function addPlayerToTournament({
 	}
 }
 
+// ANDY: Helper function to broadcast match-assigned messages to all tournament players
+function broadcastMatchAssigned(
+	tournament: Tournament,
+	newMatch: Match,
+	basePayload: any,
+	assignedPlayerSocket: any,
+	assignedPlayerUsername: string
+): void {
+	// Broadcast to all tournament players with their individual playerSide
+	for (const player of tournament.players) {
+		if (player.socket && player.socket.readyState === 1) { // ws is open
+			// Determine playerSide for this specific player for this specific match
+			const recipientPlayerSide: "left" | "right" | null = 
+				newMatch.players.left?.username === player.username ? "left" :
+				newMatch.players.right?.username === player.username ? "right" :
+				null;
+			
+			const matchAssignedPayload = buildPayload("match-assigned", {
+				...basePayload,
+				playerSide: recipientPlayerSide,
+			} as any);
+			
+			player.socket.send(matchAssignedPayload);
+		}
+	}
+	// Also send it to the assigned player socket
+	if (assignedPlayerSocket.readyState === 1) {
+		const assignedPlayerSide = newMatch.players.left?.username === assignedPlayerUsername ? "left" : "right";
+		const matchAssignedPayload = buildPayload("match-assigned", {
+			...basePayload,
+			playerSide: assignedPlayerSide,
+		} as any);
+		assignedPlayerSocket.send(matchAssignedPayload);
+	}
+}
+
 // Assign players to the next round based on the results
 export function assignPlayersToRound(tournament: Tournament) {
 	const prevRound = tournament.matches.get(tournament.state.round - 1);
@@ -231,32 +267,8 @@ export function assignPlayersToRound(tournament: Tournament) {
 				},
 			};
 
-			// ANDY: broadcast to all tournament players with their individual playerSide
-			for (const player of tournament.players) {
-				if (player.socket && player.socket.readyState === 1) { // WebSocket.OPEN
-					// Determine playerSide for THIS specific player for THIS specific match
-					const recipientPlayerSide: "left" | "right" | null = 
-						newMatch.players.left?.username === player.username ? "left" :
-						newMatch.players.right?.username === player.username ? "right" :
-						null;
-					
-					const matchAssignedPayload = buildPayload("match-assigned", {
-						...basePayload,
-						playerSide: recipientPlayerSide,
-					} as any);
-					
-					player.socket.send(matchAssignedPayload);
-				}
-			}
-			// Also send to the assigned player's socket
-			if (socket.readyState === 1) {
-				const winnerPlayerSide = newMatch.players.left?.username === winner ? "left" : "right";
-				const matchAssignedPayload = buildPayload("match-assigned", {
-					...basePayload,
-					playerSide: winnerPlayerSide,
-				} as any);
-				socket.send(matchAssignedPayload);
-			}
+			// ANDY: broadcast match-assigned to all tournament players
+			broadcastMatchAssigned(tournament, newMatch, basePayload, socket, winner);
 
 			// send initial state of new match to the frontend so when a player joins the new match the canvas can render the right scene
 			socket.send(buildPayload("state", newMatch.state));
@@ -302,32 +314,8 @@ export function assignPlayersToRound(tournament: Tournament) {
 				},
 			};
 
-			// ANDY: broadcast to ALL tournament participants with their individual playerSide
-			for (const player of tournament.players) {
-				if (player.socket && player.socket.readyState === 1) { // WebSocket.OPEN
-					// Determine playerSide for THIS specific player for THIS specific match
-					const recipientPlayerSide: "left" | "right" | null = 
-						newMatch.players.left?.username === player.username ? "left" :
-						newMatch.players.right?.username === player.username ? "right" :
-						null;
-					
-					const matchAssignedPayload = buildPayload("match-assigned", {
-						...basePayloadLoser,
-						playerSide: recipientPlayerSide,
-					} as any);
-					
-					player.socket.send(matchAssignedPayload);
-				}
-			}
-			// Also send to the assigned player's socket
-			if (socket.readyState === 1) {
-				const loserPlayerSide = newMatch.players.left?.username === loser ? "left" : "right";
-				const matchAssignedPayload = buildPayload("match-assigned", {
-					...basePayloadLoser,
-					playerSide: loserPlayerSide,
-				} as any);
-				socket.send(matchAssignedPayload);
-			}
+			// ANDY: broadcast match-assigned to all tournament players
+			broadcastMatchAssigned(tournament, newMatch, basePayloadLoser, socket, loser);
 
 			// send initial state of new match
 			socket.send(buildPayload("state", newMatch.state));
