@@ -1,6 +1,6 @@
 import { generalData, userData } from "../config/constants";
 import { API_BASE } from "../config/endpoints";
-import { sanitizeMessageInput, sendMessage, wireIncomingChat } from "./chatHandler";
+import { sanitizeInput, sendMessage, wireIncomingChat } from "./chatHandler";
 import { Message } from "./types";
 
 export function updateLocalBlockState(
@@ -316,7 +316,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 		if (messageContent.length === 0)
 			return; 
 
-		let sanitizeMessage = sanitizeMessageInput(messageContent);
+		let sanitizeMessage = sanitizeInput(messageContent);
 
 		sendBtn.style.transform = "scale(0.97)";
 		setTimeout(() => sendBtn.style.transform = "scale(1)", 120);
@@ -345,7 +345,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 		if (messageContent.length === 0)
 			return; 
 
-		let sanitizeMessage = sanitizeMessageInput(messageContent);
+		let sanitizeMessage = sanitizeInput(messageContent);
 
 		sendBtn.style.transform = "scale(0.97)";
 		setTimeout(() => sendBtn.style.transform = "scale(1)", 120);

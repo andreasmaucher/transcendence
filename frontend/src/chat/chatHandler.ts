@@ -572,7 +572,7 @@ export function renderOnlineUsers(
 
 // METHODS /////////////////////////////////////////////////////////////////////
 
-export function sanitizeMessageInput(input: string): string {
+export function sanitizeInput(input: string): string {
 	if (!input) {
 		return "";
 	}
