@@ -1,16 +1,23 @@
 import { generalData, userData } from "../config/constants";
-import { ApiOpenSingleGame, ApiOpenTournament, ChatEvent, chatHistory, Message, OpenGames, OpenGamesResponse, Tournament } from "./types";
-import { navigate } from "../router/router"; 
-import { fetchTournamentList } from "../api/http";
+import {
+	ApiOpenSingleGame,
+	ApiOpenTournament,
+	ChatEvent,
+	chatHistory,
+	Message,
+	OpenGames,
+	OpenGamesResponse,
+} from "./types";
+import { navigate } from "../router/router";
 import { API_BASE } from "../config/endpoints";
-
+import { convertUTCStringToLocal } from "../utils/time";
 
 export function sendMessage(
 	type: ChatEvent,
 	content: string,
 	receiver: string | null = null,
 	gameId: any | null = null,
-	tournamentName: string | null = null,
+	tournamentName: string | null = null
 ) {
 	const message: Message = {
 		id: undefined,
@@ -20,7 +27,7 @@ export function sendMessage(
 		content: content,
 		gameId: gameId ?? undefined,
 		sentAt: undefined,
-		tournamentName: tournamentName ?? undefined
+		tournamentName: tournamentName ?? undefined,
 	};
 	if (userData.userSock?.readyState === WebSocket.OPEN) {
 		userData.userSock.send(JSON.stringify(message));
@@ -31,9 +38,9 @@ export function sendMessage(
 // RENDER FUNCTIONS ///////////////////////////////////////////////////////////
 
 export async function renderIncomingMessage(message: Message) {
-	const messageElement = document.createElement("div");	
+	const messageElement = document.createElement("div");
 
-	messageElement.classList.add('message', 'chat-message');
+	messageElement.classList.add("message", "chat-message");
 	messageElement.style.padding = "6px 8px";
 	messageElement.style.marginBottom = "6px";
 	messageElement.style.background = "rgba(0, 255, 200, 0.1)";
@@ -41,19 +48,19 @@ export async function renderIncomingMessage(message: Message) {
 	messageElement.style.cursor = "pointer";
 
 	const createHeader = (senderName: string, timeStr: string | undefined) => {
-		const headerContainer = document.createElement('div');
+		const headerContainer = document.createElement("div");
 		headerContainer.style.display = "flex";
 		headerContainer.style.justifyContent = "space-between";
 		headerContainer.style.fontSize = "12px";
 		headerContainer.style.color = "#00ffc8";
 		headerContainer.style.marginBottom = "5px";
 
-		const senderStrong = document.createElement('strong');
+		const senderStrong = document.createElement("strong");
 		senderStrong.textContent = senderName;
 
-		const timeSmall = document.createElement('small');
+		const timeSmall = document.createElement("small");
 		timeSmall.style.color = "#66ffc8";
-		timeSmall.textContent = timeStr || '';
+		timeSmall.textContent = timeStr || "";
 
 		headerContainer.appendChild(senderStrong);
 		headerContainer.appendChild(timeSmall);
@@ -62,49 +69,47 @@ export async function renderIncomingMessage(message: Message) {
 
 	if (message.type === "blockedByMeMessage") {
 		messageElement.style.background = "rgba(150, 0, 0, 0.4)";
-		
-		const span = document.createElement('span');
+
+		const span = document.createElement("span");
 		span.style.color = "#ff0000";
 		span.style.fontWeight = "bold";
-		span.textContent = `You've blocked ${message.receiver}. No Conversation possible!`; 
-		
+		span.textContent = `You've blocked ${message.receiver}. No Conversation possible!`;
+
 		messageElement.appendChild(span);
-	} 
-	else if (message.type === "blockedByOthersMessage"){
+	} else if (message.type === "blockedByOthersMessage") {
 		messageElement.style.background = "rgba(255, 170, 0, 0.15)";
-		
-		const span = document.createElement('span');
+
+		const span = document.createElement("span");
 		span.style.color = "#ffaa00";
 		span.style.fontWeight = "bold";
 		span.textContent = `You have been blocked by ${message.receiver}. Message cannot be sent.`;
 
 		messageElement.appendChild(span);
-	} 
-	else if (message.type === "invite") {
+	} else if (message.type === "invite") {
 		const isGameStillAvailable = await isGameStillOpen(message.gameId!);
 		const isExpired = !isGameStillAvailable;
 
 		if (isExpired) {
-			const expiredText = document.createElement('div');
+			const expiredText = document.createElement("div");
 			expiredText.style.color = "#888";
 			expiredText.style.fontStyle = "italic";
 			expiredText.textContent = `⚔️ Game Invite from ${message.sender} (Expired)`;
 			messageElement.appendChild(expiredText);
 		} else {
-			messageElement.appendChild(createHeader(message.sender, message.sentAt));
+			messageElement.appendChild(createHeader(message.sender, convertUTCStringToLocal(message.sentAt!)));
 
-			const inviteContainer = document.createElement('div');
-			inviteContainer.style.background = "rgba(0, 0, 0, 0.3)"; 
+			const inviteContainer = document.createElement("div");
+			inviteContainer.style.background = "rgba(0, 0, 0, 0.3)";
 			inviteContainer.style.border = "1px solid #00ffc8";
 			inviteContainer.style.padding = "10px";
 			inviteContainer.style.borderRadius = "5px";
 
-			const text = document.createElement('p');
+			const text = document.createElement("p");
 			text.textContent = message.content || "";
 			text.style.color = "#fff";
 			text.style.margin = "0 0 5px 0";
-			
-			const joinButton = document.createElement('button');
+
+			const joinButton = document.createElement("button");
 			joinButton.textContent = "ACCEPT CHALLENGE";
 			joinButton.style.cursor = "pointer";
 			joinButton.style.backgroundColor = "#00ffc8";
@@ -117,7 +122,9 @@ export async function renderIncomingMessage(message: Message) {
 			joinButton.onclick = (e) => {
 				e.stopPropagation();
 				if (message.content === "Are you up for a tournament") {
-					navigate(`#/game?mode=tournament&id=${message.gameId}&name=${encodeURIComponent(message.tournamentName!)}`);
+					navigate(
+						`#/game?mode=tournament&id=${message.gameId}&name=${encodeURIComponent(message.tournamentName!)}`
+					);
 				} else {
 					navigate(`#/game?mode=online&id=${message.gameId}`);
 				}
@@ -128,14 +135,13 @@ export async function renderIncomingMessage(message: Message) {
 			inviteContainer.appendChild(joinButton);
 			messageElement.appendChild(inviteContainer);
 		}
-	}
-	else {
-		messageElement.appendChild(createHeader(message.sender, message.sentAt));
+	} else {
+		messageElement.appendChild(createHeader(message.sender, convertUTCStringToLocal(message.sentAt!)));
 
-		const contentSpan = document.createElement('span');
+		const contentSpan = document.createElement("span");
 		contentSpan.style.color = "#66ffc8";
-		contentSpan.textContent = message.content || ""; 
-		
+		contentSpan.textContent = message.content || "";
+
 		messageElement.appendChild(contentSpan);
 	}
 
@@ -146,8 +152,8 @@ export async function displayIncomingMessage(msg: Message, chatMessages: HTMLEle
 	const messageElement = await renderIncomingMessage(msg);
 	chatMessages.append(messageElement);
 	requestAnimationFrame(() => {
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    });
+		chatMessages.scrollTop = chatMessages.scrollHeight;
+	});
 }
 
 export async function isGameStillOpen(gameId: string): Promise<boolean> {
@@ -158,14 +164,12 @@ export async function isGameStillOpen(gameId: string): Promise<boolean> {
 
 	try {
 		const openGamesData = await fetchOpenGames();
-		
+
 		const singleGames = openGamesData.openSingleGames || [];
 		const tournaments = openGamesData.openTournaments || [];
 
 		const isSingleGameOpen = singleGames.some((g: ApiOpenSingleGame) => {
-			return g.id === gameId &&
-				g.match.isRunning === false &&
-				g.playersJoined < 2;
+			return g.id === gameId && g.match.isRunning === false && g.playersJoined < 2;
 		});
 
 		if (isSingleGameOpen) {
@@ -173,34 +177,31 @@ export async function isGameStillOpen(gameId: string): Promise<boolean> {
 		}
 
 		const isTournamentOpen = tournaments.some((t: ApiOpenTournament) => {
-			return t.id === gameId &&
-				t.state.isRunning === false && 
-				t.playersJoined < t.state.size;
+			return t.id === gameId && t.state.isRunning === false && t.playersJoined < t.state.size;
 		});
-		
-		return isTournamentOpen;
 
+		return isTournamentOpen;
 	} catch (error) {
 		console.error("Error while checking for openGames: ", error);
-		return false; 
+		return false;
 	}
 }
 
 async function fetchOpenGames() {
 	try {
 		const response = await fetch(`${API_BASE}/api/games/open`, {
-		credentials: "include",
-	});
+			credentials: "include",
+		});
 
 		if (response.status !== 200 && response.status !== 404) {
-			const errorText = await response.text(); 
+			const errorText = await response.text();
 			console.error("Server returned non-OK status. Response:", errorText);
 			throw new Error(`Server error: Status ${response.status}`);
 		}
 		if (response.status === 404) {
 			return { singleGames: [], tournaments: [] };
 		}
-		if(!response.ok) {
+		if (!response.ok) {
 			throw new Error(`HTTP error! status: ${response.status}`);
 		}
 
@@ -213,14 +214,14 @@ async function fetchOpenGames() {
 }
 
 export function removeModal() {
-	const existingModal = document.getElementById('challenge-modal-overlay');
+	const existingModal = document.getElementById("challenge-modal-overlay");
 	if (existingModal) {
 		existingModal.remove();
 	}
 }
 
 async function handleDuelChallenge(anchorElement: HTMLElement) {
-	const existingDropdown = document.getElementById('challenge-dropdown');
+	const existingDropdown = document.getElementById("challenge-dropdown");
 	if (existingDropdown) {
 		existingDropdown.remove();
 		return;
@@ -230,7 +231,7 @@ async function handleDuelChallenge(anchorElement: HTMLElement) {
 	try {
 		const response = await fetchOpenGames();
 		if (response) {
-			apiData = response as unknown as OpenGamesResponse; 
+			apiData = response as unknown as OpenGamesResponse;
 		}
 	} catch (error) {
 		console.error("Error fetching games:", error);
@@ -243,10 +244,10 @@ async function handleDuelChallenge(anchorElement: HTMLElement) {
 		apiData.openSingleGames.forEach((g: ApiOpenSingleGame) => {
 			const creatorName = g.match.players.left || "Unknown";
 			availableGames.push({
-				type: 'single', 
-				id: g.id, 
+				type: "single",
+				id: g.id,
 				creator: g.creator,
-				name: g.name || `Game ${g.id.substring(0, 8)}` // Use generated name or fallback to short ID
+				name: g.name || `Game ${g.id.substring(0, 8)}`, // Use generated name or fallback to short ID
 			});
 		});
 	}
@@ -254,9 +255,9 @@ async function handleDuelChallenge(anchorElement: HTMLElement) {
 	if (apiData.openTournaments && Array.isArray(apiData.openTournaments)) {
 		apiData.openTournaments.forEach((t: ApiOpenTournament) => {
 			availableGames.push({
-				type: 'tournament',
+				type: "tournament",
 				id: t.id,
-				name: `Tournament: ${t.name} (${t.playersJoined}/${t.state.size})`
+				name: `Tournament: ${t.name} (${t.playersJoined}/${t.state.size})`,
 			});
 		});
 	}
@@ -267,9 +268,9 @@ async function handleDuelChallenge(anchorElement: HTMLElement) {
 	}
 
 	const rect = anchorElement.getBoundingClientRect();
-	
-	const dropdown = document.createElement('div');
-	dropdown.id = 'challenge-dropdown';
+
+	const dropdown = document.createElement("div");
+	dropdown.id = "challenge-dropdown";
 	dropdown.style.cssText = `
 		position: absolute; 
 		z-index: 99999;
@@ -286,13 +287,13 @@ async function handleDuelChallenge(anchorElement: HTMLElement) {
 		gap: 4px;
 	`;
 
-	dropdown.style.top = `${rect.bottom + window.scrollY + 5}px`; 
-	
-	const leftPos = rect.right - 280; 
+	dropdown.style.top = `${rect.bottom + window.scrollY + 5}px`;
+
+	const leftPos = rect.right - 280;
 	dropdown.style.left = `${rect.left + window.scrollX}px`;
 
-	availableGames.forEach(game => {
-		const item = document.createElement('div');
+	availableGames.forEach((game) => {
+		const item = document.createElement("div");
 		item.textContent = game.name;
 		item.title = `[${game.type.toUpperCase()}] ${game.name}`;
 		item.style.cssText = `
@@ -307,22 +308,22 @@ async function handleDuelChallenge(anchorElement: HTMLElement) {
 			text-overflow: ellipsis;
 		`;
 
-		if (game.type === 'tournament') {
+		if (game.type === "tournament") {
 			item.style.borderLeft = "2px solid #ffcc00";
 			item.textContent = `🏆 ${game.name}`;
 		} else {
 			item.style.borderLeft = "2px solid #00ffc8";
 			item.textContent = `🎾 ${game.name}`;
 		}
-		
+
 		item.title = `[${game.type.toUpperCase()}] ${game.name}`;
 
-		item.onmouseenter = () => item.style.background = 'rgba(0, 255, 200, 0.2)';
-		item.onmouseleave = () => item.style.background = 'transparent';
+		item.onmouseenter = () => (item.style.background = "rgba(0, 255, 200, 0.2)");
+		item.onmouseleave = () => (item.style.background = "transparent");
 
 		item.onclick = (e) => {
 			e.stopPropagation();
-			sendMessage('invite', `Are you up for a ${game.type}`, userData.activePrivateChat, game.id, game.name);
+			sendMessage("invite", `Are you up for a ${game.type}`, userData.activePrivateChat, game.id, game.name);
 			dropdown.remove();
 		};
 
@@ -334,37 +335,31 @@ async function handleDuelChallenge(anchorElement: HTMLElement) {
 		const closeMenu = (e: MouseEvent) => {
 			if (!dropdown.contains(e.target as Node) && e.target !== anchorElement) {
 				dropdown.remove();
-				document.removeEventListener('click', closeMenu);
+				document.removeEventListener("click", closeMenu);
 			}
 		};
-		document.addEventListener('click', closeMenu);
+		document.addEventListener("click", closeMenu);
 	}, 0);
 
 	document.body.appendChild(dropdown);
 }
 
-export function renderChatHeaderButtons(
-	chatHeader: HTMLElement,
-	activeChat: string | null
-) {
+export function renderChatHeaderButtons(chatHeader: HTMLElement, activeChat: string | null) {
 	chatHeader.textContent = "";
 
 	const primaryNeon = "#00ffc8"; // OLD "#00e0b3";
 	const secondaryNeon = "#66ffc8"; // OLD "#33cc99";
 
 	const title = document.createElement("span");
-	title.textContent =
-		activeChat === "Global Chat"
-			? "Global Chat"
-			: `Chat with ${activeChat}`;
+	title.textContent = activeChat === "Global Chat" ? "Global Chat" : `Chat with ${activeChat}`;
 
 	title.style.flex = "1";
 	title.style.fontWeight = "600";
-	title.style.color = primaryNeon
-	title.style.textShadow = `0 0 5px ${secondaryNeon}`
+	title.style.color = primaryNeon;
+	title.style.textShadow = `0 0 5px ${secondaryNeon}`;
 
 	chatHeader.style.display = "flex";
-	chatHeader.style.alignItems = "flex-start"; 
+	chatHeader.style.alignItems = "flex-start";
 	chatHeader.style.justifyContent = "space-between";
 	chatHeader.style.paddingTop = "0px";
 	chatHeader.style.paddingBottom = "0px";
@@ -383,8 +378,8 @@ export function renderChatHeaderButtons(
 	btnRow.style.transform = "translateY(-1px)";
 
 	const createIconBtn = (
-		symbol: string, 
-		title: string, 
+		symbol: string,
+		title: string,
 		action: (btnElement: HTMLButtonElement) => void,
 		blocked: boolean = false
 	) => {
@@ -397,11 +392,9 @@ export function renderChatHeaderButtons(
 		btn.style.cursor = "pointer";
 		btn.style.transition = "background-color 0.2s ease, box-shadow 0.2s ease"; // hover
 
-		btn.style.color = blocked ? "white" : secondaryNeon
-		btn.style.border = `1px solid ${primaryNeon}`
-		btn.style.background = blocked 
-		? "rgba(150, 0, 0, 0.58)"
-		: "rgba(0, 224, 179, 0.08)";
+		btn.style.color = blocked ? "white" : secondaryNeon;
+		btn.style.border = `1px solid ${primaryNeon}`;
+		btn.style.background = blocked ? "rgba(150, 0, 0, 0.58)" : "rgba(0, 224, 179, 0.08)";
 
 		btn.style.cursor = "pointer";
 		btn.onclick = (e) => {
@@ -422,9 +415,7 @@ export function renderChatHeaderButtons(
 			}
 		};
 		btn.onmouseleave = () => {
-			btn.style.backgroundColor = blocked 
-			? "rgba(150, 0, 0, 0.58)" 
-			: "rgba(0, 224, 179, 0.08)";
+			btn.style.backgroundColor = blocked ? "rgba(150, 0, 0, 0.58)" : "rgba(0, 224, 179, 0.08)";
 			btn.style.boxShadow = "none";
 
 			// text glow
@@ -445,25 +436,25 @@ export function renderChatHeaderButtons(
 	});
 
 	const isBlocked = userData.blockedUsers?.includes(activeChat!);
-	
+
 	const btnBlock = createIconBtn(
-		isBlocked? "♻️": "🚫",
-		isBlocked? "Unblock user" : "Block user",
+		isBlocked ? "♻️" : "🚫",
+		isBlocked ? "Unblock user" : "Block user",
 		() => {
 			const isBlockedNow = userData.blockedUsers?.includes(activeChat!) || false;
 
-			if (!isBlockedNow){
+			if (!isBlockedNow) {
 				userData.blockedUsers?.push(activeChat!);
-				sendMessage('block', `You've blocked ${activeChat}`, activeChat);
+				sendMessage("block", `You've blocked ${activeChat}`, activeChat);
 				console.log(`🚫 User ${activeChat} was blocked`);
 			} else {
-				userData.blockedUsers = userData.blockedUsers!.filter(u => u !== activeChat);
-				sendMessage('unblock', `You've unblocked ${activeChat}`, activeChat);
+				userData.blockedUsers = userData.blockedUsers!.filter((u) => u !== activeChat);
+				sendMessage("unblock", `You've unblocked ${activeChat}`, activeChat);
 				console.log(`♻️ User ${activeChat} was UNBLOCKED`);
 			}
 			renderChatHeaderButtons(chatHeader, activeChat);
-		}, 
-	isBlocked
+		},
+		isBlocked
 	);
 
 	btnRow.append(btnProfile, btnDuel, btnBlock);
@@ -474,21 +465,21 @@ export function renderChatHeaderButtons(
 export function renderOnlineUsers(
 	channelListContainer: HTMLElement,
 	chatMessages: HTMLElement,
-	chatHeader: HTMLElement,
+	chatHeader: HTMLElement
 ) {
 	channelListContainer.textContent = "";
 
 	const primaryNeon = "#00ffc8";
-	const secondaryNeon = "#66ffc8"
-	const headerGreen = "#00A358"
+	const secondaryNeon = "#66ffc8";
+	const headerGreen = "#00A358";
 
 	const allUsersExcludingSelfAndGlobal = generalData.onlineUsers!.filter(
-		u => u !== userData.username && u !== "Global Chat"
+		(u) => u !== userData.username && u !== "Global Chat"
 	);
 
-	const friendsOnline = allUsersExcludingSelfAndGlobal.filter(u => userData.friends?.includes(u));
-	const othersOnline = allUsersExcludingSelfAndGlobal.filter(u => !userData.friends?.includes(u));
-	const friendsOffline = userData.friends.filter(f => !allUsersExcludingSelfAndGlobal.includes(f));
+	const friendsOnline = allUsersExcludingSelfAndGlobal.filter((u) => userData.friends?.includes(u));
+	const othersOnline = allUsersExcludingSelfAndGlobal.filter((u) => !userData.friends?.includes(u));
+	const friendsOffline = userData.friends.filter((f) => !allUsersExcludingSelfAndGlobal.includes(f));
 
 	const renderSectionHeader = (title: string, color: string, margin: string = "12px 0 5px 0") => {
 		const header = document.createElement("h4");
@@ -511,10 +502,10 @@ export function renderOnlineUsers(
 		userItem.classList.add("online-user");
 
 		if (isOffline) {
-			userItem.style.background = "rgba(255, 255, 255, 0.05)"; 
-			userItem.style.color = "#888"; 
+			userItem.style.background = "rgba(255, 255, 255, 0.05)";
+			userItem.style.color = "#888";
 		} else if (username !== "Global Chat") {
-			userItem.style.background = "rgba(0, 255, 200, 0.1)"; 
+			userItem.style.background = "rgba(0, 255, 200, 0.1)";
 			userItem.style.color = "#66ffc8";
 		} else {
 			userItem.style.background = "rgba(0, 255, 200, 0.2)";
@@ -524,30 +515,31 @@ export function renderOnlineUsers(
 
 		// highlight active channel
 		if (username === userData.activePrivateChat) {
-			userItem.style.border = `1px solid ${primaryNeon}`
-			userItem.style.boxShadow = `0 0 5px ${primaryNeon}`
+			userItem.style.border = `1px solid ${primaryNeon}`;
+			userItem.style.boxShadow = `0 0 5px ${primaryNeon}`;
 			userItem.style.color = primaryNeon;
 		}
-		
+
 		// hover
 		userItem.onmouseenter = () => {
-			userItem.style.backgroundColor = isOffline 
-				? "rgba(255, 255, 255, 0.1)" 
-				: "rgba(0, 255, 200, 0.25)";
+			userItem.style.backgroundColor = isOffline ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 255, 200, 0.25)";
 		};
 		userItem.onmouseleave = () => {
-			userItem.style.backgroundColor = (username === userData.activePrivateChat) 
-				? `rgba(0, 255, 200, 0.1)` 
-				: isOffline ? "rgba(255, 255, 255, 0.05)" : `rgba(0, 255, 200, 0.1)`;
+			userItem.style.backgroundColor =
+				username === userData.activePrivateChat
+					? `rgba(0, 255, 200, 0.1)`
+					: isOffline
+					? "rgba(255, 255, 255, 0.05)"
+					: `rgba(0, 255, 200, 0.1)`;
 		};
 
 		// Click handler
 		userItem.onclick = () => {
 			userData.activePrivateChat = username;
-			localStorage.setItem('activePrivateChat', username);
-			renderOnlineUsers(channelListContainer, chatMessages, chatHeader); 
+			localStorage.setItem("activePrivateChat", username);
+			renderOnlineUsers(channelListContainer, chatMessages, chatHeader);
 			chatMessages.textContent = "";
-			populateChatWindow(userData.chatHistory!, chatMessages); 
+			populateChatWindow(userData.chatHistory!, chatMessages);
 			renderChatHeaderButtons(chatHeader, userData.activePrivateChat);
 		};
 		channelListContainer.append(userItem);
@@ -559,14 +551,14 @@ export function renderOnlineUsers(
 	//friends online
 	if (friendsOnline.length > 0 || friendsOffline.length > 0) {
 		renderSectionHeader("Friends", headerGreen);
-		friendsOnline.forEach(f => renderUserItem(f, false));
-		friendsOffline.forEach(f => renderUserItem(f, true));
+		friendsOnline.forEach((f) => renderUserItem(f, false));
+		friendsOffline.forEach((f) => renderUserItem(f, true));
 	}
 
 	//user online
 	if (othersOnline.length > 0) {
 		renderSectionHeader("Online Users", headerGreen);
-		othersOnline.forEach(f => renderUserItem(f, false));
+		othersOnline.forEach((f) => renderUserItem(f, false));
 	}
 }
 
@@ -576,11 +568,11 @@ export function sanitizeMessageInput(input: string): string {
 	if (!input) {
 		return "";
 	}
-	let sanitized = input.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-	sanitized = sanitized.replace(/'/g, '&#39;');
-	sanitized = sanitized.replace(/"/g, '&quot;');
-	sanitized = sanitized.replace(/;/g, '');
-	sanitized = sanitized.replace(/--/g, '');
+	let sanitized = input.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+	sanitized = sanitized.replace(/'/g, "&#39;");
+	sanitized = sanitized.replace(/"/g, "&quot;");
+	sanitized = sanitized.replace(/;/g, "");
+	sanitized = sanitized.replace(/--/g, "");
 	return sanitized;
 }
 
@@ -597,39 +589,30 @@ export function populateOnlineUserList(username: string | null = null): string[]
 	if (!generalData.onlineUsers) return ["Global Chat"];
 	onlineList.push("Global Chat");
 	generalData.onlineUsers.forEach((user) => {
-		console.log(`${user} is online!`)
+		console.log(`${user} is online!`);
 		if (username !== user) onlineList.push(user);
 	});
 	return onlineList;
 }
 
 export function addOnlineUser(username: string) {
-	if (!generalData.onlineUsers!.includes(username))
-		generalData.onlineUsers!.push(username);
-	if (!generalData.allUsers?.includes(username))
-		generalData.allUsers?.push(username);
+	if (!generalData.onlineUsers!.includes(username)) generalData.onlineUsers!.push(username);
+	if (!generalData.allUsers?.includes(username)) generalData.allUsers?.push(username);
 }
 
 export function removeUserFromList(username: string, list: string[] | null): string[] {
 	if (!list) return [];
 
-	return list.filter(
-		(user) => user !== username
-	);
+	return list.filter((user) => user !== username);
 }
 
 export function addUserToList(userToBlock: string, list: string[] | null): string[] {
-	if (!list)
-		list = [];
-	if (!list.includes(userToBlock))
-		list.push(userToBlock);
-	return list
+	if (!list) list = [];
+	if (!list.includes(userToBlock)) list.push(userToBlock);
+	return list;
 }
 
-export async function populateChatWindow(
-	chatHistory: chatHistory,
-	chatMessages: HTMLElement,
-) {
+export async function populateChatWindow(chatHistory: chatHistory, chatMessages: HTMLElement) {
 	chatMessages.textContent = "";
 
 	let chatHistoryToAdd: Message[] = [];
@@ -646,7 +629,7 @@ export async function populateChatWindow(
 
 	const messageElements = await Promise.all(renderPromises!);
 
-	messageElements.forEach(element => {
+	messageElements.forEach((element) => {
 		chatMessages.append(element);
 	});
 
@@ -660,13 +643,15 @@ export function appendMessageToHistory(message: Message): void {
 		userData.chatHistory!.global.push(message);
 		return;
 	}
-	if (message.type === "direct" || 
-		(message.type === "blockedByMeMessage" && message.sender === userData.username) || 
-		(message.type === "blockedByOthersMessage" && message.sender === userData.username)) {
+	if (
+		message.type === "direct" ||
+		(message.type === "blockedByMeMessage" && message.sender === userData.username) ||
+		(message.type === "blockedByOthersMessage" && message.sender === userData.username)
+	) {
 		const otherUser = message.sender === userData.chatHistory!.user ? message.receiver : message.sender;
 		if (!otherUser) return;
 		if (!userData.chatHistory!.private.has(otherUser)) userData.chatHistory!.private.set(otherUser, []);
-			userData.chatHistory!.private.get(otherUser)!.push(message);
+		userData.chatHistory!.private.get(otherUser)!.push(message);
 		return;
 	}
 	if (message.type === "tournament") {
@@ -678,7 +663,7 @@ export function appendMessageToHistory(message: Message): void {
 export function wireIncomingChat(
 	chatMessages: HTMLElement,
 	friendList: HTMLElement,
-	chatHeader: HTMLElement,
+	chatHeader: HTMLElement
 ): () => void {
 	const ws = userData.userSock;
 	if (!ws) {
@@ -689,18 +674,18 @@ export function wireIncomingChat(
 	const previousHandler = ws.onmessage;
 
 	// get the last chatPartner
-	const savedChatPartner = localStorage.getItem('activeChatPartner');
+	const savedChatPartner = localStorage.getItem("activeChatPartner");
 	if (savedChatPartner) {
 		userData.activePrivateChat = savedChatPartner;
-	} else if (!userData.activePrivateChat){
+	} else if (!userData.activePrivateChat) {
 		userData.activePrivateChat = "Global Chat";
 	}
 
 	generalData.onlineUsers = populateOnlineUserList(userData.username);
 
-	if (userData.activePrivateChat !== "Global Chat" && !generalData.onlineUsers.includes(userData.activePrivateChat!)){
+	if (userData.activePrivateChat !== "Global Chat" && !generalData.onlineUsers.includes(userData.activePrivateChat!)) {
 		userData.activePrivateChat = "Global Chat";
-		localStorage.setItem('activePrivateChat', "Global Chat");
+		localStorage.setItem("activePrivateChat", "Global Chat");
 	}
 
 	populateChatWindow(userData.chatHistory!, chatMessages);
@@ -709,26 +694,25 @@ export function wireIncomingChat(
 
 	// keep chat header in sync when block/unblock happens in userProfile
 	const handleUserListsUpdated = (event: Event) => {
-		const custom = event as CustomEvent<{ action: 'block' | 'unblock'; username: string }>;
+		const custom = event as CustomEvent<{ action: "block" | "unblock"; username: string }>;
 		const { action, username } = custom.detail;
 
-		if (action === 'block') {
+		if (action === "block") {
 			if (!userData.blockedUsers?.includes(username)) {
 				userData.blockedUsers?.push(username);
 			}
-		} else if (action === 'unblock') {
-			userData.blockedUsers = userData.blockedUsers?.filter(u => u !== username) ?? [];
+		} else if (action === "unblock") {
+			userData.blockedUsers = userData.blockedUsers?.filter((u) => u !== username) ?? [];
 		}
 
 		renderChatHeaderButtons(chatHeader, userData.activePrivateChat);
 		renderOnlineUsers(friendList, chatMessages, chatHeader);
 	};
 
-	document.addEventListener('userListsUpdated', handleUserListsUpdated);
+	document.addEventListener("userListsUpdated", handleUserListsUpdated);
 
 	ws.onmessage = async (event) => {
 		try {
-			
 			const payload = JSON.parse(event.data);
 			if (payload && payload.type === "chat") {
 				const msg: Message = payload.data;
@@ -736,14 +720,16 @@ export function wireIncomingChat(
 
 				switch (msg.type) {
 					case "broadcast": {
-						if (userData.activePrivateChat === "Global Chat")
-							await displayIncomingMessage(msg, chatMessages);
+						if (userData.activePrivateChat === "Global Chat") await displayIncomingMessage(msg, chatMessages);
 						appendMessageToHistory(msg);
 						break;
 					}
 					case "direct": {
-						if ((userData.activePrivateChat === msg.sender || userData.activePrivateChat === msg.receiver)
-						&& (!userData.blockedUsers?.includes(msg.sender) && !userData.blockedByUsers?.includes(msg.receiver!)))
+						if (
+							(userData.activePrivateChat === msg.sender || userData.activePrivateChat === msg.receiver) &&
+							!userData.blockedUsers?.includes(msg.sender) &&
+							!userData.blockedByUsers?.includes(msg.receiver!)
+						)
 							await displayIncomingMessage(msg, chatMessages);
 						appendMessageToHistory(msg);
 						break;
@@ -754,7 +740,7 @@ export function wireIncomingChat(
 						}
 						appendMessageToHistory(msg);
 						break;
-						}
+					}
 					case "unblock": {
 						if (msg.receiver === userData.username && msg.sender !== userData.username) {
 							userData.blockedByUsers = removeUserFromList(msg.sender, userData.blockedByUsers);
@@ -764,78 +750,61 @@ export function wireIncomingChat(
 					}
 					case "blockedByMeMessage": {
 						if (userData.activePrivateChat === msg.receiver) {
-								await displayIncomingMessage(msg, chatMessages);
+							await displayIncomingMessage(msg, chatMessages);
 						}
 						appendMessageToHistory(msg);
 						break;
-						}
+					}
 					case "blockedByOthersMessage": {
-						if (userData.activePrivateChat === msg.receiver){
-								await displayIncomingMessage(msg, chatMessages);
-							}
+						if (userData.activePrivateChat === msg.receiver) {
+							await displayIncomingMessage(msg, chatMessages);
+						}
 						appendMessageToHistory(msg);
 						break;
-						}
+					}
 					case "invite": {
-						if (userData.username === msg.receiver){
-								await displayIncomingMessage(msg, chatMessages);
-							}
+						if (userData.username === msg.receiver) {
+							await displayIncomingMessage(msg, chatMessages);
+						}
 						appendMessageToHistory(msg);
 						break;
-						}
+					}
 				}
 			}
 
 			if (payload && payload.type === "user-online") {
 				const newUserOnline = payload.data.username;
-				console.log(`${newUserOnline} is online!`)
+				console.log(`${newUserOnline} is online!`);
 				addOnlineUser(newUserOnline);
-				renderOnlineUsers(
-							friendList,
-							chatMessages,
-							chatHeader
-						);
-					}
+				renderOnlineUsers(friendList, chatMessages, chatHeader);
+			}
 
 			if (payload && payload.type === "user-offline") {
 				const newUserOffline = payload.data.username;
-				console.log(`${newUserOffline} left the realm!`)
+				console.log(`${newUserOffline} left the realm!`);
 				generalData.onlineUsers = removeUserFromList(newUserOffline, generalData.onlineUsers!);
 				if (userData.activePrivateChat === newUserOffline) {
 					userData.activePrivateChat = "Global Chat";
-					localStorage.setItem('activePrivateChat', "Global Chat");
+					localStorage.setItem("activePrivateChat", "Global Chat");
 					populateChatWindow(userData.chatHistory!, chatMessages);
 					renderChatHeaderButtons(chatHeader, userData.activePrivateChat);
 				}
-				renderOnlineUsers(
-							friendList,
-							chatMessages,
-							chatHeader
-						);
-					}
+				renderOnlineUsers(friendList, chatMessages, chatHeader);
+			}
 
 			if (payload && payload.type == "block") {
 				const blockedUser = payload.data.username;
-				console.log(`${userData.username} blocked ${blockedUser}`)
+				console.log(`${userData.username} blocked ${blockedUser}`);
 				userData.blockedUsers = addUserToList(blockedUser, userData.blockedUsers);
-				renderOnlineUsers(
-							friendList,
-							chatMessages,
-							chatHeader
-						);
-					}
+				renderOnlineUsers(friendList, chatMessages, chatHeader);
+			}
 
-				if (payload && payload.type == "unblock") {
+			if (payload && payload.type == "unblock") {
 				const unblockedUser = payload.data.username;
-				console.log(`${userData.username} unblocked ${unblockedUser}`)
+				console.log(`${userData.username} unblocked ${unblockedUser}`);
 				userData.blockedUsers = removeUserFromList(unblockedUser, userData.blockedUsers!);
-				renderOnlineUsers(
-							friendList,
-							chatMessages,
-							chatHeader
-						);
-					}
-
+				renderOnlineUsers(friendList, chatMessages, chatHeader);
+			}
 		} catch (err) {
 			console.error("Failed to parse incoming payload", err);
 		}
@@ -843,6 +812,6 @@ export function wireIncomingChat(
 
 	return () => {
 		ws.onmessage = previousHandler ?? null;
-		document.removeEventListener('userListsUpdated', handleUserListsUpdated);
+		document.removeEventListener("userListsUpdated", handleUserListsUpdated);
 	};
 }

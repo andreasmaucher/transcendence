@@ -3,12 +3,7 @@ import { fetchTournamentList, fetchMe, type Tournament } from "../../api/http";
 import { t } from "../../i18n";
 import "./tournament.css";
 import "./overlays/overlays.css";
-import {
-  createTournamentOverlay,
-  showTournamentOverlay,
-  hideTournamentOverlay
-} from "./overlays/tournament_overlay";
-
+import { createTournamentOverlay, showTournamentOverlay, hideTournamentOverlay } from "./overlays/tournament_overlay";
 
 export async function renderTournament(container: HTMLElement) {
 	container.innerHTML = "";
@@ -71,7 +66,7 @@ export async function renderTournament(container: HTMLElement) {
 			justify-content: center;
 			align-items: center;
 		`;
-		
+
 		// Close modal when clicking outside of it
 		modalOverlay.onclick = () => {
 			modalOverlay.remove();
@@ -95,7 +90,7 @@ export async function renderTournament(container: HTMLElement) {
 			color: #ff6bff;
 			font-family: Orbitron, sans-serif;
 		`;
-		
+
 		// Prevent modal from closing when clicking inside it
 		modalContent.onclick = (e) => e.stopPropagation();
 
@@ -116,13 +111,18 @@ export async function renderTournament(container: HTMLElement) {
 		const displayNameLabel = document.createElement("label");
 		displayNameLabel.className = "tournament-name-label";
 		displayNameLabel.textContent = t("tournaments.displayNameLabel");
-		
+
 		const displayNameInput = document.createElement("input");
 		displayNameInput.type = "text";
 		displayNameInput.className = "tournament-name-input";
 		displayNameInput.placeholder = t("tournaments.displayNamePlaceholder");
 		displayNameInput.maxLength = 30;
-		
+
+		// Add sanitation
+		displayNameInput.addEventListener("input", () => {
+			displayNameInput.value = displayNameInput.value.replace(/[^a-zA-Z0-9]/g, "");
+		});
+
 		displayNameLabel.appendChild(displayNameInput);
 		modalContent.appendChild(displayNameLabel);
 
@@ -190,8 +190,8 @@ export async function renderTournament(container: HTMLElement) {
 		joinBtn.onclick = () => {
 			// ANDY: get custom display name from input if provided, otherwise it will be empty and backend will use username
 			const customDisplayName = displayNameInput.value.trim();
-			const displayNameParam = customDisplayName ? `&displayName=${encodeURIComponent(customDisplayName)}` : '';
-			
+			const displayNameParam = customDisplayName ? `&displayName=${encodeURIComponent(customDisplayName)}` : "";
+
 			modalOverlay.remove();
 			navigate(`#/game?mode=tournament&id=${tournamentId}${displayNameParam}`);
 		};
@@ -207,7 +207,7 @@ export async function renderTournament(container: HTMLElement) {
 		modalContent.appendChild(buttonContainer);
 		modalOverlay.appendChild(modalContent);
 		document.body.appendChild(modalOverlay);
-		
+
 		// Focus the input field when modal opens
 		setTimeout(() => displayNameInput.focus(), 100);
 	}
@@ -230,7 +230,7 @@ export async function renderTournament(container: HTMLElement) {
 			justify-content: center;
 			align-items: center;
 		`;
-		
+
 		// Close modal when clicking outside of it
 		modalOverlay.onclick = () => {
 			modalOverlay.remove();
@@ -254,7 +254,7 @@ export async function renderTournament(container: HTMLElement) {
 			color: #ff6bff;
 			font-family: Orbitron, sans-serif;
 		`;
-		
+
 		// Prevent modal from closing when clicking inside it
 		modalContent.onclick = (e) => e.stopPropagation();
 
@@ -274,13 +274,18 @@ export async function renderTournament(container: HTMLElement) {
 		const nameLabel = document.createElement("label");
 		nameLabel.className = "tournament-name-label";
 		nameLabel.textContent = t("tournaments.nameLabel");
-		
+
 		const nameInput = document.createElement("input");
 		nameInput.type = "text";
 		nameInput.className = "tournament-name-input";
 		nameInput.placeholder = t("tournaments.namePlaceholder");
 		nameInput.maxLength = 30;
-		
+
+		// Add sanitation
+		nameInput.addEventListener("input", () => {
+			nameInput.value = nameInput.value.replace(/[^a-zA-Z0-9]/g, "");
+		});
+
 		nameLabel.appendChild(nameInput);
 		modalContent.appendChild(nameLabel);
 
@@ -288,13 +293,13 @@ export async function renderTournament(container: HTMLElement) {
 		const displayNameLabel = document.createElement("label");
 		displayNameLabel.className = "tournament-name-label";
 		displayNameLabel.textContent = t("tournaments.displayNameLabel");
-		
+
 		const displayNameInput = document.createElement("input");
 		displayNameInput.type = "text";
 		displayNameInput.className = "tournament-name-input";
 		displayNameInput.placeholder = t("tournaments.displayNamePlaceholder");
 		displayNameInput.maxLength = 30;
-		
+
 		displayNameLabel.appendChild(displayNameInput);
 		modalContent.appendChild(displayNameLabel);
 
@@ -362,24 +367,22 @@ export async function renderTournament(container: HTMLElement) {
 		confirmBtn.onclick = async () => {
 			const tournamentId = crypto.randomUUID?.() || Math.random().toString(36).slice(2);
 			const me = await fetchMe();
-			
+
 			// ANDY: use custom tournament name from input if provided, otherwise use our old naming logic
 			const customName = nameInput.value.trim();
 			const tournamentName = customName
 				? customName
 				: me
-					? `${me.username} Tournament`
-					: `Tournament ${tournamentId.slice(0, 8)}`;
+				? `${me.username}Tournament`
+				: `Tournament${tournamentId.slice(0, 8)}`;
 
 			// ANDY: get custom display name from input if provided, otherwise it will be empty and backend will use username
 			const customDisplayName = displayNameInput.value.trim();
 
 			modalOverlay.remove();
-			const displayNameParam = customDisplayName ? `&displayName=${encodeURIComponent(customDisplayName)}` : '';
+			const displayNameParam = customDisplayName ? `&displayName=${encodeURIComponent(customDisplayName)}` : "";
 			navigate(
-				`#/game?mode=tournament&id=${tournamentId}&name=${encodeURIComponent(
-					tournamentName
-				)}${displayNameParam}`
+				`#/game?mode=tournament&id=${tournamentId}&name=${encodeURIComponent(tournamentName)}${displayNameParam}`
 			);
 		};
 
@@ -439,7 +442,7 @@ export async function renderTournament(container: HTMLElement) {
 				left.style.gap = "0.3rem";
 
 				const nameLine = document.createElement("div");
-				nameLine.textContent = tour.name || `Tournament #${tour.id}`;
+				nameLine.textContent = tour.name || `Tournament${tour.id}`;
 				nameLine.style.fontWeight = "bold";
 
 				const statusLine = document.createElement("div");

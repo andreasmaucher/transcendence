@@ -14,6 +14,7 @@ import {
 } from "../user/online.js";
 import { handleChatMessages, handleGameMessages } from "./messages.js";
 import { authenticateWebSocket } from "../auth/verify.js";
+import { isValidInput } from "../utils/sanitize.js";
 
 export function registerWebsocketRoute(fastify: FastifyInstance) {
 	// Register user socket
@@ -189,13 +190,21 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			const tournamentName = request.query.name;
 			const tournamentSize = request.query.size;
 			const userDisplayName = request.query.displayName;
+			console.log("tournamentName", tournamentName);
+			console.log("userDisplayName", userDisplayName);
 			if (!tournamentId) {
 				socket.close(1011, "Tournament id missing");
 				return;
+			} else if (
+				(tournamentName && !isValidInput(tournamentName)) ||
+				(userDisplayName && !isValidInput(userDisplayName))
+			) {
+				socket.close(1011, "Invalid tournament name or display name");
+				return;
 			}
 
-			// Check user is not already connected to another game socket
 			if (isUserAlreadyInGame(payload.username)) {
+				// Check user is not already connected to another game socket
 				socket.close(1011, "user is already playing");
 				return;
 			}
@@ -221,7 +230,12 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			//		}
 			//	}
 			//}
-		const tournament = getOrCreateTournament(tournamentId, tournamentName, tournamentSize, payload.username);
+			const tournament = getOrCreateTournament({
+				id: tournamentId,
+				name: tournamentName,
+				size: tournamentSize,
+				creator: payload.username,
+			});
 
 			// ANDY: use custom display name from query parameter if provided, otherwise use username
 			const playerDisplayName = userDisplayName || socket.username;
@@ -238,21 +252,23 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				socket.tournamentId = tournament.id; // tracks the tournament this socket belongs to
 
 				// ANDY: determine playerSide AFTER adding player (to get the actual assigned side)
-				const playerSide: "left" | "right" | null = 
-					match.players.left?.username === socket.username ? "left" :
-					match.players.right?.username === socket.username ? "right" :
-					null;
+				const playerSide: "left" | "right" | null =
+					match.players.left?.username === socket.username
+						? "left"
+						: match.players.right?.username === socket.username
+						? "right"
+						: null;
 
 				// ANDY: broadcast match-assigned for ALL matches in the current round to ALL tournament participants
 				// This ensures all players see the tournament tree being populated
 				const roundMatches = tournament.matches.get(tournament.state.round);
 				if (roundMatches) {
 					const sentSockets = new Set();
-					
+
 					// Build and send match-assigned for each match in the round
 					for (let i = 0; i < roundMatches.length; i++) {
 						const currentMatch = roundMatches[i];
-						
+
 						// ANDY: Build base payload without playerSide (will be customized per recipient)
 						const basePayload = {
 							matchId: currentMatch.id,
@@ -261,29 +277,34 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 							matchIndex: i, // ANDY: index in the roundMatches array (0=first match, 1=second match)
 							leftPlayer: {
 								username: currentMatch.players.left?.username || null,
-								displayName: currentMatch.players.left?.displayName || currentMatch.players.left?.username || null,
+								displayName:
+									currentMatch.players.left?.displayName || currentMatch.players.left?.username || null,
 							},
 							rightPlayer: {
 								username: currentMatch.players.right?.username || null,
-								displayName: currentMatch.players.right?.displayName || currentMatch.players.right?.username || null,
+								displayName:
+									currentMatch.players.right?.displayName || currentMatch.players.right?.username || null,
 							},
 						};
 
 						// Send to all tournament participants with their individual playerSide
 						for (const player of tournament.players) {
-							if (player.socket && player.socket.readyState === 1) { // WebSocket.OPEN
+							if (player.socket && player.socket.readyState === 1) {
+								// WebSocket.OPEN
 								// ANDY: Determine playerSide for THIS specific player for THIS specific match
 								// needed for broadcasting match-assigned messages to all players
-								const recipientPlayerSide: "left" | "right" | null = 
-									currentMatch.players.left?.username === player.username ? "left" :
-									currentMatch.players.right?.username === player.username ? "right" :
-									null;
-								
+								const recipientPlayerSide: "left" | "right" | null =
+									currentMatch.players.left?.username === player.username
+										? "left"
+										: currentMatch.players.right?.username === player.username
+										? "right"
+										: null;
+
 								const matchAssignedPayload = buildPayload("match-assigned", {
 									...basePayload,
 									playerSide: recipientPlayerSide,
 								} as any);
-								
+
 								player.socket.send(matchAssignedPayload);
 								sentSockets.add(player.socket);
 							}

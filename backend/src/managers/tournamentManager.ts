@@ -21,29 +21,34 @@ import { forfeitMatchDB } from "../database/matches/setters.js";
 import { buildPayload } from "../transport/broadcaster.js";
 import { createTournamentPlayerDB, removeTournamentPlayerDB } from "../database/tournament_players/setters.js";
 import db from "../database/db_init.js";
+import { getTournamentCountByCreator } from "../database/tournaments/getters.js";
 
 // Get or Create a tournament, called only when creating a socket connection
-export function getOrCreateTournament(id: string, name?: string, size?: number, creator?: string): Tournament {
+export function getOrCreateTournament({
+	id,
+	name,
+	size,
+	creator,
+}: {
+	id: string;
+	name?: string;
+	size?: number;
+	creator?: string;
+}): Tournament {
 	let tournament = tournaments.get(id);
 	if (!tournament) {
 		// Generate unique name with counter if creator is provided
 		let tournamentName = name;
 		if (creator && name) {
 			// Count existing tournaments by this creator (ANDY:added creator field to the db)
-			const stmt = db.prepare(`
-				SELECT COUNT(*) as count
-				FROM tournaments
-				WHERE creator = ?
-			`);
-			const result: any = stmt.get(creator);
-			const counter = (result?.count || 0) + 1;
-			
-			// name the tournaments e.g.  "andy tournament #1"
-			if (name.includes('Tournament')) {
-				tournamentName = `${creator} tournament #${counter}`;
+			const counter = getTournamentCountByCreator(creator) + 1;
+
+			// name the tournaments e.g.  "andyTournament1"
+			if (name.includes("Tournament")) {
+				tournamentName = `${creator}Tournament${counter}`;
 			}
 		}
-		
+
 		// use the provided id from URL so players can find each other
 		tournament = {
 			id: id,
@@ -131,19 +136,19 @@ export function addPlayerToTournament({
 				if (!checkMatchFull(match)) {
 					if (tournament.state.round === 1 && playerDisplayName && socket) {
 						// Only add to tournament.players if not already there
-						const alreadyInTournament = tournament.players.some(p => p.username === playerId);
+						const alreadyInTournament = tournament.players.some((p) => p.username === playerId);
 						if (!alreadyInTournament) {
-						tournament.players.push({
-							username: playerId,
-							displayName: playerDisplayName,
-							socket: socket,
-							currentMatch: match,
-						});
-						createTournamentPlayerDB(tournament.id, playerId, playerDisplayName);
+							tournament.players.push({
+								username: playerId,
+								displayName: playerDisplayName,
+								socket: socket,
+								currentMatch: match,
+							});
+							createTournamentPlayerDB(tournament.id, playerId, playerDisplayName);
 						}
 					}
 					// ANDY: look up displayName from tournament.players for later rounds or if already in tournament
-					const tournamentPlayer = tournament.players.find(p => p.username === playerId);
+					const tournamentPlayer = tournament.players.find((p) => p.username === playerId);
 					const displayName = tournamentPlayer?.displayName || playerDisplayName;
 					addPlayerToMatch(match, playerId, socket, displayName);
 					if (checkTournamentFull(tournament)) startTournament(tournament);
@@ -167,18 +172,21 @@ function broadcastMatchAssigned(
 ): void {
 	// Broadcast to all tournament players with their individual playerSide
 	for (const player of tournament.players) {
-		if (player.socket && player.socket.readyState === 1) { // ws is open
+		if (player.socket && player.socket.readyState === 1) {
+			// ws is open
 			// Determine playerSide for this specific player for this specific match
-			const recipientPlayerSide: "left" | "right" | null = 
-				newMatch.players.left?.username === player.username ? "left" :
-				newMatch.players.right?.username === player.username ? "right" :
-				null;
-			
+			const recipientPlayerSide: "left" | "right" | null =
+				newMatch.players.left?.username === player.username
+					? "left"
+					: newMatch.players.right?.username === player.username
+					? "right"
+					: null;
+
 			const matchAssignedPayload = buildPayload("match-assigned", {
 				...basePayload,
 				playerSide: recipientPlayerSide,
 			} as any);
-			
+
 			player.socket.send(matchAssignedPayload);
 		}
 	}
@@ -432,41 +440,41 @@ export function forfeitTournament(tournamentId: string, playerId: string) {
 				}
 			}
 		}
-		
+
 		// Remove player from tournament players list
-		const playerIndex = tournament.players.findIndex(p => p.username === playerId);
+		const playerIndex = tournament.players.findIndex((p) => p.username === playerId);
 		if (playerIndex !== -1) {
 			tournament.players.splice(playerIndex, 1);
 			console.log(`[TM] Removed ${playerId} from tournament players list`);
 		}
-		
+
 		// Remove player from database tournament_players table
 		try {
 			removeTournamentPlayerDB(tournament.id, playerId);
 		} catch (error: any) {
 			console.log(`[TM] Could not remove ${playerId} from tournament_players DB: ${error.message}`);
 		}
-		
+
 		// If tournament already started, end it, therwise just remove the player
 		if (tournament.state.isRunning) {
 			tournament.state.isRunning = false;
-		if (roundMatches) {
-			for (const match of roundMatches) {
-				match.state.isRunning = false;
-				const clients = tournament.players.map((player) => player.socket);
-				for (const client of clients) {
-					client.send(
-						buildPayload("player-left", {
-							username: playerId,
-						})
-					);
-					client.close(1000, "A player left");
+			if (roundMatches) {
+				for (const match of roundMatches) {
+					match.state.isRunning = false;
+					const clients = tournament.players.map((player) => player.socket);
+					for (const client of clients) {
+						client.send(
+							buildPayload("player-left", {
+								username: playerId,
+							})
+						);
+						client.close(1000, "A player left");
+					}
+					forfeitMatchDB(match.id, playerId);
 				}
-				forfeitMatchDB(match.id, playerId);
 			}
-		}
-		forfeitTournamentDB(tournament.id, playerId);
-		tournaments.delete(tournament.id);
+			forfeitTournamentDB(tournament.id, playerId);
+			tournaments.delete(tournament.id);
 		}
 	}
 }
