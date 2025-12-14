@@ -1,6 +1,6 @@
 import { generalData, userData } from "../config/constants";
 import { API_BASE } from "../config/endpoints";
-import { renderBlockMessage, sendMessage, wireIncomingChat } from "./chatHandler";
+import { sanitizeMessageInput, sendMessage, wireIncomingChat } from "./chatHandler";
 import { Message } from "./types";
 
 export function updateLocalBlockState(
@@ -29,11 +29,11 @@ export function updateLocalBlockState(
 	}
 }
 
-export function populatePrivateConv(username: string, privateMessages: Message[]): Map<string, Message[]> {
-	const privateConvs = new Map<string, Message[]>();
-	const blockedUsersLocal = new Map<string, string[]>();
-	let blockedByMe: string[] = [];
-	let blockedByThem: string[] = [];
+	export function populatePrivateConv(username: string, privateMessages: Message[]): Map<string, Message[]> {
+		const privateConvs = new Map<string, Message[]>();
+		const blockedUsersLocal = new Map<string, string[]>();
+		let blockedByMe: string[] = [];
+		let blockedByThem: string[] = [];
 
 	for (const msg of privateMessages) {
 		const otherUser = msg.sender === username ? msg.receiver : msg.sender;
@@ -60,10 +60,26 @@ export function populatePrivateConv(username: string, privateMessages: Message[]
 					if (index === -1) blockedByMe.push(msg.sender!);
 				} else {
 					if (index !== -1) blockedByMe.splice(index, 1);
+			if (msg.type === "block" || msg.type === "unblock") {
+				updateLocalBlockState(blockedUsersLocal, msg.sender!, msg.receiver!, msg.type);
+				
+				if (msg.sender === username) {
+					const index = blockedByMe.indexOf(msg.receiver!);
+					if (msg.type === "block") {
+						if (index === -1) blockedByMe.push(msg.receiver!);
+					} else {
+						if (index !== -1) blockedByMe.splice(index, 1);
+					}
+				} else if (msg.receiver === username) {
+					const index = blockedByThem.indexOf(msg.sender!);
+					if (msg.type === "block") {
+						if (index === -1) blockedByThem.push(msg.sender!);
+					} else {
+						if (index !== -1) blockedByThem.splice(index, 1);
+					}
 				}
+				continue;
 			}
-			continue;
-		}
 
 		const senderBlockedTarget = blockedUsersLocal.get(msg.sender!)?.includes(msg.receiver!) ?? false;
 
@@ -82,10 +98,10 @@ export function populatePrivateConv(username: string, privateMessages: Message[]
 		privateConvs.get(otherUser)!.push(msg);
 	}
 
-	userData.blockedByUsers = blockedByThem;
-	userData.blockedUsers = blockedByMe;
-	return privateConvs;
-}
+		userData.blockedUsers = blockedByMe;
+		userData.blockedByUsers = blockedByThem;
+		return privateConvs;
+	}
 
 export async function fetchUserData() {
 	const response = await fetch(`${API_BASE}/api/user/data`, {
@@ -269,7 +285,6 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	fHeader.style.fontWeight = "bold";
 	fHeader.style.fontSize = "18px";
 	fHeader.style.margin = "8px";
-	fHeader.style.cursor = "pointer";
 	fHeader.style.whiteSpace = "nowrap";
 	fHeader.style.color = "#00ffc8";
 	fHeader.style.textShadow = "0 0 5px #66ffc8";
@@ -285,31 +300,15 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	// CHAT EXPANDS AUTOMATICALLY
 	chat.style.flex = "1";
 
-	// TOGGLE OPEN/CLOSE FRIEND LIST
-	let channelOpen = true;
-	fHeader.onclick = () => {
-		channelOpen = !channelOpen;
-		if (channelOpen) {
-			// NORMAL (aufgeklappt)
-			friends.style.width = "180px";
-			friends.style.padding = "6px";
-			channelList.style.display = "block";
+	// STATIC CHANNELLIST
+	friends.style.width = "180px";
+	friends.style.padding = "6px";
+	channelList.style.display = "block";
 
-			fHeader.style.writingMode = "horizontal-tb";
-			fHeader.style.margin = "8px";
-			fHeader.style.rotate = "0deg";
-			fHeader.textContent = "Channels";
-		} else {
-			friends.style.width = "32px";
-			friends.style.padding = "0";
-			channelList.style.display = "none";
-
-			fHeader.style.writingMode = "vertical-lr";
-			fHeader.style.rotate = "0deg";
-			fHeader.style.margin = "40px auto 0 auto";
-			fHeader.textContent = "Channels";
-		}
-	};
+	fHeader.style.writingMode = "horizontal-tb";
+	fHeader.style.margin = "8px";
+	fHeader.style.rotate = "0deg";
+	fHeader.textContent = "Channels";
 
 	// MINIMIZE CHAT
 	// Minimize button
@@ -336,15 +335,25 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 
 	// SEND MESSAGE ON CLICK
 	sendBtn.onclick = () => {
+		const messageContent = input.value.trim();
+		if (messageContent.length === 0)
+			return; 
+
+		let sanitizeMessage = sanitizeMessageInput(messageContent);
+
 		sendBtn.style.transform = "scale(0.97)";
 		setTimeout(() => (sendBtn.style.transform = "scale(1)"), 120);
 
-		if (userData.activePrivateChat === "Global Chat") sendMessage("broadcast", input.value);
+		if (userData.activePrivateChat === "Global Chat")
+			sendMessage("broadcast", sanitizeMessage);
 		else {
 			if (userData.blockedUsers?.includes(userData.activePrivateChat!)) {
-				console.log(`Message to ${userData.activePrivateChat} should be blocked`);
-				renderBlockMessage(userData.activePrivateChat!, chatMessages);
-			} else sendMessage("direct", input.value, userData.activePrivateChat);
+				sendMessage("blockedByMeMessage", '', userData.activePrivateChat);
+			} else if (userData.blockedByUsers?.includes(userData.activePrivateChat!)) {
+				sendMessage("blockedByOthersMessage", '', userData.activePrivateChat);
+			}
+			else
+				sendMessage("direct", sanitizeMessage, userData.activePrivateChat);
 		}
 
 		input.value = "";
@@ -355,19 +364,26 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 		if (e.key === "Enter") {
 			e.preventDefault();
 
-			sendBtn.style.transform = "scale(0.97)";
-			setTimeout(() => (sendBtn.style.transform = "scale(1)"), 120);
+		const messageContent = input.value.trim();
+		if (messageContent.length === 0)
+			return; 
 
-			if (userData.activePrivateChat === "Global Chat") sendMessage("broadcast", input.value);
-			else {
-				if (userData.blockedUsers?.includes(userData.activePrivateChat!)) {
-					console.log(`Message to ${userData.activePrivateChat} should be blocked`);
-					sendMessage("blockedByMeMessage", "", userData.activePrivateChat);
-				} else if (userData.blockedByUsers?.includes(userData.activePrivateChat!)) {
-					console.log(`${userData.activePrivateChat} blocked you`);
-					sendMessage("blockedByOthersMessage", "", userData.activePrivateChat);
-				} else sendMessage("direct", input.value, userData.activePrivateChat);
+		let sanitizeMessage = sanitizeMessageInput(messageContent);
+
+		sendBtn.style.transform = "scale(0.97)";
+		setTimeout(() => sendBtn.style.transform = "scale(1)", 120);
+
+		if (userData.activePrivateChat === "Global Chat")
+			sendMessage("broadcast", sanitizeMessage);
+		else {
+			if (userData.blockedUsers?.includes(userData.activePrivateChat!)) {
+				sendMessage("blockedByMeMessage", '', userData.activePrivateChat);
+			} else if (userData.blockedByUsers?.includes(userData.activePrivateChat!)) {
+				sendMessage("blockedByOthersMessage", '', userData.activePrivateChat);
 			}
+			else
+				sendMessage("direct", sanitizeMessage, userData.activePrivateChat);
+		}
 
 			input.value = "";
 		}
