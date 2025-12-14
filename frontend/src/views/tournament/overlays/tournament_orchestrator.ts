@@ -53,10 +53,7 @@ export function isMatchInRound2(matchId: string): boolean {
 	// ANDY: convert round to number for comparison (handles both number and string)
 	const round = matchInfo?.round;
 	const roundNum = round !== undefined ? (typeof round === 'number' ? round : parseInt(String(round), 10)) : undefined;
-	const isRound2 = roundNum === 2;
-	console.log(`[TO] isMatchInRound2(${matchId}): matchInfo=`, matchInfo, `round=${round} (type: ${typeof round}), roundNum=${roundNum}, isRound2=${isRound2}`);
-	console.log(`[TO] matchTypeMap contents:`, Array.from(matchTypeMap.entries()));
-	return isRound2;
+	return roundNum === 2;
 }
 
 /**
@@ -91,7 +88,6 @@ export function handleTournamentMatchAssigned(data: any) {
 		// ANDY: ensure round is stored as a number for consistent comparison
 		const roundNum = typeof round === 'number' ? round : parseInt(round, 10);
 		matchTypeMap.set(matchId, { round: roundNum, type: tournamentMatchType });
-		console.log(`[TO] Stored matchTypeMap: matchId=${matchId}, round=${roundNum} (type: ${typeof roundNum}), type=${tournamentMatchType}`);
 	}
 
 	const me = userData.username ?? undefined;

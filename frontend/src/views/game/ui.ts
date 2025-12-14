@@ -103,8 +103,6 @@ export async function renderGame(container: HTMLElement) {
 	const tournamentName = params.get("name") || undefined;
 	const displayName = params.get("displayName") || undefined;
 
-	console.log("GAME MODE =", mode, "ROOM ID =", roomId, "TOURNAMENT NAME =", tournamentName);
-
 	// ==========================================================
 	// GAME FRAME WRAPPER
 	// ==========================================================
@@ -282,14 +280,16 @@ export async function renderGame(container: HTMLElement) {
 	}
 
 	let isWaiting = mode !== "local"; // Track if we're in waiting mode
+	let isMatchOver = false; // ANDY: track if the match is over (round 2 finished)
 	const exitBtn = document.createElement("button");
 
 	// Function to update button text based on state
 	const updateButtonText = () => {
-		exitBtn.textContent = isWaiting ? t("game.leave") : t("game.exit");
-		// ANDY: Don't reset display style if button was hidden (e.g., after match ends the forfeit button is hidden)
-		if (exitBtn.style.display === "none") {
-			return; // Don't change anything if button is hidden
+		// ANDY: if match is over (round 2 finished), show "Back to Menu"
+		if (isMatchOver) {
+			exitBtn.textContent = t("game.backToMenu");
+		} else {
+			exitBtn.textContent = isWaiting ? t("game.leave") : t("game.exit");
 		}
 
 		// attach to wrapper (same as user info)
@@ -338,6 +338,13 @@ export async function renderGame(container: HTMLElement) {
 		cancelled = true;
 		setMatchActive(false); // Show topbar again before navigating
 		if (cancelCountdown) cancelCountdown(); // Stop countdown immediately
+
+		// ANDY: if match is over (round 2 finished), just go back to menu
+		if (isMatchOver) {
+			userData.gameSock?.close(); // Close socket
+			navigate("#/menu");
+			return;
+		}
 
 		if (isWaiting) {
 			// In waiting mode: go back to appropriate lobby
@@ -498,16 +505,11 @@ export async function renderGame(container: HTMLElement) {
 			await showMessageOverlay(message);
 		},
 
-		// ANDY: hide the forfeit button when the match is over (works separately for final and 3rd place matches)
+		// ANDY: change button to "Back to Menu" when the match is over (works separately for final and 3rd place matches)
 		onMatchOver: () => {
 			if (cancelled) return;
-			console.log(`[UI] onMatchOver called, hiding exitBtn. exitBtn exists:`, !!exitBtn, `exitBtn.parentElement:`, exitBtn?.parentElement);
-			if (exitBtn) {
-				exitBtn.style.display = "none";
-				exitBtn.style.visibility = "hidden";
-				exitBtn.style.opacity = "0";
-				console.log(`[UI] exitBtn.style.display set to:`, exitBtn.style.display, `computed display:`, window.getComputedStyle(exitBtn).display);
-			}
+			isMatchOver = true;
+			updateButtonText(); // Update button text to "Back to Menu"
 		},
 	});
 
