@@ -5,7 +5,13 @@ import { getOrCreateSingleGame } from "../managers/singleGameManager.js";
 import { getOrCreateTournament, addPlayerToTournament } from "../managers/tournamentManager.js";
 import { addPlayerToMatch, checkMatchFull, forfeitMatch, startMatch } from "../managers/matchManager.js";
 import { Match } from "../types/match.js";
-import { addGameToUser, addUserOnline, removeGameFromUser, removeUserOnline } from "../user/online.js";
+import {
+	addGameToUser,
+	addUserOnline,
+	isUserAlreadyInGame,
+	removeGameFromUser,
+	removeUserOnline,
+} from "../user/online.js";
 import { handleChatMessages, handleGameMessages } from "./messages.js";
 import { authenticateWebSocket } from "../auth/verify.js";
 
@@ -54,12 +60,18 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				return;
 			}
 
+			// Check user is not already connected to another game socket
+			if (isUserAlreadyInGame(payload.username)) {
+				socket.close(1011, "user is already playing");
+				return;
+			}
+
 			console.log(
 				`[gameWS] Websocket for LocalSingleGame: ${singleGameId} and User: ${payload.username} registered`
 			);
 
 			socket.username = payload.username;
-		const singleGame = getOrCreateSingleGame(singleGameId, "local", payload.username);
+			const singleGame = getOrCreateSingleGame(singleGameId, "local", payload.username);
 			const match: Match = singleGame.match;
 
 			// Add the current game info to the userOnline struct
@@ -100,13 +112,19 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				return;
 			}
 
+			// Check user is not already connected to another game socket
+			if (isUserAlreadyInGame(payload.username)) {
+				socket.close(1011, "user is already playing");
+				return;
+			}
+
 			if (singleGameId === "default")
 				console.log(`[gameWS] Websocket for SingleGame: ${singleGameId} and User: ${payload.username} registered`);
 			else console.log(`[gameWS] Websocket for SingleGame: ${singleGameId} and User: ${payload.username} connected`);
 
 			socket.username = payload.username;
 
-		const singleGame = getOrCreateSingleGame(singleGameId, "remote", payload.username);
+			const singleGame = getOrCreateSingleGame(singleGameId, "remote", payload.username);
 			const match: Match = singleGame.match;
 
 			if (checkMatchFull(match)) {
@@ -138,6 +156,9 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 					client.send(buildPayload("waiting", undefined));
 				}
 			}
+
+			// Add the current game info to the userOnline struct
+			addGameToUser(socket.username, socket, singleGame.id);
 
 			// add player to match (this may trigger countdown if match becomes full)
 			addPlayerToMatch(match, socket.username, socket);
@@ -173,12 +194,18 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				return;
 			}
 
+			// Check user is not already connected to another game socket
+			if (isUserAlreadyInGame(payload.username)) {
+				socket.close(1011, "user is already playing");
+				return;
+			}
+
 			if (tournamentId === "default")
 				console.log(`[gameWS] Websocket for Tournament: ${tournamentId} and User: ${payload.username} registered`);
 			else console.log(`[gameWS] Websocket for Tournament: ${tournamentId} and User: ${payload.username} connected`);
 			socket.username = payload.username;
 
-		const tournament = getOrCreateTournament(tournamentId, tournamentName, tournamentSize, payload.username);
+			const tournament = getOrCreateTournament(tournamentId, tournamentName, tournamentSize, payload.username);
 			// ANDY: added this part to ensure that in the second round of the tournament the sides are correctly assigned to the players
 			// Find which match this player will join and determine their side BEFORE adding them
 			let playerSide: "left" | "right" = "left";
@@ -228,6 +255,9 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 					const currentMatch = socket.currentTournamentMatch || match;
 					currentMatch.clients.delete(socket);
 					forfeitMatch(currentMatch, socket.username);
+
+					// Remove the current game from the userOnline struct
+					removeGameFromUser(socket.username);
 				});
 				socket.on("error", (err: any) => {
 					const currentMatch = socket.currentTournamentMatch || match;

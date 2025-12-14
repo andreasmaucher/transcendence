@@ -14,6 +14,7 @@ import { uploadAvatar } from "../user/cloudinary.js";
 import { DEFAULT_AVATAR_URL } from "../config/constants.js";
 import { getUserOnline, updateUserOnline } from "../user/online.js";
 import { authenticateRequest } from "../auth/verify.js";
+import { isValidInput, sanitizeInput } from "../utils/sanitize.js";
 
 export default async function userManagementRoutes(fastify: FastifyInstance) {
 	// ROUTES FOR ONE USER ONLY
@@ -34,9 +35,11 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 			avatar?: string;
 		};
 
-		// Basic validation: required fields
-		if (!username || !password)
-			return reply.code(400).send({ success: false, message: "Username and password are required" });
+		if (!isValidInput(username) || !isValidInput(password))
+			return reply.code(400).send({ success: false, message: "Invalid username and/or password" });
+
+		const sanUsername = sanitizeInput(username);
+		const sanPassword = sanitizeInput(password);
 
 		// Duplicate username check (clear message for users)
 		if (isUsernameDB(username)) return reply.code(409).send({ success: false, message: "Username already taken" });
@@ -71,12 +74,12 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 		// Read posted username and password
 		const { username, password } = request.body as { username: string; password: string };
 
-		// Check if the password matches the stored hash for this username
-		const isValid = await verifyPassword(username, password);
-		if (!isValid) return reply.code(401).send({ success: false, message: "Invalid credentials" });
+		if (!isValidInput(username) || !isValidInput(password))
+			return reply.code(400).send({ success: false, message: "Invalid username and/or password" });
 
-		// Look up the full user row to get the numeric id
-		const user = getUserByUsernameDB(username);
+		// Check if the password matches the stored hash for this username
+		const isRightPassword = await verifyPassword(username, password);
+		if (!isRightPassword) return reply.code(401).send({ success: false, message: "Invalid password" });
 
 		// Create a signed session token and attach it as an httpOnly cookie
 		const { token, maxAgeSec } = createSessionToken(username, 60);
@@ -108,31 +111,19 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 		if (!payload) return reply.code(401).send({ success: false, message: "Unauthorized" });
 
 		// Read posted update data
-		const { newUsername, newPassword, newAvatar } = request.body as {
-			newUsername?: string;
+		const { newPassword, newAvatar } = request.body as {
 			newPassword?: string;
 			newAvatar?: string;
 		};
 
-		const updates = [newUsername, newPassword, newAvatar].filter((v) => v !== undefined);
+		if (newPassword && !isValidInput(newPassword))
+			return reply.code(400).send({ success: false, message: "Invalid password" });
+
+		const updates = [newPassword, newAvatar].filter((v) => v !== undefined);
 
 		if (updates.length !== 1) return reply.code(400).send({ success: false, message: "Too many values to update" });
 
-		if (newUsername) {
-			try {
-				if (isUsernameDB(newUsername))
-					return reply.code(409).send({ success: false, message: "Username already in use" });
-				updateUsernameDB(payload.username, newUsername);
-				updateUserOnline({
-					username: payload.username,
-					newUsername: newUsername,
-				});
-				return reply.code(200).send({ success: true, message: "Username updated successfully" });
-			} catch (error: any) {
-				console.error("[userRT]", error.message);
-				return reply.code(400).send({ success: false, message: "Unable to update username" });
-			}
-		} else if (newPassword) {
+		if (newPassword) {
 			try {
 				const hashedPassword = await hashPassword(newPassword);
 				updatePasswordDB(payload.username, hashedPassword);

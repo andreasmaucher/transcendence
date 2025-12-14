@@ -14,6 +14,23 @@ export function getAllTournamentsDB(): any[] {
 	return tournaments;
 }
 
+// Retrieve open tournaments from the database
+export function getOpenTournamentsDB(): Array<{ id: string; name: string; size: number }> {
+	const stmt = db.prepare(`
+		SELECT id, name, size
+		FROM tournaments
+		WHERE started_at IS NULL
+		ORDER BY internal_id ASC
+	`);
+	const openTournaments = stmt.all() as Array<{
+		id: string;
+		name: string;
+		size: number;
+	}>;
+
+	return openTournaments;
+}
+
 // Retrive all the tournaments where a specific user played
 export function getTournamentsByUserDB(username: string) {
 	const stmt = db.prepare(`

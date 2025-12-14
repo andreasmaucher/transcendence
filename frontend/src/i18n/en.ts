@@ -1,7 +1,7 @@
 export default {
 	topbar: {
 		login: "Login",
-		editProfile: "Edit Profile",
+		editProfile: "Profile",
 		logout: "Logout",
 	},
 
@@ -13,10 +13,10 @@ export default {
 		onlineMatch: "Play Online",
 	},
 
-  game: {
-    exit: "Forfeit Match",
-    leave: "Back to Lobby",
-  },
+	game: {
+		exit: "Forfeit Match",
+		leave: "Back to Lobby",
+	},
 
 	tournaments: {
 		title: "Tournaments",
