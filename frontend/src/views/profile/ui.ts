@@ -5,6 +5,7 @@ import { updateTopBar } from "../topbar/ui";
 import { t } from "../../i18n";
 import { userData } from "../../config/constants";
 import { API_BASE } from "../../config/endpoints";
+import { convertUTCStringToLocal } from "../../utils/time";
 
 export async function renderProfile(container: HTMLElement) {
 	container.innerHTML = "";
@@ -80,7 +81,6 @@ export async function renderProfile(container: HTMLElement) {
 		avatarMsg.className = "profile-message";
 		avatarCard.append(avatarMsg);
 
-
 		avatarInput.onchange = async () => {
 			const file = avatarInput.files?.[0];
 			if (!file) return;
@@ -102,7 +102,6 @@ export async function renderProfile(container: HTMLElement) {
 			reader.readAsDataURL(file);
 		};
 
-
 		avatarWrapper.append(avatar, overlayBtn, avatarInput);
 		const uname = document.createElement("div");
 		uname.className = "profile-username";
@@ -123,17 +122,14 @@ export async function renderProfile(container: HTMLElement) {
 		passHeader.style.cursor = "pointer";
 		passCard.append(passHeader);
 
-
 		const passSection = document.createElement("div");
 		passSection.style.display = "none";
 		passSection.style.flexDirection = "column";
 		passCard.append(passSection);
 
 		passHeader.onclick = () => {
-			passSection.style.display =
-				passSection.style.display === "none" ? "flex" : "none";
+			passSection.style.display = passSection.style.display === "none" ? "flex" : "none";
 		};
-
 
 		// Helper text
 		const passHint = document.createElement("div");
@@ -158,7 +154,7 @@ export async function renderProfile(container: HTMLElement) {
 		// Add sanitation
 		const enforceAlphanumeric = (e: Event) => {
 			const target = e.target as HTMLInputElement;
-			target.value = target.value.replace(/[^a-zA-Z0-9]/g, "");
+			target.value = target.value.replace(/[^a-zA-Z0-9 ]/g, "");
 		};
 
 		newPass.addEventListener("input", enforceAlphanumeric);
@@ -264,12 +260,6 @@ export async function renderProfile(container: HTMLElement) {
 		statsCard.append(tabContent);
 
 		// --- HELPERS ---
-		const formatDate = (d: string | null) => {
-			if (!d) return "—";
-			const date = new Date(d);
-			return new Date(date.getTime() + 60 * 60 * 1000).toLocaleString();
-		};
-
 		const getWinnerName = (winner: string | null, left: string, right: string | null) => {
 			if (!winner) return "—";
 			if (winner === "left") return left;
@@ -377,15 +367,12 @@ export async function renderProfile(container: HTMLElement) {
 				const PAGE_SIZE = 5;
 				let page = 0;
 
-				const pageData = data.singleGames.slice(
-					page * PAGE_SIZE,
-					(page + 1) * PAGE_SIZE
-				);
+				const pageData = data.singleGames.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
 				pageData.forEach((g: any) => {
 					const row = document.createElement("tr");
 					row.innerHTML = `
-                        <td>${formatDate(g.started_at)}</td>
+                        <td>${convertUTCStringToLocal(g.started_at)}</td>
                         <td>${getAdversaryName(g.player_left, g.player_right, username)}</td>
                         <td>${getWinnerName(g.winner, g.player_left, g.player_right)}</td>
                         <td>${g.mode ?? "—"}</td>
@@ -418,7 +405,6 @@ export async function renderProfile(container: HTMLElement) {
 					pager.append(prev, next);
 					tabContent.append(pager);
 				}
-
 			} else if (tab === "tournament") {
 				singleTabBtn.classList.remove("active");
 				tournamentTabBtn.classList.add("active");
@@ -443,16 +429,13 @@ export async function renderProfile(container: HTMLElement) {
 				const PAGE_SIZE = 5;
 				let page = 0;
 
-				const pageData = data.tournaments.slice(
-					page * PAGE_SIZE,
-					(page + 1) * PAGE_SIZE
-				);
+				const pageData = data.tournaments.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
 				pageData.forEach((tourney: any) => {
 					const myRank = getUserTournamentRank(tourney);
 					const tRow = document.createElement("tr");
 					tRow.innerHTML = `
-                        <td>${formatDate(tourney.created_at)}</td>
+                        <td>${convertUTCStringToLocal(tourney.created_at)}</td>
                         <td>${tourney.name}</td>
                         <td>${tourney.winner ?? "—"}</td>
                         <td style="color:#ff2cfb; font-weight:bold;">${myRank}</td>
@@ -510,7 +493,6 @@ export async function renderProfile(container: HTMLElement) {
 					pager.append(prev, next);
 					tabContent.append(pager);
 				}
-
 			}
 		};
 

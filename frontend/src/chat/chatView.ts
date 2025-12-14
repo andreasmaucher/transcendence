@@ -235,7 +235,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	// Add sanitation
 	input.addEventListener("input", () => {
 		// Replace any character that is NOT (^) a-z, A-Z, or 0-9 with an empty string
-		input.value = input.value.replace(/[^a-zA-Z0-9]/g, "");
+		input.value = input.value.replace(/[^a-zA-Z0-9 ]/g, "");
 	});
 	inputRow.append(input);
 

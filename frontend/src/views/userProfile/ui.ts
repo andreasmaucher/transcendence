@@ -4,7 +4,8 @@ import { t } from "../../i18n";
 import { fetchUserPublic } from "../../api/http";
 import { userData } from "../../config/constants";
 import { API_BASE } from "../../config/endpoints";
-import { appendMessageToHistory, sendMessage } from "../../chat/chatHandler";
+import { sendMessage } from "../../chat/chatHandler";
+import { convertUTCStringToLocal } from "../../utils/time";
 
 export async function renderUserProfile(container: HTMLElement, username?: string) {
 	container.innerHTML = "";
@@ -102,35 +103,37 @@ export async function renderUserProfile(container: HTMLElement, username?: strin
 			};
 			actions.append(friendBtn);
 
-      // BLOCK BTN
-      const blockBtn = document.createElement("button");
-      blockBtn.className = "profile-action-btn secondary";
-      blockBtn.textContent = userData.blockedUsers.includes(user.username)
-        ? t("userProfile.unblock")
-        : t("userProfile.block");
+			// BLOCK BTN
+			const blockBtn = document.createElement("button");
+			blockBtn.className = "profile-action-btn secondary";
+			blockBtn.textContent = userData.blockedUsers.includes(user.username)
+				? t("userProfile.unblock")
+				: t("userProfile.block");
 
-      blockBtn.onclick = () => {
-        const isBlocked = userData.blockedUsers.includes(user.username);
-        if (isBlocked) {
-          userData.blockedUsers = userData.blockedUsers.filter(b => b !== user.username);
-          sendMessage("unblock", t("userProfile.youUnblocked") + user.username, user.username);
-          blockBtn.textContent = t("userProfile.block");
-        } else {
-          userData.blockedUsers.push(user.username);
-          sendMessage("block", t("userProfile.youBlocked") + user.username, user.username);
-          blockBtn.textContent = t("userProfile.unblock");
-        }
-        // send the information to the chat
-        document.dispatchEvent(new CustomEvent('userListsUpdated', { 
-            detail: { 
-                action: isBlocked ? 'unblock' : 'block',
-                username: user.username 
-            }
-        }));
-      };
+			blockBtn.onclick = () => {
+				const isBlocked = userData.blockedUsers.includes(user.username);
+				if (isBlocked) {
+					userData.blockedUsers = userData.blockedUsers.filter((b) => b !== user.username);
+					sendMessage("unblock", t("userProfile.youUnblocked") + user.username, user.username);
+					blockBtn.textContent = t("userProfile.block");
+				} else {
+					userData.blockedUsers.push(user.username);
+					sendMessage("block", t("userProfile.youBlocked") + user.username, user.username);
+					blockBtn.textContent = t("userProfile.unblock");
+				}
+				// send the information to the chat
+				document.dispatchEvent(
+					new CustomEvent("userListsUpdated", {
+						detail: {
+							action: isBlocked ? "unblock" : "block",
+							username: user.username,
+						},
+					})
+				);
+			};
 
-      actions.append(blockBtn);
-    }
+			actions.append(blockBtn);
+		}
 
 		const friendCard = document.createElement("div");
 		friendCard.className = "profile-section-card";
@@ -205,12 +208,6 @@ export async function renderUserProfile(container: HTMLElement, username?: strin
 		statsCard.append(tabContent);
 
 		// --- HELPERS ---
-		const formatDate = (d: string | null) => {
-			if (!d) return "—";
-			const date = new Date(d);
-			return new Date(date.getTime() + 60 * 60 * 1000).toLocaleString();
-		};
-
 		const getWinnerName = (winner: string | null, left: string, right: string | null) => {
 			if (!winner) return "—";
 			if (winner === "left") return left;
@@ -317,7 +314,7 @@ export async function renderUserProfile(container: HTMLElement, username?: strin
 				data.singleGames.forEach((g: any) => {
 					const row = document.createElement("tr");
 					row.innerHTML = `
-                    <td>${formatDate(g.started_at)}</td>
+                    <td>${convertUTCStringToLocal(g.started_at)}</td>
                     <td>${getAdversaryName(g.player_left, g.player_right, user.username)}</td>
                     <td>${getWinnerName(g.winner, g.player_left, g.player_right)}</td>
                     <td>${g.mode ?? "—"}</td>
@@ -352,7 +349,7 @@ export async function renderUserProfile(container: HTMLElement, username?: strin
 					const myRank = getUserTournamentRank(tourney);
 					const tRow = document.createElement("tr");
 					tRow.innerHTML = `
-                    <td>${formatDate(tourney.created_at)}</td>
+                    <td>${convertUTCStringToLocal(tourney.created_at)}</td>
                     <td>${tourney.name}</td>
                     <td>${tourney.winner ?? "—"}</td>
                     <td style="color:var(--primary); font-weight:bold;">${myRank}</td>

@@ -72,10 +72,10 @@ export function renderAuth(container: HTMLElement) {
 
 	// Add sanitation
 	inputUser.addEventListener("input", () => {
-		inputUser.value = inputUser.value.replace(/[^a-zA-Z0-9]/g, "");
+		inputUser.value = inputUser.value.replace(/[^a-zA-Z0-9 ]/g, "");
 	});
 	inputPass.addEventListener("input", () => {
-		inputPass.value = inputPass.value.replace(/[^a-zA-Z0-9]/g, "");
+		inputPass.value = inputPass.value.replace(/[^a-zA-Z0-9 ]/g, "");
 	});
 
 	const errUser = form.querySelector("#auth-user-err") as HTMLDivElement;
