@@ -53,7 +53,7 @@ export async function renderIncomingMessage(message: Message) {
 
 		const timeSmall = document.createElement('small');
 		timeSmall.style.color = "#66ffc8";
-		timeSmall.textContent = timeStr || '';
+		timeSmall.textContent = formatTime(timeStr) || '';
 
 		headerContainer.appendChild(senderStrong);
 		headerContainer.appendChild(timeSmall);
@@ -571,6 +571,32 @@ export function renderOnlineUsers(
 }
 
 // METHODS /////////////////////////////////////////////////////////////////////
+export function formatTime(isoString: string | undefined): string {
+	if (!isoString) {
+		return "";
+	}
+	
+	try {
+		const date = new Date(isoString);
+
+		if (isNaN(date.getTime())) {
+			throw new Error("Invalid date string provided.");
+		}
+		date.setMinutes(date.getMinutes() + 60);
+
+		const day = date.getDate().toString().padStart(2, '0');
+		const month = (date.getMonth() + 1).toString().padStart(2, '0');
+
+		const hours = date.getHours().toString().padStart(2, '0');
+		const minutes = date.getMinutes().toString().padStart(2, '0');
+
+		return `${day}.${month}. ${hours}:${minutes}`;
+		
+	} catch (e) {
+		console.error(`[TimeFormat Error] Failed to process timestamp: "${isoString}".`, e);
+		return "N/A";
+	}
+}
 
 export function sanitizeInput(input: string): string {
 	if (!input) {
