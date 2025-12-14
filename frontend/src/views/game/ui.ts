@@ -17,7 +17,7 @@ import { showMessageOverlay } from "./forfeit_overlay";
 import { t } from "../../i18n";
 import { createTournamentOverlay } from "../../views/tournament/overlays/tournament_overlay";
 import { hideTournamentOverlay } from "../../views/tournament/overlays/tournament_overlay";
-
+import { setMatchActive } from "../../config/matchState";
 
 let GAME_CONSTANTS: GameConstants | null = null;
 
@@ -127,7 +127,6 @@ export async function renderGame(container: HTMLElement) {
 	container.append(wrapper);
 	createTournamentOverlay(container);
 
-
 	// Floating UI (top-right)
 	const ui = document.createElement("div");
 	ui.style.position = "absolute";
@@ -172,7 +171,6 @@ export async function renderGame(container: HTMLElement) {
 		name.style.color = "#e4cc2fff"; // blue
 		name.style.fontWeight = "600";
 
-
 		userBox.append(avatar, name);
 	})();
 
@@ -190,26 +188,23 @@ export async function renderGame(container: HTMLElement) {
 	if (mode !== "local") {
 		import("../../game/input.js").then(({ onSideAssigned }) => {
 			onSideAssigned((side) => {
-	if (side === "left") {
-		ui.style.left = "10px";
-		ui.style.right = "";
-		ui.style.transform = "none";
-		userBox.style.flexDirection = "row";
-	} else {
-		ui.style.right = "10px";
-		ui.style.left = "";
-		ui.style.transform = "none";
-		userBox.style.flexDirection = "row-reverse";
-	}
+				if (side === "left") {
+					ui.style.left = "10px";
+					ui.style.right = "";
+					ui.style.transform = "none";
+					userBox.style.flexDirection = "row";
+				} else {
+					ui.style.right = "10px";
+					ui.style.left = "";
+					ui.style.transform = "none";
+					userBox.style.flexDirection = "row-reverse";
+				}
 
-	sideIndicator.textContent =
-		side === "left"
-		? "You control: LEFT paddle (W/S)"
-		: "You control: RIGHT paddle (↑/↓)";
+				sideIndicator.textContent =
+					side === "left" ? "You control: LEFT paddle (W/S)" : "You control: RIGHT paddle (↑/↓)";
 
-	sideIndicator.style.display = "block";
-	});
-
+				sideIndicator.style.display = "block";
+			});
 		});
 	}
 
@@ -227,24 +222,23 @@ export async function renderGame(container: HTMLElement) {
 
 	let isWaiting = mode !== "local"; // Track if we're in waiting mode
 	const exitBtn = document.createElement("button");
-	
+
 	// Function to update button text based on state
 	const updateButtonText = () => {
 		exitBtn.textContent = isWaiting ? t("game.leave") : t("game.exit");
 
-	// attach to wrapper (same as user info)
-	wrapper.append(exitBtn);
+		// attach to wrapper (same as user info)
+		wrapper.append(exitBtn);
 
-	wrapper.append(sideIndicator);
+		wrapper.append(sideIndicator);
 
-	sideIndicator.style.position = "absolute";
-	sideIndicator.style.bottom = "-34px";
-	sideIndicator.style.left = "50%";
-	sideIndicator.style.transform = "translateX(-50%)";
-
+		sideIndicator.style.position = "absolute";
+		sideIndicator.style.bottom = "-34px";
+		sideIndicator.style.left = "50%";
+		sideIndicator.style.transform = "translateX(-50%)";
 	};
 	updateButtonText(); // Set initial text
-	
+
 	exitBtn.style.position = "absolute";
 	exitBtn.style.top = "-60px";
 	exitBtn.style.left = "50%";
@@ -252,9 +246,6 @@ export async function renderGame(container: HTMLElement) {
 
 	// keep it above tournament overlay
 	exitBtn.style.zIndex = "10001";
-
-
-
 
 	exitBtn.style.padding = "8px 16px";
 	exitBtn.style.fontSize = "16px";
@@ -282,11 +273,11 @@ export async function renderGame(container: HTMLElement) {
 		cancelled = true;
 		setMatchActive(false); // Show topbar again before navigating
 		if (cancelCountdown) cancelCountdown(); // Stop countdown immediately
-		
+
 		if (isWaiting) {
 			// In waiting mode: go back to appropriate lobby
 			userData.gameSock?.close(); // Close socket
-			
+
 			// Navigate to the lobby based on game mode
 			if (mode === "online") {
 				navigate("#/online");
@@ -298,10 +289,10 @@ export async function renderGame(container: HTMLElement) {
 			}
 		} else {
 			// In playing mode: show forfeit overlay, then go back to lobby
-		const overlayPromise = showMessageOverlay("You forfeited the game.");
-		userData.gameSock?.close(); // Close socket (triggers backend forfeit)
-		await overlayPromise; // Wait for overlay to complete
-			
+			const overlayPromise = showMessageOverlay("You forfeited the game.");
+			userData.gameSock?.close(); // Close socket (triggers backend forfeit)
+			await overlayPromise; // Wait for overlay to complete
+
 			// Navigate to the lobby based on game mode
 			if (mode === "online") {
 				navigate("#/online");
@@ -309,7 +300,7 @@ export async function renderGame(container: HTMLElement) {
 				navigate("#/tournament");
 			} else {
 				// Local game: go to menu (no lobby for local)
-		navigate("#/menu");
+				navigate("#/menu");
 			}
 		}
 	};
@@ -408,7 +399,6 @@ export async function renderGame(container: HTMLElement) {
 			}
 		},
 
-
 		//
 		// FIX: Start only after animation fully completes
 		//
@@ -432,7 +422,6 @@ export async function renderGame(container: HTMLElement) {
 				updateButtonText(); // Update button to "Forfeit Match"
 			}
 		},
-
 
 		showPlayerLeftMessage: async (message: string) => {
 			// Cancel countdown if it's running (so the countdown overlay is not running in the background)

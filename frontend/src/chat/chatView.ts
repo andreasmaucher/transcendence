@@ -29,11 +29,11 @@ export function updateLocalBlockState(
 	}
 }
 
-	export function populatePrivateConv(username: string, privateMessages: Message[]): Map<string, Message[]> {
-		const privateConvs = new Map<string, Message[]>();
-		const blockedUsersLocal = new Map<string, string[]>();
-		let blockedByMe: string[] = [];
-		let blockedByThem: string[] = [];
+export function populatePrivateConv(username: string, privateMessages: Message[]): Map<string, Message[]> {
+	const privateConvs = new Map<string, Message[]>();
+	const blockedUsersLocal = new Map<string, string[]>();
+	let blockedByMe: string[] = [];
+	let blockedByThem: string[] = [];
 
 	for (const msg of privateMessages) {
 		const otherUser = msg.sender === username ? msg.receiver : msg.sender;
@@ -44,35 +44,37 @@ export function updateLocalBlockState(
 			privateConvs.set(otherUser, []);
 		}
 
-			if (msg.type === "block" || msg.type === "unblock") {
-				updateLocalBlockState(blockedUsersLocal, msg.sender!, msg.receiver!, msg.type);
-				
-				if (msg.sender === username) {
-					const index = blockedByMe.indexOf(msg.receiver!);
-					if (msg.type === "block") {
-						if (index === -1) blockedByMe.push(msg.receiver!);
-					} else {
-						if (index !== -1) blockedByMe.splice(index, 1);
-					}
-				} else if (msg.receiver === username) {
-					const index = blockedByThem.indexOf(msg.sender!);
-					if (msg.type === "block") {
-						if (index === -1) blockedByThem.push(msg.sender!);
-					} else {
-						if (index !== -1) blockedByThem.splice(index, 1);
-					}
+		if (msg.type === "block" || msg.type === "unblock") {
+			updateLocalBlockState(blockedUsersLocal, msg.sender!, msg.receiver!, msg.type);
+
+			if (msg.sender === username) {
+				const index = blockedByThem.indexOf(msg.receiver!);
+				if (msg.type === "block") {
+					if (index === -1) blockedByThem.push(msg.receiver!);
+				} else {
+					if (index !== -1) blockedByThem.splice(index, 1);
 				}
-				continue;
+			} else if (msg.receiver === username) {
+				const index = blockedByMe.indexOf(msg.sender!);
+				if (msg.type === "block") {
+					if (index === -1) blockedByMe.push(msg.sender!);
+				} else {
+					if (index !== -1) blockedByMe.splice(index, 1);
+				}
 			}
+			continue;
+		}
 
-		const senderBlockedTarget =
-			blockedUsersLocal.get(msg.sender!)?.includes(msg.receiver!) ?? false;
+		const senderBlockedTarget = blockedUsersLocal.get(msg.sender!)?.includes(msg.receiver!) ?? false;
+		const targetBlockedSender = blockedUsersLocal.get(msg.receiver!)?.includes(msg.sender!) ?? false;
 
-		const targetBlockedSender =
-			blockedUsersLocal.get(msg.receiver!)?.includes(msg.sender!) ?? false;
-
-		if ((msg.type === "blockedByMeMessage" || msg.type === "blockedByOthersMessage") && msg.sender === userData.username)
+		if (
+			(msg.type === "blockedByMeMessage" || msg.type === "blockedByOthersMessage") &&
+			msg.sender === userData.username
+		) {
 			privateConvs.get(otherUser)!.push(msg);
+			continue;
+		}
 
 		if (senderBlockedTarget || targetBlockedSender) {
 			continue;
@@ -81,10 +83,10 @@ export function updateLocalBlockState(
 		privateConvs.get(otherUser)!.push(msg);
 	}
 
-		userData.blockedUsers = blockedByMe;
-		userData.blockedByUsers = blockedByThem;
-		return privateConvs;
-	}
+	userData.blockedUsers = blockedByMe;
+	userData.blockedByUsers = blockedByThem;
+	return privateConvs;
+}
 
 export async function fetchUserData() {
 	const response = await fetch(`${API_BASE}/api/user/data`, {
@@ -100,7 +102,7 @@ export async function fetchUserData() {
 		console.warn("Backend returned an error:", body.message);
 		return;
 	}
-	const { blockedByUsers, blockedUsers, chatHistory, friends} = body.data;
+	const { blockedByUsers, blockedUsers, chatHistory, friends } = body.data;
 
 	userData.blockedByUsers = blockedByUsers ?? [];
 	userData.blockedUsers = blockedUsers ?? [];
@@ -108,7 +110,7 @@ export async function fetchUserData() {
 	userData.chatHistory = {
 		user: chatHistory.user,
 		global: chatHistory.global,
-		private: await populatePrivateConv(chatHistory.user, chatHistory.private),
+		private: populatePrivateConv(chatHistory.user, chatHistory.private),
 		tournament: chatHistory.tournament,
 	};
 
@@ -158,8 +160,8 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	if (!userData.chatHistory || !userData.blockedUsers || !userData.friends)
 		console.log("[CHAT] Error retrieving user data");
 
-	// LIVE CHAT /; ///////////////////////////////////////////////////////////////
-	// MAIN CHAT PANEL (Container für Chat + Friends)
+	// LIVE CHAT /////////////////////////////////////////////////////////////////
+	// MAIN CHAT PANEL
 
 	const panel = document.createElement("div");
 	panel.id = "chat-panel";
@@ -199,9 +201,9 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	chatHeader.style.fontWeight = "600";
 	chatHeader.style.marginBottom = "8px";
 	chatHeader.style.color = "#00ffc8";
-    chatHeader.style.textShadow = "0 0 5px #66ffc8";
+	chatHeader.style.textShadow = "0 0 5px #66ffc8";
 	chat.append(chatHeader);
-	
+
 	// Messages
 	const chatMessages = document.createElement("div");
 	chatMessages.style.flex = "1";
@@ -225,16 +227,22 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	input.placeholder = "Type a message…";
 	input.style.flex = "1";
 	input.style.border = "1px solid #00ffc8";
-    input.style.background = "rgba(0,0,0,0.6)";
-    input.style.color = "#66ffc8";
+	input.style.background = "rgba(0,0,0,0.6)";
+	input.style.color = "#66ffc8";
 	input.style.padding = "6px 8px";
 	input.style.borderRadius = "4px";
 	input.style.border = "1px solid #444";
+	// Add sanitation
+	input.addEventListener("input", () => {
+		// Replace any character that is NOT (^) a-z, A-Z, or 0-9 with an empty string
+		input.value = input.value.replace(/[^a-zA-Z0-9]/g, "");
+	});
 	inputRow.append(input);
-	
+
 	// Send button
 	const sendBtn = document.createElement("button");
 	sendBtn.textContent = "Send";
+
 	sendBtn.style.background = "rgba(10,10,10,0.55)";
 	sendBtn.style.color = "#66ffc8";
 	sendBtn.style.border = "2px solid #00ffc8";
@@ -252,7 +260,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	friends.style.width = "180px";
 	friends.style.display = "flex";
 	friends.style.flexDirection = "column";
-	friends.style.background = "rgba(0,0,0,0.4)"; 
+	friends.style.background = "rgba(0,0,0,0.4)";
 	friends.style.transition = "width 0.25s ease, padding 0.25s ease";
 	panel.append(friends);
 
@@ -292,7 +300,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	const toggleBtn = document.createElement("div");
 	toggleBtn.textContent = "+";
 	toggleBtn.style.position = "absolute";
-	toggleBtn.style.top = "5px"
+	toggleBtn.style.top = "5px";
 	toggleBtn.style.right = "8px";
 	toggleBtn.style.cursor = "pointer";
 	toggleBtn.style.fontSize = "22px";
@@ -313,24 +321,20 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	// SEND MESSAGE ON CLICK
 	sendBtn.onclick = () => {
 		const messageContent = input.value.trim();
-		if (messageContent.length === 0)
-			return; 
+		if (messageContent.length === 0) return;
 
 		let sanitizeMessage = sanitizeMessageInput(messageContent);
 
 		sendBtn.style.transform = "scale(0.97)";
-		setTimeout(() => sendBtn.style.transform = "scale(1)", 120);
+		setTimeout(() => (sendBtn.style.transform = "scale(1)"), 120);
 
-		if (userData.activePrivateChat === "Global Chat")
-			sendMessage("broadcast", sanitizeMessage);
+		if (userData.activePrivateChat === "Global Chat") sendMessage("broadcast", sanitizeMessage);
 		else {
 			if (userData.blockedUsers?.includes(userData.activePrivateChat!)) {
-				sendMessage("blockedByMeMessage", '', userData.activePrivateChat);
+				sendMessage("blockedByMeMessage", "", userData.activePrivateChat);
 			} else if (userData.blockedByUsers?.includes(userData.activePrivateChat!)) {
-				sendMessage("blockedByOthersMessage", '', userData.activePrivateChat);
-			}
-			else
-				sendMessage("direct", sanitizeMessage, userData.activePrivateChat);
+				sendMessage("blockedByOthersMessage", "", userData.activePrivateChat);
+			} else sendMessage("direct", sanitizeMessage, userData.activePrivateChat);
 		}
 
 		input.value = "";
@@ -341,30 +345,27 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 		if (e.key === "Enter") {
 			e.preventDefault();
 
-		const messageContent = input.value.trim();
-		if (messageContent.length === 0)
-			return; 
+			const messageContent = input.value.trim();
+			if (messageContent.length === 0) return;
 
-		let sanitizeMessage = sanitizeMessageInput(messageContent);
+			let sanitizeMessage = sanitizeMessageInput(messageContent);
 
-		sendBtn.style.transform = "scale(0.97)";
-		setTimeout(() => sendBtn.style.transform = "scale(1)", 120);
+			sendBtn.style.transform = "scale(0.97)";
+			setTimeout(() => (sendBtn.style.transform = "scale(1)"), 120);
 
-		if (userData.activePrivateChat === "Global Chat")
-			sendMessage("broadcast", sanitizeMessage);
-		else {
-			if (userData.blockedUsers?.includes(userData.activePrivateChat!)) {
-				sendMessage("blockedByMeMessage", '', userData.activePrivateChat);
-			} else if (userData.blockedByUsers?.includes(userData.activePrivateChat!)) {
-				sendMessage("blockedByOthersMessage", '', userData.activePrivateChat);
+			if (userData.activePrivateChat === "Global Chat") sendMessage("broadcast", sanitizeMessage);
+			else {
+				if (userData.blockedUsers?.includes(userData.activePrivateChat!)) {
+					sendMessage("blockedByMeMessage", "", userData.activePrivateChat);
+				} else if (userData.blockedByUsers?.includes(userData.activePrivateChat!)) {
+					sendMessage("blockedByOthersMessage", "", userData.activePrivateChat);
+				} else sendMessage("direct", sanitizeMessage, userData.activePrivateChat);
 			}
-			else
-				sendMessage("direct", sanitizeMessage, userData.activePrivateChat);
-		}
 
-		input.value = "";
-	}
-});
+			input.value = "";
+		}
+	});
+
 	// hover
 	sendBtn.onmouseenter = () => {
 		sendBtn.style.backgroundColor = "rgba(0, 255, 200, 0.15)";

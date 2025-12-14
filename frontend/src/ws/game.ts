@@ -11,7 +11,7 @@ import {
 	handleTournamentMatchState,
 	resetTournamentOrchestrator,
 } from "../views/tournament/overlays/tournament_orchestrator";
-
+import { setMatchActive } from "../config/matchState";
 
 // no-op functions to avoid errors as long as the UI has not registered handlers by calling registerGameUiHandlers
 let waitingForPlayers: () => void = () => {};
@@ -72,7 +72,7 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 
 				// payload.data is now MatchState
 				applyBackendState(state, payload.data);
-				
+
 				// Reset game
 				if (state.isOver && !wasOver && !resetRequested) {
 					ws.send(JSON.stringify({ type: "reset" }));
@@ -98,41 +98,41 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 				break;
 			}
 
-		case "start": {
-			startGame();
-			break;
-		}
+			case "start": {
+				startGame();
+				break;
+			}
 
-		case "player-left": {
-			// Other player left - show overlay message then navigate
-			isHandlingForfeit = true;
-			await showPlayerLeftMessage("Your opponent forfeited the game.");
-			navigate("#/menu");
-			ws.close();
-			break;
-		}
+			case "player-left": {
+				// Other player left - show overlay message then navigate
+				isHandlingForfeit = true;
+				await showPlayerLeftMessage("Your opponent forfeited the game.");
+				navigate("#/menu");
+				ws.close();
+				break;
+			}
 
-		/* 	case "chat":
+			/* 	case "chat":
 			addChatMessage(payload.data.from, payload.data.message);
 			break; */
 
-		default:
-			console.warn("[WS] Unknown payload:", payload);
-			break;
-	}
-});
+			default:
+				console.warn("[WS] Unknown payload:", payload);
+				break;
+		}
+	});
 
-ws.addEventListener("close", (event) => {
-	setActiveSocket(null);
-	resetRequested = false;
-	// If socket closed unexpectedly (not by us) AND we're not handling forfeit, navigate to menu
-	if (!isHandlingForfeit && (event.code !== 1000 || event.reason)) {
-		console.log("[WS] Connection closed:", event.reason);
-		setMatchActive(false); // Show topbar again before navigating
-		navigate("#/menu");
-	}
-	//setTimeout(() => connectToLocalSingleGameWS(state), 1000);
-});
+	ws.addEventListener("close", (event) => {
+		setActiveSocket(null);
+		resetRequested = false;
+		// If socket closed unexpectedly (not by us) AND we're not handling forfeit, navigate to menu
+		if (!isHandlingForfeit && (event.code !== 1000 || event.reason)) {
+			console.log("[WS] Connection closed:", event.reason);
+			setMatchActive(false); // Show topbar again before navigating
+			navigate("#/menu");
+		}
+		//setTimeout(() => connectToLocalSingleGameWS(state), 1000);
+	});
 
 	ws.addEventListener("error", () => ws.close());
 
@@ -207,42 +207,42 @@ export function connectToSingleGameWS(state: MatchState, roomId?: string): () =>
 				break;
 			}
 
-		case "start": {
-			startGame();
-			break;
-		}
+			case "start": {
+				startGame();
+				break;
+			}
 
-		case "player-left": {
-			// Other player left - show overlay message then navigate
-			isHandlingForfeit = true;
-			setMatchActive(false); // Show topbar again before showing overlay
-			await showPlayerLeftMessage("Your opponent forfeited the game.");
-			navigate("#/menu");
-			ws.close();
-			break;
-		}
+			case "player-left": {
+				// Other player left - show overlay message then navigate
+				isHandlingForfeit = true;
+				setMatchActive(false); // Show topbar again before showing overlay
+				await showPlayerLeftMessage("Your opponent forfeited the game.");
+				navigate("#/menu");
+				ws.close();
+				break;
+			}
 
-		/* 	case "chat":
+			/* 	case "chat":
 			addChatMessage(payload.data.from, payload.data.message);
 			break; */
 
-		default:
-			console.warn("[WS] Unknown payload:", payload);
-			break;
-	}
-});
+			default:
+				console.warn("[WS] Unknown payload:", payload);
+				break;
+		}
+	});
 
-ws.addEventListener("close", (event) => {
-	setActiveSocket(null);
-	resetRequested = false;
-	// If socket closed unexpectedly (not by us) AND we're not handling forfeit, navigate to menu
-	if (!isHandlingForfeit && (event.code !== 1000 || event.reason)) {
-		console.log("[WS] Connection closed:", event.reason);
-		setMatchActive(false); // Show topbar again before navigating
-		navigate("#/menu");
-	}
-	//setTimeout(() => connectToSingleGameWS(state), 1000);
-});
+	ws.addEventListener("close", (event) => {
+		setActiveSocket(null);
+		resetRequested = false;
+		// If socket closed unexpectedly (not by us) AND we're not handling forfeit, navigate to menu
+		if (!isHandlingForfeit && (event.code !== 1000 || event.reason)) {
+			console.log("[WS] Connection closed:", event.reason);
+			setMatchActive(false); // Show topbar again before navigating
+			navigate("#/menu");
+		}
+		//setTimeout(() => connectToSingleGameWS(state), 1000);
+	});
 
 	ws.addEventListener("error", () => ws.close());
 
@@ -250,7 +250,12 @@ ws.addEventListener("close", (event) => {
 	return () => ws.close();
 }
 
-export function connectToTournamentWS(state: MatchState, roomId?: string, tournamentName?: string, displayName?: string): () => void {
+export function connectToTournamentWS(
+	state: MatchState,
+	roomId?: string,
+	tournamentName?: string,
+	displayName?: string
+): () => void {
 	const targetRoomId = roomId ?? ROOM_ID;
 	// ANDY: add tournament name and display name as query parameters if provided
 	const queryParams = new URLSearchParams();
@@ -261,7 +266,7 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 		queryParams.set("displayName", displayName);
 	}
 	const queryString = queryParams.toString();
-	const nameParam = queryString ? `?${queryString}` : '';
+	const nameParam = queryString ? `?${queryString}` : "";
 	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/tournament/${targetRoomId}/ws${nameParam}`;
 
 	const ws = new WebSocket(wsUrl);
@@ -297,7 +302,7 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 			case "match-assigned": {
 				// server tells us which side we're playing on
 				const data = (payload as any).data;
-				
+
 				// ANDY: only update assignedSide if playerSide is explicitly set meaning the player is in the match
 				// This prevents overwriting the correct side when receiving match-assigned for for matches the player is not in
 				// the backend sends playerSide:null for matches the player is not in and we need it to show the tournament bracket correctly
@@ -305,16 +310,16 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 				if (data?.playerSide !== null && data?.playerSide !== undefined) {
 					setAssignedSide(data.playerSide);
 				}
-				
+
 				// ANDY: store match players so we can determine winner later
 				if (data?.matchId) {
 					matchPlayersMap.set(data.matchId, {
 						left: data?.leftPlayer?.username || null,
-						right: data?.rightPlayer?.username || null
+						right: data?.rightPlayer?.username || null,
 					});
 				}
-				
-				handleTournamentMatchAssigned(data); 
+
+				handleTournamentMatchAssigned(data);
 
 				// notify UI about tournament match type
 				if (data?.tournamentMatchType) {
@@ -363,42 +368,42 @@ export function connectToTournamentWS(state: MatchState, roomId?: string, tourna
 				break;
 			}
 
-		case "start": {
-			startGame();
-			break;
-		}
+			case "start": {
+				startGame();
+				break;
+			}
 
-		case "player-left": {
-			// Other player left - show overlay message then navigate
-			isHandlingForfeit = true;
-			setMatchActive(false); // Show topbar again before showing overlay
-			await showPlayerLeftMessage("Your opponent forfeited the game.");
-			navigate("#/menu");
-			ws.close();
-			break;
-		}
+			case "player-left": {
+				// Other player left - show overlay message then navigate
+				isHandlingForfeit = true;
+				setMatchActive(false); // Show topbar again before showing overlay
+				await showPlayerLeftMessage("Your opponent forfeited the game.");
+				navigate("#/menu");
+				ws.close();
+				break;
+			}
 
-		/* 	case "chat":
+			/* 	case "chat":
 			addChatMessage(payload.data.from, payload.data.message);
 			break; */
 
-		default:
-			console.warn("[WS] Unknown payload:", payload);
-			break;
-	}
-});
+			default:
+				console.warn("[WS] Unknown payload:", payload);
+				break;
+		}
+	});
 
-ws.addEventListener("close", (event) => {
-	setActiveSocket(null);
-	resetRequested = false;
-	// If socket closed unexpectedly (not by us) AND we're not handling forfeit, navigate to menu
-	if (!isHandlingForfeit && (event.code !== 1000 || event.reason)) {
-		console.log("[WS] Connection closed:", event.reason);
-		setMatchActive(false); // Show topbar again before navigating
-		navigate("#/menu");
-	}
-	//setTimeout(() => connectToTournamentWS(state), 1000);
-});
+	ws.addEventListener("close", (event) => {
+		setActiveSocket(null);
+		resetRequested = false;
+		// If socket closed unexpectedly (not by us) AND we're not handling forfeit, navigate to menu
+		if (!isHandlingForfeit && (event.code !== 1000 || event.reason)) {
+			console.log("[WS] Connection closed:", event.reason);
+			setMatchActive(false); // Show topbar again before navigating
+			navigate("#/menu");
+		}
+		//setTimeout(() => connectToTournamentWS(state), 1000);
+	});
 
 	ws.addEventListener("error", () => ws.close());
 
