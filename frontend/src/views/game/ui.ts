@@ -127,37 +127,46 @@ export async function renderGame(container: HTMLElement) {
 	container.append(wrapper);
 	createTournamentOverlay(container);
 
-	// Floating UI (top-right)
-	const ui = document.createElement("div");
-	ui.style.position = "absolute";
-	ui.style.top = "-60px";
-	ui.style.left = "50%";
-	ui.style.transform = "translateX(-50%)";
+	// Floating UI (online / tournament only)
+	const ui =
+		mode === "local" ? null : document.createElement("div");
 
-	ui.style.display = "flex";
-	ui.style.flexDirection = "column";
-	ui.style.gap = "8px";
-	ui.style.zIndex = "9999";
-	wrapper.append(ui);
+	if (ui) {
+		ui.style.position = "absolute";
+		ui.style.top = "-60px";
+		ui.style.left = "50%";
+		ui.style.transform = "translateX(-50%)";
+
+		ui.style.display = "flex";
+		ui.style.flexDirection = "column";
+		ui.style.gap = "8px";
+		ui.style.zIndex = "9999";
+		wrapper.append(ui);
+	}
+
 
 	// USER INFO
-	const userBox = document.createElement("div");
-	userBox.style.display = "flex";
-	userBox.style.alignItems = "center";
-	userBox.style.gap = "8px";
-	userBox.style.background = "rgba(0,0,0,0.5)";
-	userBox.style.padding = "4px 8px";
-	userBox.style.borderRadius = "6px";
-	userBox.style.color = "#fff";
-	userBox.style.border = "1px solid rgba(221, 238, 33, 0.71)";
-	userBox.style.boxShadow = "0 0 10px rgba(251, 255, 44, 0.4)";
-	userBox.style.backdropFilter = "blur(6px)";
+	let userBox: HTMLDivElement | null = null;
 
-	ui.append(userBox);
+	if (ui) {
+		userBox = document.createElement("div");
+		userBox.style.display = "flex";
+		userBox.style.alignItems = "center";
+		userBox.style.gap = "8px";
+		userBox.style.background = "rgba(0,0,0,0.5)";
+		userBox.style.padding = "4px 8px";
+		userBox.style.borderRadius = "6px";
+		userBox.style.color = "#fff";
+		userBox.style.border = "1px solid rgba(221, 238, 33, 0.71)";
+		userBox.style.boxShadow = "0 0 10px rgba(251, 255, 44, 0.4)";
+		userBox.style.backdropFilter = "blur(6px)";
+		ui.append(userBox);
+	}
+
 
 	(async () => {
 		const me = await fetchMe();
-		if (!me) return;
+		if (!me || !userBox) return;
 
 		const avatar = document.createElement("img");
 		avatar.src = me.avatar || "/default-avatar.png";
@@ -168,11 +177,59 @@ export async function renderGame(container: HTMLElement) {
 
 		const name = document.createElement("span");
 		name.textContent = me.username;
-		name.style.color = "#e4cc2fff"; // blue
+		name.style.color = "#e4cc2fff";
 		name.style.fontWeight = "600";
 
 		userBox.append(avatar, name);
 	})();
+
+
+	// ==========================================================
+	// LOCAL GAME PLAYER UI (LEFT / RIGHT)
+	// ==========================================================
+	if (mode === "local") {
+		const createLocalPlayerBox = (
+			side: "left" | "right",
+			name: string,
+			instruction: string
+		) => {
+			const box = document.createElement("div");
+			box.style.position = "absolute";
+			box.style.top = "-60px";
+			box.style[side] = "10px";
+
+			box.style.display = "flex";
+			box.style.flexDirection = "column";
+			box.style.gap = "2px";
+			box.style.padding = "6px 10px";
+
+			box.style.background = "rgba(0,0,0,0.5)";
+			box.style.borderRadius = "6px";
+			box.style.border = "1px solid #ff2cfb55";
+			box.style.backdropFilter = "blur(6px)";
+			box.style.color = "#ff6bff";
+			box.style.fontSize = "14px";
+			box.style.fontWeight = "600";
+			box.style.textAlign = side === "left" ? "left" : "right";
+
+			const title = document.createElement("div");
+			title.textContent = name;
+			title.style.color = "#9ad1ff";
+
+			const hint = document.createElement("div");
+			hint.textContent = instruction;
+			hint.style.fontSize = "12px";
+			hint.style.color = "#e6e6e6";   // light whitish
+			hint.style.opacity = "0.95";
+
+
+			box.append(title, hint);
+			wrapper.append(box);
+		};
+
+		createLocalPlayerBox("left", "Player 1", "W / S");
+		createLocalPlayerBox("right", "Player 2", "↑ / ↓");
+	}
 
 	// SIDE INDICATOR
 	const sideIndicator = document.createElement("div");
@@ -188,6 +245,8 @@ export async function renderGame(container: HTMLElement) {
 	if (mode !== "local") {
 		import("../../game/input.js").then(({ onSideAssigned }) => {
 			onSideAssigned((side) => {
+				if (!ui || !userBox) return;
+
 				if (side === "left") {
 					ui.style.left = "10px";
 					ui.style.right = "";
@@ -218,7 +277,9 @@ export async function renderGame(container: HTMLElement) {
 	tournamentIndicator.style.fontSize = "16px";
 	tournamentIndicator.style.textAlign = "center";
 	tournamentIndicator.style.fontWeight = "bold";
-	ui.append(tournamentIndicator);
+	if (ui) {
+		ui.append(tournamentIndicator);
+	}
 
 	let isWaiting = mode !== "local"; // Track if we're in waiting mode
 	const exitBtn = document.createElement("button");
