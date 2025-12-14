@@ -1,6 +1,7 @@
 // src/views/tournament/overlays/tournament_overlay.ts
 
 import { fetchUserPublic } from "../../../api/http";
+import { t } from "../../../i18n";
 
 type TournamentOverlayMode = "waiting" | "match-ready" | "between-rounds" | "final";
 
@@ -65,6 +66,8 @@ type OverlayData =
 
 let overlayEl: HTMLElement | null = null;
 let mode: TournamentOverlayMode | null = null;
+// ANDY: store current overlay data so we can re-render when language changes
+let currentOverlayData: OverlayData | null = null;
 
 export function createTournamentOverlay(container: HTMLElement) {
     overlayEl = document.createElement("div");
@@ -208,7 +211,7 @@ function buildBracketView(
 
     const finalLabel = document.createElement("div");
     finalLabel.className = "tournament-bracket-slot-label";
-    finalLabel.textContent = "FINAL";
+    finalLabel.textContent = t("tournaments.final");
     finalMatch.appendChild(finalLabel);
 
     finalMatch.appendChild(
@@ -230,7 +233,7 @@ function buildBracketView(
 
     const thirdLabel = document.createElement("div");
     thirdLabel.className = "tournament-bracket-slot-label";
-    thirdLabel.textContent = "3rd PLACE";
+    thirdLabel.textContent = t("tournaments.thirdPlace");
     thirdMatch.appendChild(thirdLabel);
 
     thirdMatch.appendChild(
@@ -279,7 +282,7 @@ function buildBracketView(
 
     const championLabel = document.createElement("div");
     championLabel.className = "tournament-bracket-champion-name";
-    championLabel.textContent = "Champion";
+    championLabel.textContent = t("tournaments.champion");
     trophyBox.appendChild(championLabel);
 
     root.appendChild(col1);
@@ -313,6 +316,7 @@ async function loadChampionAvatarIfNeeded(bracket: BracketSnapshot4) {
 export function showTournamentOverlay(newMode: TournamentOverlayMode, rawData: OverlayData) {
     if (!overlayEl) return;
     mode = newMode;
+    currentOverlayData = rawData; // ANDY: store current data for translation updates
 
     const titleEl = overlayEl.querySelector(".tournament-overlay-title") as HTMLElement;
     const bodyEl = overlayEl.querySelector(".tournament-overlay-body") as HTMLElement;
@@ -324,28 +328,28 @@ export function showTournamentOverlay(newMode: TournamentOverlayMode, rawData: O
 
     if (newMode === "waiting") {
         const data = rawData as WaitingOverlayData;
-        titleEl.textContent = data.roundLabel || "Waiting for players";
+        titleEl.textContent = data.roundLabel || t("tournaments.waitingForPlayers");
 
         const bracketEl = buildBracketView(data.bracket, focused, "normal");
         bodyEl.appendChild(bracketEl);
     }
     else if (newMode === "match-ready") {
         const data = rawData as MatchReadyOverlayData;
-        titleEl.textContent = data.roundLabel || "Match ready";
+        titleEl.textContent = data.roundLabel || t("tournaments.matchReady");
 
         const bracketEl = buildBracketView(data.bracket, focused, "normal");
         bodyEl.appendChild(bracketEl);
     }
     else if (newMode === "between-rounds") {
         const data = rawData as BetweenRoundsOverlayData;
-        titleEl.textContent = data.title || "Round complete";
+        titleEl.textContent = data.title || t("tournaments.roundComplete");
 
         const bracketEl = buildBracketView(data.bracket, focused, "normal");
         bodyEl.appendChild(bracketEl);
     }
     else if (newMode === "final") {
         const data = rawData as FinalOverlayData;
-        titleEl.textContent = data.title || "Tournament finished";
+        titleEl.textContent = data.title || t("tournaments.tournamentFinished");
 
         const bracketEl = buildBracketView(data.bracket, focused, "final");
         bodyEl.appendChild(bracketEl);
@@ -359,6 +363,14 @@ export function showTournamentOverlay(newMode: TournamentOverlayMode, rawData: O
 export function hideTournamentOverlay() {
     if (!overlayEl) return;
     overlayEl.classList.add("hidden");
+    currentOverlayData = null; // ANDY: clear stored data when hiding
+}
+
+// ANDY: function to update tournament overlay translations when language changes
+export function updateTournamentOverlayTranslations() {
+    if (!overlayEl || !mode || !currentOverlayData) return;
+    // Re-render the overlay with current data to update translations
+    showTournamentOverlay(mode, currentOverlayData);
 }
 
 

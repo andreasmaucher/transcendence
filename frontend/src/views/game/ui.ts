@@ -233,8 +233,8 @@ export async function renderGame(container: HTMLElement) {
 			wrapper.append(box);
 		};
 
-		createLocalPlayerBox("left", "Player 1", "W / S");
-		createLocalPlayerBox("right", "Player 2", "↑ / ↓");
+		createLocalPlayerBox("left", t("game.player1"), "W / S");
+		createLocalPlayerBox("right", t("game.player2"), "↑ / ↓");
 	}
 
 	// SIDE INDICATOR
@@ -253,6 +253,8 @@ export async function renderGame(container: HTMLElement) {
 			onSideAssigned((side) => {
 				if (!ui || !userBox) return;
 
+				currentAssignedSide = side; // ANDY: store current side for translation updates
+
 				if (side === "left") {
 					ui.style.left = "10px";
 					ui.style.right = "";
@@ -266,7 +268,7 @@ export async function renderGame(container: HTMLElement) {
 				}
 
 				sideIndicator.textContent =
-					side === "left" ? "You control: LEFT paddle (W/S)" : "You control: RIGHT paddle (↑/↓)";
+					side === "left" ? t("game.controlLeftPaddle") : t("game.controlRightPaddle");
 
 				sideIndicator.style.display = "block";
 			});
@@ -289,6 +291,7 @@ export async function renderGame(container: HTMLElement) {
 
 	let isWaiting = mode !== "local"; // Track if we're in waiting mode
 	let isMatchOver = false; // ANDY: track if the match is over (round 2 finished)
+	let currentAssignedSide: "left" | "right" | null = null; // ANDY: track current side assignment for translation updates
 	const exitBtn = document.createElement("button");
 
 	// Function to update button text based on state
@@ -315,6 +318,15 @@ export async function renderGame(container: HTMLElement) {
 	// ANDY: store update function globally so language switcher can call it without re-rendering
 	updateGameTranslations = () => {
 		updateButtonText();
+		// ANDY: also update side indicator if side is already assigned
+		if (currentAssignedSide && sideIndicator.style.display !== "none") {
+			sideIndicator.textContent =
+				currentAssignedSide === "left" ? t("game.controlLeftPaddle") : t("game.controlRightPaddle");
+		}
+		// ANDY: also update waiting overlay text if it's visible
+		if (waitingOverlay && waitingOverlay.style.display !== "none") {
+			waitingOverlay.textContent = t("game.waitingForOpponent");
+		}
 	};
 
 	exitBtn.style.position = "absolute";
@@ -374,7 +386,7 @@ export async function renderGame(container: HTMLElement) {
 			}
 		} else {
 			// In playing mode: show forfeit overlay, then go back to lobby
-			const overlayPromise = showMessageOverlay("You forfeited the game.");
+			const overlayPromise = showMessageOverlay(t("game.youForfeited"));
 			userData.gameSock?.close(); // Close socket (triggers backend forfeit)
 			await overlayPromise; // Wait for overlay to complete
 
@@ -445,7 +457,7 @@ export async function renderGame(container: HTMLElement) {
 	waitingOverlay.style.color = "white";
 	waitingOverlay.style.fontSize = "24px";
 	waitingOverlay.style.zIndex = "1000";
-	waitingOverlay.textContent = "Waiting for opponent...";
+	waitingOverlay.textContent = t("game.waitingForOpponent");
 	wrapper.append(waitingOverlay);
 
 	//
@@ -455,7 +467,7 @@ export async function renderGame(container: HTMLElement) {
 		waitingForPlayers: () => {
 			if (cancelled) return;
 			if (mode !== "local") {
-				waitingOverlay.textContent = "Waiting for opponent...";
+				waitingOverlay.textContent = t("game.waitingForOpponent");
 				waitingOverlay.style.display = "flex";
 				isWaiting = true; // Update waiting state
 				updateButtonText(); // Update button to "Leave"

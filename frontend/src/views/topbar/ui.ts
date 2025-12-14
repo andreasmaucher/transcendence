@@ -86,6 +86,16 @@ function setupLanguageUI(langSwitcher: HTMLDivElement) {
         }).catch(() => {
           // If import fails, don't navigate (avoid breaking game state)
         });
+        
+        // ANDY: also update tournament overlay if it's visible
+        import("../../views/tournament/overlays/tournament_overlay").then((module) => {
+          const updateOverlayFn = (module as any).updateTournamentOverlayTranslations?.();
+          if (updateOverlayFn) {
+            updateOverlayFn();
+          }
+        }).catch(() => {
+          // If import fails, ignore (overlay might not be visible)
+        });
       } else {
         // For non-game views, normal navigation is fine
         navigate(location.hash);

@@ -17,6 +17,12 @@ export default {
     exit: "Match Verlassen",
     leave: "Zurück zur Lobby",
     backToMenu: "Zurück zum Menü",
+    waitingForOpponent: "Warte auf Gegner...",
+    youForfeited: "Du hast das Spiel aufgegeben.",
+    controlLeftPaddle: "Du steuerst: LINKER Schläger (W/S)",
+    controlRightPaddle: "Du steuerst: RECHTER Schläger (↑/↓)",
+    player1: "Spieler 1",
+    player2: "Spieler 2",
   },
 
   tournaments: {
@@ -40,6 +46,13 @@ export default {
     nameError: "Nur alphanumerische Zeichen erlaubt",
     displayNameLabel: "Dein Anzeigename",
     displayNamePlaceholder: "Anzeigename eingeben (optional)",
+    final: "FINALE",
+    thirdPlace: "3. PLATZ",
+    champion: "Champion",
+    waitingForPlayers: "Warte auf Spieler",
+    matchReady: "Spiel bereit",
+    players: "Spieler",
+    tournamentNumber: (id: number) => `Turnier #${id}`,
   },
 
   auth: {
