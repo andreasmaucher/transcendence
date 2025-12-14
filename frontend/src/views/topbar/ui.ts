@@ -2,7 +2,7 @@
 import "./topbar.css";
 
 import { fetchMe, logout } from "../../api/http";
-import { navigate } from "../../router/router";
+import { navigate, isInGameView } from "../../router/router";
 import { setLanguage, getLanguage } from "../../i18n";
 import { t } from "../../i18n";
 import { connectToUserWS } from "../../ws/user";
@@ -71,7 +71,25 @@ function setupLanguageUI(langSwitcher: HTMLDivElement) {
       setLanguage(code);
       currentLangBtn.textContent = code.toUpperCase();
       updateTopBar();
-      navigate(location.hash);
+      
+      // ANDY: if we're in a game view, update translations without re-rendering
+      if (isInGameView()) {
+        // Import and call the update function if it exists
+        import("../../views/game/ui").then((module) => {
+          const updateFn = (module as any).getUpdateGameTranslations?.();
+          if (updateFn) {
+            updateFn();
+          } else {
+            // If function doesn't exist, don't navigate (avoid breaking game state)
+            // Translations will update on next render naturally
+          }
+        }).catch(() => {
+          // If import fails, don't navigate (avoid breaking game state)
+        });
+      } else {
+        // For non-game views, normal navigation is fine
+        navigate(location.hash);
+      }
       submenu.style.display = "none";
     };
     submenu.append(btn);

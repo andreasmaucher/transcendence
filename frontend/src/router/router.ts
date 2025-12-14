@@ -15,6 +15,9 @@ let isRendering = false;
 let lastNav = 0;
 const NAV_DELAY = 200;
 
+// ANDY: track current route to check if we're in a game view
+let currentRoute: string | null = null;
+
 // public api
 
 export function registerRoutes(map: Routes) {
@@ -42,6 +45,11 @@ export function navigate(hash: string) {
   } else {
     location.hash = hash;
   }
+}
+
+// ANDY: check if we're currently in a game view
+export function isInGameView(): boolean {
+  return currentRoute === "#/game";
 }
 
 // helpers
@@ -98,6 +106,7 @@ async function render() {
     // ===========================================================
     // Normal static routes
     // ===========================================================
+    currentRoute = hash;
     let view = routes[hash];
 
     if (!view) {

@@ -21,6 +21,14 @@ import { setMatchActive } from "../../config/matchState";
 
 let GAME_CONSTANTS: GameConstants | null = null;
 
+// ANDY: store callback to update translations without re-rendering
+let updateGameTranslations: (() => void) | null = null;
+
+// ANDY: export getter function so language switcher can access the update function
+export function getUpdateGameTranslations(): (() => void) | null {
+	return updateGameTranslations;
+}
+
 // -------------------------------
 // Existing logic (unchanged)
 // -------------------------------
@@ -304,6 +312,11 @@ export async function renderGame(container: HTMLElement) {
 	};
 	updateButtonText(); // Set initial text
 
+	// ANDY: store update function globally so language switcher can call it without re-rendering
+	updateGameTranslations = () => {
+		updateButtonText();
+	};
+
 	exitBtn.style.position = "absolute";
 	exitBtn.style.top = "-60px";
 	exitBtn.style.left = "50%";
@@ -529,5 +542,6 @@ export async function renderGame(container: HTMLElement) {
 		cleanupLoop();
 		cleanupWS();
 		setActiveSocket(null);
+		updateGameTranslations = null; // ANDY: clear translation update callback when leaving game view
 	};
 }
