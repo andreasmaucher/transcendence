@@ -21,6 +21,14 @@ import { setMatchActive } from "../../config/matchState";
 
 let GAME_CONSTANTS: GameConstants | null = null;
 
+// ANDY: store callback to update translations without re-rendering
+let updateGameTranslations: (() => void) | null = null;
+
+// ANDY: export getter function so language switcher can access the update function
+export function getUpdateGameTranslations(): (() => void) | null {
+	return updateGameTranslations;
+}
+
 // -------------------------------
 // Existing logic (unchanged)
 // -------------------------------
@@ -102,8 +110,6 @@ export async function renderGame(container: HTMLElement) {
 	const roomId = params.get("id") || undefined;
 	const tournamentName = params.get("name") || undefined;
 	const displayName = params.get("displayName") || undefined;
-
-	console.log("GAME MODE =", mode, "ROOM ID =", roomId, "TOURNAMENT NAME =", tournamentName);
 
 	// ==========================================================
 	// GAME FRAME WRAPPER
@@ -227,8 +233,8 @@ export async function renderGame(container: HTMLElement) {
 			wrapper.append(box);
 		};
 
-		createLocalPlayerBox("left", "Player 1", "W / S");
-		createLocalPlayerBox("right", "Player 2", "↑ / ↓");
+		createLocalPlayerBox("left", t("game.player1"), "W / S");
+		createLocalPlayerBox("right", t("game.player2"), "↑ / ↓");
 	}
 
 	// SIDE INDICATOR
@@ -247,6 +253,8 @@ export async function renderGame(container: HTMLElement) {
 			onSideAssigned((side) => {
 				if (!ui || !userBox) return;
 
+				currentAssignedSide = side; // ANDY: store current side for translation updates
+
 				if (side === "left") {
 					ui.style.left = "10px";
 					ui.style.right = "";
@@ -260,7 +268,7 @@ export async function renderGame(container: HTMLElement) {
 				}
 
 				sideIndicator.textContent =
-					side === "left" ? "You control: LEFT paddle (W/S)" : "You control: RIGHT paddle (↑/↓)";
+					side === "left" ? t("game.controlLeftPaddle") : t("game.controlRightPaddle");
 
 				sideIndicator.style.display = "block";
 			});
@@ -282,11 +290,18 @@ export async function renderGame(container: HTMLElement) {
 	}
 
 	let isWaiting = mode !== "local"; // Track if we're in waiting mode
+	let isMatchOver = false; // ANDY: track if the match is over (round 2 finished)
+	let currentAssignedSide: "left" | "right" | null = null; // ANDY: track current side assignment for translation updates
 	const exitBtn = document.createElement("button");
 
 	// Function to update button text based on state
 	const updateButtonText = () => {
-		exitBtn.textContent = isWaiting ? t("game.leave") : t("game.exit");
+		// ANDY: if match is over (round 2 finished), show "Back to Menu"
+		if (isMatchOver) {
+			exitBtn.textContent = t("game.backToMenu");
+		} else {
+			exitBtn.textContent = isWaiting ? t("game.leave") : t("game.exit");
+		}
 
 		// attach to wrapper (same as user info)
 		wrapper.append(exitBtn);
@@ -299,6 +314,20 @@ export async function renderGame(container: HTMLElement) {
 		sideIndicator.style.transform = "translateX(-50%)";
 	};
 	updateButtonText(); // Set initial text
+
+	// ANDY: store update function globally so language switcher can call it without re-rendering
+	updateGameTranslations = () => {
+		updateButtonText();
+		// ANDY: also update side indicator if side is already assigned
+		if (currentAssignedSide && sideIndicator.style.display !== "none") {
+			sideIndicator.textContent =
+				currentAssignedSide === "left" ? t("game.controlLeftPaddle") : t("game.controlRightPaddle");
+		}
+		// ANDY: also update waiting overlay text if it's visible
+		if (waitingOverlay && waitingOverlay.style.display !== "none") {
+			waitingOverlay.textContent = t("game.waitingForOpponent");
+		}
+	};
 
 	exitBtn.style.position = "absolute";
 	exitBtn.style.top = "-60px";
@@ -335,6 +364,13 @@ export async function renderGame(container: HTMLElement) {
 		setMatchActive(false); // Show topbar again before navigating
 		if (cancelCountdown) cancelCountdown(); // Stop countdown immediately
 
+		// ANDY: if match is over (round 2 finished), just go back to menu
+		if (isMatchOver) {
+			userData.gameSock?.close(); // Close socket
+			navigate("#/menu");
+			return;
+		}
+
 		if (isWaiting) {
 			// In waiting mode: go back to appropriate lobby
 			userData.gameSock?.close(); // Close socket
@@ -350,7 +386,7 @@ export async function renderGame(container: HTMLElement) {
 			}
 		} else {
 			// In playing mode: show forfeit overlay, then go back to lobby
-			const overlayPromise = showMessageOverlay("You forfeited the game.");
+			const overlayPromise = showMessageOverlay(t("game.youForfeited"));
 			userData.gameSock?.close(); // Close socket (triggers backend forfeit)
 			await overlayPromise; // Wait for overlay to complete
 
@@ -421,7 +457,7 @@ export async function renderGame(container: HTMLElement) {
 	waitingOverlay.style.color = "white";
 	waitingOverlay.style.fontSize = "24px";
 	waitingOverlay.style.zIndex = "1000";
-	waitingOverlay.textContent = "Waiting for opponent...";
+	waitingOverlay.textContent = t("game.waitingForOpponent");
 	wrapper.append(waitingOverlay);
 
 	//
@@ -431,7 +467,7 @@ export async function renderGame(container: HTMLElement) {
 		waitingForPlayers: () => {
 			if (cancelled) return;
 			if (mode !== "local") {
-				waitingOverlay.textContent = "Waiting for opponent...";
+				waitingOverlay.textContent = t("game.waitingForOpponent");
 				waitingOverlay.style.display = "flex";
 				isWaiting = true; // Update waiting state
 				updateButtonText(); // Update button to "Leave"
@@ -493,6 +529,13 @@ export async function renderGame(container: HTMLElement) {
 			setMatchActive(false); // Show topbar again
 			await showMessageOverlay(message);
 		},
+
+		// ANDY: change button to "Back to Menu" when the match is over (works separately for final and 3rd place matches)
+		onMatchOver: () => {
+			if (cancelled) return;
+			isMatchOver = true;
+			updateButtonText(); // Update button text to "Back to Menu"
+		},
 	});
 
 	const cleanupWS =
@@ -511,5 +554,6 @@ export async function renderGame(container: HTMLElement) {
 		cleanupLoop();
 		cleanupWS();
 		setActiveSocket(null);
+		updateGameTranslations = null; // ANDY: clear translation update callback when leaving game view
 	};
 }

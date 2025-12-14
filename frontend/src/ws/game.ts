@@ -10,6 +10,7 @@ import {
 	handleTournamentMatchAssigned,
 	handleTournamentMatchState,
 	resetTournamentOrchestrator,
+	isMatchInRound2,
 } from "../views/tournament/overlays/tournament_orchestrator";
 import { setMatchActive } from "../config/matchState";
 
@@ -19,6 +20,7 @@ let countdownToGame: (n: number, side?: "left" | "right") => void = () => {};
 let startGame: () => void = () => {};
 let tournamentMatchType: (type: string, round: number) => void = () => {};
 let showPlayerLeftMessage: (message: string) => Promise<void> = async () => {};
+let onMatchOver: () => void = () => {};
 
 // function that registers the UI handlers (replaces the no-op functions above with the actual handlers)
 export function registerGameUiHandlers(handlers: {
@@ -27,17 +29,18 @@ export function registerGameUiHandlers(handlers: {
 	startGame?: () => void;
 	tournamentMatchType?: (type: string, round: number) => void;
 	showPlayerLeftMessage?: (message: string) => Promise<void>;
+	onMatchOver?: () => void;
 }) {
 	if (handlers.waitingForPlayers) waitingForPlayers = handlers.waitingForPlayers;
 	if (handlers.countdownToGame) countdownToGame = handlers.countdownToGame;
 	if (handlers.startGame) startGame = handlers.startGame;
 	if (handlers.tournamentMatchType) tournamentMatchType = handlers.tournamentMatchType;
 	if (handlers.showPlayerLeftMessage) showPlayerLeftMessage = handlers.showPlayerLeftMessage;
+	if (handlers.onMatchOver) onMatchOver = handlers.onMatchOver;
 }
 
 export function connectToLocalSingleGameWS(state: MatchState): () => void {
 	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/local-single-game/${ROOM_ID}/ws`;
-	console.log("URL: ", wsUrl);
 
 	const ws = new WebSocket(wsUrl);
 	userData.gameSock = ws;
@@ -127,7 +130,6 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 		resetRequested = false;
 		// If socket closed unexpectedly (not by us) AND we're not handling forfeit, navigate to menu
 		if (!isHandlingForfeit && (event.code !== 1000 || event.reason)) {
-			console.log("[WS] Connection closed:", event.reason);
 			setMatchActive(false); // Show topbar again before navigating
 			navigate("#/menu");
 		}
@@ -174,7 +176,6 @@ export function connectToSingleGameWS(state: MatchState, roomId?: string): () =>
 			case "match-assigned": {
 				// server tells us which side we're playing on
 				const data = (payload as any).data;
-				console.log(`[WS] Assigned to match ${data?.matchId} as ${data?.playerSide}`);
 				setAssignedSide(data?.playerSide || null);
 				break;
 			}
@@ -237,7 +238,6 @@ export function connectToSingleGameWS(state: MatchState, roomId?: string): () =>
 		resetRequested = false;
 		// If socket closed unexpectedly (not by us) AND we're not handling forfeit, navigate to menu
 		if (!isHandlingForfeit && (event.code !== 1000 || event.reason)) {
-			console.log("[WS] Connection closed:", event.reason);
 			setMatchActive(false); // Show topbar again before navigating
 			navigate("#/menu");
 		}
@@ -337,11 +337,35 @@ export function connectToTournamentWS(
 				// ANDY: when a match finishes, call handleTournamentMatchState
 				// Find which match this state belongs to by checking all known matches (because we don't have matchid here)
 				if (state.isOver && state.winner && !wasOver) {
+					// ANDY: First collect all matches where the winner matches, prioritizing round 2 matches
+					let foundMatchId: string | null = null;
+					let foundRound2MatchId: string | null = null;
+					
 					for (const [matchId, players] of matchPlayersMap.entries()) {
 						const winnerUsername = state.winner === "left" ? players.left : players.right;
 						if (winnerUsername) {
-							handleTournamentMatchState(state, matchId, players.left, players.right);
-							break;
+							const isRound2 = isMatchInRound2(matchId);
+							
+							if (isRound2) {
+								// Found a round 2 match - this takes priority
+								foundRound2MatchId = matchId;
+							} else if (!foundMatchId) {
+								// Store first round 1 match found (fallback)
+								foundMatchId = matchId;
+							}
+						}
+					}
+					
+					// Use round 2 match if found, otherwise use round 1 match
+					const targetMatchId = foundRound2MatchId || foundMatchId;
+					if (targetMatchId) {
+						const players = matchPlayersMap.get(targetMatchId);
+						if (players) {
+							handleTournamentMatchState(state, targetMatchId, players.left, players.right);
+							// ANDY: change button to "Back to Menu" only when a round 2 match (final or 3rd place) is over
+							if (foundRound2MatchId) {
+								onMatchOver();
+							}
 						}
 					}
 				}
@@ -398,7 +422,6 @@ export function connectToTournamentWS(
 		resetRequested = false;
 		// If socket closed unexpectedly (not by us) AND we're not handling forfeit, navigate to menu
 		if (!isHandlingForfeit && (event.code !== 1000 || event.reason)) {
-			console.log("[WS] Connection closed:", event.reason);
 			setMatchActive(false); // Show topbar again before navigating
 			navigate("#/menu");
 		}

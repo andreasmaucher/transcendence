@@ -16,6 +16,13 @@ export default {
 	game: {
 		exit: "Forfeit Match",
 		leave: "Back to Lobby",
+		backToMenu: "Back to Menu",
+		waitingForOpponent: "Waiting for opponent...",
+		youForfeited: "You forfeited the game.",
+		controlLeftPaddle: "You control: LEFT paddle (W/S)",
+		controlRightPaddle: "You control: RIGHT paddle (↑/↓)",
+		player1: "Player 1",
+		player2: "Player 2",
 	},
 
 	tournaments: {
@@ -39,6 +46,13 @@ export default {
 		nameError: "Only alphanumeric characters allowed",
 		displayNameLabel: "Your Display Name",
 		displayNamePlaceholder: "Enter your display name (optional)",
+		final: "FINAL",
+		thirdPlace: "3rd PLACE",
+		champion: "Champion",
+		waitingForPlayers: "Waiting for players",
+		matchReady: "Match ready",
+		players: "Players",
+		tournamentNumber: (id: number) => `Tournament #${id}`,
 	},
 
 	auth: {
