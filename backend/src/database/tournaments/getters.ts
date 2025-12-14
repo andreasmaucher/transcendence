@@ -115,3 +115,13 @@ export function getTournamentByIdDB(id: string): any {
 
 	return result;
 }
+
+export function getTournamentCountByCreator(creator: string): number {
+	const stmt = db.prepare(`
+		SELECT COUNT(*) as count
+		FROM tournaments
+		WHERE creator = ?
+	`);
+	const result: any = stmt.get(creator);
+	return result?.count || 0;
+}

@@ -7,7 +7,7 @@ import { userBroadcast } from "./broadcaster.js";
 import { createUTCTimestamp } from "../utils/time.js";
 import { convertToMessage } from "../chat/utils.js";
 import { ChatMessage } from "../types/chat.js";
-import { isValidInput } from "../utils/sanitize.js";
+import { isValidChatInput } from "../utils/sanitize.js";
 
 // ANDY: added this to track when matches ended to delay reset requests (so final score is visible)
 export const matchEndTimes = new Map<string, number>(); // matchId -> timestamp when game ended
@@ -25,8 +25,8 @@ export function handleChatMessages(raw: RawData) {
 	const msg: ChatMessage = convertToMessage(rawMsg);
 	msg.id = crypto.randomUUID();
 	msg.sentAt = createUTCTimestamp();
-	if ((msg.type === "direct" || msg.type === "broadcast") && !isValidInput(msg.content)) {
-		console.log("[WS] Chat message didn't pass validation");
+	if ((msg.type === "direct" || msg.type === "broadcast") && !isValidChatInput(msg.content)) {
+		console.log("[WS] Message didn't pass validation");
 		return;
 	}
 	try {
