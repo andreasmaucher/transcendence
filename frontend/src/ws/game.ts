@@ -10,6 +10,7 @@ import {
 	handleTournamentMatchAssigned,
 	handleTournamentMatchState,
 	resetTournamentOrchestrator,
+	isMatchInRound2,
 } from "../views/tournament/overlays/tournament_orchestrator";
 import { setMatchActive } from "../config/matchState";
 
@@ -19,6 +20,7 @@ let countdownToGame: (n: number, side?: "left" | "right") => void = () => {};
 let startGame: () => void = () => {};
 let tournamentMatchType: (type: string, round: number) => void = () => {};
 let showPlayerLeftMessage: (message: string) => Promise<void> = async () => {};
+let onMatchOver: () => void = () => {};
 
 // function that registers the UI handlers (replaces the no-op functions above with the actual handlers)
 export function registerGameUiHandlers(handlers: {
@@ -27,12 +29,14 @@ export function registerGameUiHandlers(handlers: {
 	startGame?: () => void;
 	tournamentMatchType?: (type: string, round: number) => void;
 	showPlayerLeftMessage?: (message: string) => Promise<void>;
+	onMatchOver?: () => void;
 }) {
 	if (handlers.waitingForPlayers) waitingForPlayers = handlers.waitingForPlayers;
 	if (handlers.countdownToGame) countdownToGame = handlers.countdownToGame;
 	if (handlers.startGame) startGame = handlers.startGame;
 	if (handlers.tournamentMatchType) tournamentMatchType = handlers.tournamentMatchType;
 	if (handlers.showPlayerLeftMessage) showPlayerLeftMessage = handlers.showPlayerLeftMessage;
+	if (handlers.onMatchOver) onMatchOver = handlers.onMatchOver;
 }
 
 export function connectToLocalSingleGameWS(state: MatchState): () => void {
@@ -317,6 +321,7 @@ export function connectToTournamentWS(
 						left: data?.leftPlayer?.username || null,
 						right: data?.rightPlayer?.username || null,
 					});
+					console.log(`[WS] match-assigned: matchId=${data.matchId}, round=${data.round}, type=${data.tournamentMatchType}`);
 				}
 
 				handleTournamentMatchAssigned(data);
@@ -337,12 +342,41 @@ export function connectToTournamentWS(
 				// ANDY: when a match finishes, call handleTournamentMatchState
 				// Find which match this state belongs to by checking all known matches (because we don't have matchid here)
 				if (state.isOver && state.winner && !wasOver) {
+					// ANDY: First collect all matches where the winner matches, prioritizing round 2 matches
+					let foundMatchId: string | null = null;
+					let foundRound2MatchId: string | null = null;
+					
 					for (const [matchId, players] of matchPlayersMap.entries()) {
 						const winnerUsername = state.winner === "left" ? players.left : players.right;
 						if (winnerUsername) {
-							handleTournamentMatchState(state, matchId, players.left, players.right);
-							break;
+							const isRound2 = isMatchInRound2(matchId);
+							console.log(`[WS] Checking match ${matchId}: winner=${winnerUsername}, isRound2=${isRound2}`);
+							
+							if (isRound2) {
+								// Found a round 2 match - this takes priority
+								foundRound2MatchId = matchId;
+							} else if (!foundMatchId) {
+								// Store first round 1 match found (fallback)
+								foundMatchId = matchId;
+							}
 						}
+					}
+					
+					// Use round 2 match if found, otherwise use round 1 match
+					const targetMatchId = foundRound2MatchId || foundMatchId;
+					if (targetMatchId) {
+						const players = matchPlayersMap.get(targetMatchId);
+						if (players) {
+							console.log(`[WS] Using match ${targetMatchId} (isRound2: ${foundRound2MatchId !== null})`);
+							handleTournamentMatchState(state, targetMatchId, players.left, players.right);
+							// ANDY: hide the forfeit button only when a round 2 match (final or 3rd place) is over
+							if (foundRound2MatchId) {
+								console.log(`[WS] Hiding forfeit button for round 2 match ${targetMatchId}`);
+								onMatchOver();
+							}
+						}
+					} else {
+						console.log(`[WS] No matching match found for winner`);
 					}
 				}
 

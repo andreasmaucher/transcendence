@@ -46,6 +46,20 @@ let semiFinalMatchIds: {
 const matchTypeMap = new Map<string, { round: number; type: string }>();
 
 /**
+ * Check if a match is in round 2 (final or 3rd place)
+ */
+export function isMatchInRound2(matchId: string): boolean {
+	const matchInfo = matchTypeMap.get(matchId);
+	// ANDY: convert round to number for comparison (handles both number and string)
+	const round = matchInfo?.round;
+	const roundNum = round !== undefined ? (typeof round === 'number' ? round : parseInt(String(round), 10)) : undefined;
+	const isRound2 = roundNum === 2;
+	console.log(`[TO] isMatchInRound2(${matchId}): matchInfo=`, matchInfo, `round=${round} (type: ${typeof round}), roundNum=${roundNum}, isRound2=${isRound2}`);
+	console.log(`[TO] matchTypeMap contents:`, Array.from(matchTypeMap.entries()));
+	return isRound2;
+}
+
+/**
  * Reset when entering a new tournament
  */
 export function resetTournamentOrchestrator() {
@@ -74,7 +88,10 @@ export function handleTournamentMatchAssigned(data: any) {
 	
 	// ANDY: store match type by matchId so we can look it up later
 	if (matchId && round && tournamentMatchType) {
-		matchTypeMap.set(matchId, { round, type: tournamentMatchType });
+		// ANDY: ensure round is stored as a number for consistent comparison
+		const roundNum = typeof round === 'number' ? round : parseInt(round, 10);
+		matchTypeMap.set(matchId, { round: roundNum, type: tournamentMatchType });
+		console.log(`[TO] Stored matchTypeMap: matchId=${matchId}, round=${roundNum} (type: ${typeof roundNum}), type=${tournamentMatchType}`);
 	}
 
 	const me = userData.username ?? undefined;
