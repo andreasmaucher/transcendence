@@ -139,7 +139,7 @@ function renderLoggedIn(userBox: HTMLDivElement, me: any) {
   username.className = "user-name";
 
   const profileBtn = document.createElement("button");
-  profileBtn.textContent = t("topbar.editProfile");
+  profileBtn.textContent = t("profile.title");
   profileBtn.onclick = () => {
     navigate("#/profile");
     submenu.style.display = "none";

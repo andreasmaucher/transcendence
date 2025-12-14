@@ -76,9 +76,17 @@ export async function renderProfile(container: HTMLElement) {
 		overlayBtn.textContent = "✎";
 		overlayBtn.onclick = () => avatarInput.click();
 
+		const avatarMsg = document.createElement("div");
+		avatarMsg.className = "profile-message";
+		avatarCard.append(avatarMsg);
+
+
 		avatarInput.onchange = async () => {
 			const file = avatarInput.files?.[0];
 			if (!file) return;
+
+			avatarMsg.textContent = "";
+
 			const reader = new FileReader();
 			reader.onload = async () => {
 				avatarSrc = reader.result as string;
@@ -86,10 +94,14 @@ export async function renderProfile(container: HTMLElement) {
 				try {
 					await updateUser({ username, newAvatar: avatarSrc });
 					await updateTopBar();
-				} catch (e) {}
+					avatarMsg.textContent = t("profile.avatarUpdated");
+				} catch (e) {
+					avatarMsg.textContent = t("profile.updateFailed");
+				}
 			};
 			reader.readAsDataURL(file);
 		};
+
 
 		avatarWrapper.append(avatar, overlayBtn, avatarInput);
 		const uname = document.createElement("div");
@@ -108,12 +120,20 @@ export async function renderProfile(container: HTMLElement) {
 		const passHeader = document.createElement("div");
 		passHeader.className = "profile-section-title";
 		passHeader.textContent = t("profile.changePassword");
+		passHeader.style.cursor = "pointer";
 		passCard.append(passHeader);
 
+
 		const passSection = document.createElement("div");
-		passSection.style.display = "flex";
+		passSection.style.display = "none";
 		passSection.style.flexDirection = "column";
 		passCard.append(passSection);
+
+		passHeader.onclick = () => {
+			passSection.style.display =
+				passSection.style.display === "none" ? "flex" : "none";
+		};
+
 
 		// Helper text
 		const passHint = document.createElement("div");
@@ -354,7 +374,15 @@ export async function renderProfile(container: HTMLElement) {
 				table.append(thead);
 				const tbody = document.createElement("tbody");
 
-				data.singleGames.forEach((g: any) => {
+				const PAGE_SIZE = 5;
+				let page = 0;
+
+				const pageData = data.singleGames.slice(
+					page * PAGE_SIZE,
+					(page + 1) * PAGE_SIZE
+				);
+
+				pageData.forEach((g: any) => {
 					const row = document.createElement("tr");
 					row.innerHTML = `
                         <td>${formatDate(g.started_at)}</td>
@@ -367,6 +395,30 @@ export async function renderProfile(container: HTMLElement) {
 				});
 				table.append(tbody);
 				tabContent.append(table);
+				if (data.singleGames.length > PAGE_SIZE) {
+					const pager = document.createElement("div");
+					pager.className = "stats-pagination";
+
+					const prev = document.createElement("button");
+					prev.textContent = "◀";
+					prev.disabled = page === 0;
+					prev.onclick = () => {
+						page--;
+						renderTabContent("single", data);
+					};
+
+					const next = document.createElement("button");
+					next.textContent = "▶";
+					next.disabled = (page + 1) * PAGE_SIZE >= data.singleGames.length;
+					next.onclick = () => {
+						page++;
+						renderTabContent("single", data);
+					};
+
+					pager.append(prev, next);
+					tabContent.append(pager);
+				}
+
 			} else if (tab === "tournament") {
 				singleTabBtn.classList.remove("active");
 				tournamentTabBtn.classList.add("active");
@@ -388,7 +440,15 @@ export async function renderProfile(container: HTMLElement) {
 				table.append(thead);
 				const tbody = document.createElement("tbody");
 
-				data.tournaments.forEach((tourney: any) => {
+				const PAGE_SIZE = 5;
+				let page = 0;
+
+				const pageData = data.tournaments.slice(
+					page * PAGE_SIZE,
+					(page + 1) * PAGE_SIZE
+				);
+
+				pageData.forEach((tourney: any) => {
 					const myRank = getUserTournamentRank(tourney);
 					const tRow = document.createElement("tr");
 					tRow.innerHTML = `
@@ -427,6 +487,30 @@ export async function renderProfile(container: HTMLElement) {
 				});
 				table.append(tbody);
 				tabContent.append(table);
+				if (data.tournaments.length > PAGE_SIZE) {
+					const pager = document.createElement("div");
+					pager.className = "stats-pagination";
+
+					const prev = document.createElement("button");
+					prev.textContent = "◀";
+					prev.disabled = page === 0;
+					prev.onclick = () => {
+						page--;
+						renderTabContent("tournament", data);
+					};
+
+					const next = document.createElement("button");
+					next.textContent = "▶";
+					next.disabled = (page + 1) * PAGE_SIZE >= data.tournaments.length;
+					next.onclick = () => {
+						page++;
+						renderTabContent("tournament", data);
+					};
+
+					pager.append(prev, next);
+					tabContent.append(pager);
+				}
+
 			}
 		};
 
