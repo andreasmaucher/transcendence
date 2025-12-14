@@ -45,9 +45,7 @@ let semiFinalMatchIds: {
 // ANDY: track match type by matchId (so we can determine match type even if currentMatchType was overwritten)
 const matchTypeMap = new Map<string, { round: number; type: string }>();
 
-/**
- * Check if a match is in round 2 (final or 3rd place)
- */
+//Check if a match is in round 2 (final or 3rd place)
 export function isMatchInRound2(matchId: string): boolean {
 	const matchInfo = matchTypeMap.get(matchId);
 	// ANDY: convert round to number for comparison (handles both number and string)

@@ -74,27 +74,16 @@ function setupLanguageUI(langSwitcher: HTMLDivElement) {
       
       // ANDY: if we're in a game view, update translations without re-rendering
       if (isInGameView()) {
-        // Import and call the update function if it exists
+        // Import and call the update function
         import("../../views/game/ui").then((module) => {
           const updateFn = (module as any).getUpdateGameTranslations?.();
-          if (updateFn) {
-            updateFn();
-          } else {
-            // If function doesn't exist, don't navigate (avoid breaking game state)
-            // Translations will update on next render naturally
-          }
-        }).catch(() => {
-          // If import fails, don't navigate (avoid breaking game state)
+          updateFn?.();
         });
         
         // ANDY: also update tournament overlay if it's visible
         import("../../views/tournament/overlays/tournament_overlay").then((module) => {
           const updateOverlayFn = (module as any).updateTournamentOverlayTranslations?.();
-          if (updateOverlayFn) {
-            updateOverlayFn();
-          }
-        }).catch(() => {
-          // If import fails, ignore (overlay might not be visible)
+          updateOverlayFn?.();
         });
       } else {
         // For non-game views, normal navigation is fine

@@ -363,7 +363,7 @@ export function showTournamentOverlay(newMode: TournamentOverlayMode, rawData: O
 export function hideTournamentOverlay() {
     if (!overlayEl) return;
     overlayEl.classList.add("hidden");
-    currentOverlayData = null; // ANDY: clear stored data when hiding
+    currentOverlayData = null;
 }
 
 // ANDY: function to update tournament overlay translations when language changes
