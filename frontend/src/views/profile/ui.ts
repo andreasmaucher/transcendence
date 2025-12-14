@@ -104,27 +104,53 @@ export async function renderProfile(container: HTMLElement) {
 		const passCard = document.createElement("div");
 		passCard.className = "profile-card";
 		content.append(passCard);
+
 		const passHeader = document.createElement("div");
 		passHeader.className = "profile-section-title";
 		passHeader.textContent = t("profile.changePassword");
 		passCard.append(passHeader);
+
 		const passSection = document.createElement("div");
 		passSection.style.display = "flex";
 		passSection.style.flexDirection = "column";
 		passCard.append(passSection);
+
+		// Helper text
+		const passHint = document.createElement("div");
+		passHint.textContent = "(alphanumeric only)";
+		// Styling to match the theme (smaller, slightly transparent)
+		passHint.style.fontSize = "0.8em";
+		passHint.style.opacity = "0.7";
+		passHint.style.marginBottom = "5px";
+		passHint.style.fontStyle = "italic";
+		passSection.append(passHint);
+
 		const newPass = document.createElement("input");
 		newPass.type = "password";
 		newPass.placeholder = t("profile.newPassword");
 		newPass.className = "profile-input";
+
 		const confirmPass = document.createElement("input");
 		confirmPass.type = "password";
 		confirmPass.placeholder = t("profile.confirmPassword");
 		confirmPass.className = "profile-input";
+
+		// Add sanitation
+		const enforceAlphanumeric = (e: Event) => {
+			const target = e.target as HTMLInputElement;
+			target.value = target.value.replace(/[^a-zA-Z0-9]/g, "");
+		};
+
+		newPass.addEventListener("input", enforceAlphanumeric);
+		confirmPass.addEventListener("input", enforceAlphanumeric);
+
 		const passSave = document.createElement("button");
 		passSave.className = "profile-btn";
 		passSave.textContent = t("profile.savePassword");
+
 		const passMsg = document.createElement("div");
 		passMsg.className = "profile-message";
+
 		passSave.onclick = async () => {
 			passSave.disabled = true;
 			passMsg.textContent = "";

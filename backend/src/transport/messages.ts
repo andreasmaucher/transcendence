@@ -7,6 +7,7 @@ import { userBroadcast } from "./broadcaster.js";
 import { createUTCTimestamp } from "../utils/time.js";
 import { convertToMessage } from "../chat/utils.js";
 import { ChatMessage } from "../types/chat.js";
+import { isValidInput } from "../utils/sanitize.js";
 
 // ANDY: added this to track when matches ended to delay reset requests (so final score is visible)
 export const matchEndTimes = new Map<string, number>(); // matchId -> timestamp when game ended
@@ -24,6 +25,7 @@ export function handleChatMessages(raw: RawData) {
 	const msg: ChatMessage = convertToMessage(rawMsg);
 	msg.id = crypto.randomUUID();
 	msg.sentAt = createUTCTimestamp();
+	if (!isValidInput(msg.content)) return;
 	try {
 		addMessageDB(msg);
 		if (msg.type === "block" && msg.receiver) blockUserDB(msg.sender, msg.receiver);
@@ -52,8 +54,8 @@ export function handleGameMessages(raw: RawData, match: Match) {
 			// Delay reset if game just ended - allow final score to be visible for a few seconds
 			const endTime = matchEndTimes.get(match.id);
 			const now = Date.now();
-			
-			if (endTime && (now - endTime) < RESET_DELAY_MS) {
+
+			if (endTime && now - endTime < RESET_DELAY_MS) {
 				// Game ended recently, delay the reset
 				const remainingDelay = RESET_DELAY_MS - (now - endTime);
 				setTimeout(() => {

@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { getAllTournamentsDB, getTournamentByIdDB } from "../database/tournaments/getters.js";
+import { getAllTournamentsDB, getOpenTournamentsDB, getTournamentByIdDB } from "../database/tournaments/getters.js";
 import {
 	getOpenTournaments,
 	getTournament,
@@ -11,7 +11,6 @@ import { tournaments } from "../config/structures.js";
 import { createInitialTournamentState } from "../game/state.js";
 import { checkTournamentFull } from "../managers/tournamentManagerHelpers.js";
 import { removeTournamentDB } from "../database/tournaments/setters.js";
-import db from "../database/db_init.js";
 
 export default async function tournamentRoutes(fastify: FastifyInstance) {
 	// ROUTES FOR MULTIPLE TOURNAMENTS
@@ -31,23 +30,15 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 		// ANDY: added this to load tournaments from database into memory so they're visible to all users
 		// Also include tournaments that are in memory but might not be in DB yet (just created)
 		try {
-			const dbTournaments = db
-				.prepare(
-					`
-				SELECT id, name, size
-				FROM tournaments
-				WHERE started_at IS NULL
-			`
-				)
-				.all() as Array<{ id: string; name: string; size: number }>;
+			const dbOpenTournaments = getOpenTournamentsDB();
 
-			for (const dbTournament of dbTournaments) {
-				if (!tournaments.has(dbTournament.id)) {
+			for (const dbOpenTournament of dbOpenTournaments) {
+				if (!tournaments.has(dbOpenTournament.id)) {
 					// Tournament exists in DB but not in memory - load it
 					const tournament: Tournament = {
-						id: dbTournament.id,
-						name: dbTournament.name,
-						state: createInitialTournamentState(dbTournament.size || 4),
+						id: dbOpenTournament.id,
+						name: dbOpenTournament.name,
+						state: createInitialTournamentState(dbOpenTournament.size || 4),
 						matches: new Map(),
 						players: [],
 					};
@@ -70,7 +61,7 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 						tournament
 					);
 
-					tournaments.set(dbTournament.id, tournament);
+					tournaments.set(dbOpenTournament.id, tournament);
 				}
 			}
 		} catch (error: any) {

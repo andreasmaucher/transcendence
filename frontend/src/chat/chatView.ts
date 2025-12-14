@@ -44,6 +44,22 @@ export function updateLocalBlockState(
 			privateConvs.set(otherUser, []);
 		}
 
+		if (msg.type === "block" || msg.type === "unblock") {
+			updateLocalBlockState(blockedUsersLocal, msg.sender!, msg.receiver!, msg.type);
+
+			if (msg.sender === username) {
+				const index = blockedByThem.indexOf(msg.receiver!);
+				if (msg.type === "block") {
+					if (index === -1) blockedByThem.push(msg.receiver!);
+				} else {
+					if (index !== -1) blockedByThem.splice(index, 1);
+				}
+			} else if (msg.receiver === username) {
+				const index = blockedByMe.indexOf(msg.sender!);
+				if (msg.type === "block") {
+					if (index === -1) blockedByMe.push(msg.sender!);
+				} else {
+					if (index !== -1) blockedByMe.splice(index, 1);
 			if (msg.type === "block" || msg.type === "unblock") {
 				updateLocalBlockState(blockedUsersLocal, msg.sender!, msg.receiver!, msg.type);
 				
@@ -65,13 +81,14 @@ export function updateLocalBlockState(
 				continue;
 			}
 
-		const senderBlockedTarget =
-			blockedUsersLocal.get(msg.sender!)?.includes(msg.receiver!) ?? false;
+		const senderBlockedTarget = blockedUsersLocal.get(msg.sender!)?.includes(msg.receiver!) ?? false;
 
-		const targetBlockedSender =
-			blockedUsersLocal.get(msg.receiver!)?.includes(msg.sender!) ?? false;
+		const targetBlockedSender = blockedUsersLocal.get(msg.receiver!)?.includes(msg.sender!) ?? false;
 
-		if ((msg.type === "blockedByMeMessage" || msg.type === "blockedByOthersMessage") && msg.sender === userData.username)
+		if (
+			(msg.type === "blockedByMeMessage" || msg.type === "blockedByOthersMessage") &&
+			msg.sender === userData.username
+		)
 			privateConvs.get(otherUser)!.push(msg);
 
 		if (senderBlockedTarget || targetBlockedSender) {
@@ -100,7 +117,7 @@ export async function fetchUserData() {
 		console.warn("Backend returned an error:", body.message);
 		return;
 	}
-	const { blockedByUsers, blockedUsers, chatHistory, friends} = body.data;
+	const { blockedByUsers, blockedUsers, chatHistory, friends } = body.data;
 
 	userData.blockedByUsers = blockedByUsers ?? [];
 	userData.blockedUsers = blockedUsers ?? [];
@@ -108,7 +125,7 @@ export async function fetchUserData() {
 	userData.chatHistory = {
 		user: chatHistory.user,
 		global: chatHistory.global,
-		private: await populatePrivateConv(chatHistory.user, chatHistory.private),
+		private: populatePrivateConv(chatHistory.user, chatHistory.private),
 		tournament: chatHistory.tournament,
 	};
 
@@ -199,9 +216,9 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	chatHeader.style.fontWeight = "600";
 	chatHeader.style.marginBottom = "8px";
 	chatHeader.style.color = "#00ffc8";
-    chatHeader.style.textShadow = "0 0 5px #66ffc8";
+	chatHeader.style.textShadow = "0 0 5px #66ffc8";
 	chat.append(chatHeader);
-	
+
 	// Messages
 	const chatMessages = document.createElement("div");
 	chatMessages.style.flex = "1";
@@ -225,16 +242,22 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	input.placeholder = "Type a message…";
 	input.style.flex = "1";
 	input.style.border = "1px solid #00ffc8";
-    input.style.background = "rgba(0,0,0,0.6)";
-    input.style.color = "#66ffc8";
+	input.style.background = "rgba(0,0,0,0.6)";
+	input.style.color = "#66ffc8";
 	input.style.padding = "6px 8px";
 	input.style.borderRadius = "4px";
 	input.style.border = "1px solid #444";
+	// Add sanitation
+	input.addEventListener("input", () => {
+		// Replace any character that is NOT (^) a-z, A-Z, or 0-9 with an empty string
+		input.value = input.value.replace(/[^a-zA-Z0-9]/g, "");
+	});
 	inputRow.append(input);
-	
+
 	// Send button
 	const sendBtn = document.createElement("button");
 	sendBtn.textContent = "Send";
+
 	sendBtn.style.background = "rgba(10,10,10,0.55)";
 	sendBtn.style.color = "#66ffc8";
 	sendBtn.style.border = "2px solid #00ffc8";
@@ -252,7 +275,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	friends.style.width = "180px";
 	friends.style.display = "flex";
 	friends.style.flexDirection = "column";
-	friends.style.background = "rgba(0,0,0,0.4)"; 
+	friends.style.background = "rgba(0,0,0,0.4)";
 	friends.style.transition = "width 0.25s ease, padding 0.25s ease";
 	panel.append(friends);
 
@@ -292,7 +315,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	const toggleBtn = document.createElement("div");
 	toggleBtn.textContent = "+";
 	toggleBtn.style.position = "absolute";
-	toggleBtn.style.top = "5px"
+	toggleBtn.style.top = "5px";
 	toggleBtn.style.right = "8px";
 	toggleBtn.style.cursor = "pointer";
 	toggleBtn.style.fontSize = "22px";
@@ -319,7 +342,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 		let sanitizeMessage = sanitizeMessageInput(messageContent);
 
 		sendBtn.style.transform = "scale(0.97)";
-		setTimeout(() => sendBtn.style.transform = "scale(1)", 120);
+		setTimeout(() => (sendBtn.style.transform = "scale(1)"), 120);
 
 		if (userData.activePrivateChat === "Global Chat")
 			sendMessage("broadcast", sanitizeMessage);
@@ -362,9 +385,9 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 				sendMessage("direct", sanitizeMessage, userData.activePrivateChat);
 		}
 
-		input.value = "";
-	}
-});
+			input.value = "";
+		}
+	});
 	// hover
 	sendBtn.onmouseenter = () => {
 		sendBtn.style.backgroundColor = "rgba(0, 255, 200, 0.15)";
