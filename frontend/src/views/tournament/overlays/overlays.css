@@ -1,0 +1,258 @@
+/* ==========================================================
+   BASE OVERLAY
+========================================================== */
+
+.tournament-overlay {
+  position: fixed;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+  z-index: 5000;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+}
+
+
+.tournament-overlay.hidden {
+  display: none;
+}
+
+/* ==========================================================
+   CONTENT BOX
+========================================================== */
+
+.tournament-overlay-content {
+  background: rgba(10, 10, 10, 0.55);
+  border: 2px solid #ff2cfb66;
+  border-radius: 12px;
+
+  box-shadow:
+    0 0 20px #ff2cfb33,
+    inset 0 0 20px #ff2cfb22;
+
+  padding: 32px 40px;
+
+  min-width: 720px;
+  max-width: 900px;
+
+  color: #ff6bff;
+  font-family: Orbitron, sans-serif;
+
+  text-align: center;
+}
+
+/* ==========================================================
+   TITLE
+========================================================== */
+
+.tournament-overlay-title {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 22px;
+
+  color: #ff2cfb;
+  text-shadow:
+    0 0 10px #ff6bff,
+    0 0 20px #ff2cfb77,
+    0 0 36px #ff2cfb33;
+}
+
+/* ==========================================================
+   BODY AREA
+========================================================== */
+
+.tournament-overlay-body {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* ==========================================================
+   BRACKET MAIN LAYOUT
+========================================================== */
+
+.tournament-bracket {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;        /* center all three columns vertically */
+  gap: 56px;                  /* a bit more space between columns */
+}
+
+/* left + middle columns */
+
+.tournament-bracket-col {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ==========================================================
+   SEMIFINAL BLOCKS (LEFT)
+========================================================== */
+
+.tournament-bracket-col-semifinals .tournament-bracket-match {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  padding: 10px 12px;
+  border-radius: 8px;
+
+  background: rgba(5, 5, 5, 0.85);
+  border: 1px solid rgba(255, 44, 251, 0.35);
+
+  box-shadow:
+    0 0 8px rgba(255, 44, 251, 0.25),
+    inset 0 0 6px rgba(255, 44, 251, 0.25);
+}
+
+/* ==========================================================
+   FINAL & THIRD PLACE BLOCKS (MIDDLE)
+========================================================== */
+
+.tournament-bracket-col-finals {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.tournament-bracket-final,
+.tournament-bracket-third {
+  padding: 12px;
+  border-radius: 10px;
+
+  border: 1px solid rgba(255, 44, 251, 0.45);
+  background: rgba(0, 0, 0, 0.9);
+
+  box-shadow:
+    0 0 12px rgba(255, 44, 251, 0.4),
+    inset 0 0 10px rgba(255, 44, 251, 0.35);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+
+  min-width: 180px;
+}
+
+.tournament-bracket-final .tournament-bracket-slot,
+.tournament-bracket-third .tournament-bracket-slot {
+  min-width: 160px;
+}
+
+/* small label above the frames */
+.tournament-bracket-slot-label {
+  font-size: 12px;
+  font-weight: bold;
+  opacity: 0.9;
+  color: #ffb8ff;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+/* ==========================================================
+   PLAYER SLOTS
+========================================================== */
+
+.tournament-bracket-slot {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  padding: 6px 10px;
+  border-radius: 6px;
+
+  background: rgba(10, 10, 10, 0.85);
+  border: 1px solid rgba(255, 44, 251, 0.35);
+
+  min-width: 140px;
+
+  box-shadow:
+    0 0 8px rgba(255, 44, 251, 0.15),
+    inset 0 0 6px rgba(255, 44, 251, 0.15);
+
+  color: #ff6bff;
+}
+
+.tournament-bracket-slot-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* highlight current player */
+
+.tournament-bracket-slot-focused {
+  border-color: #ffd700;
+  box-shadow:
+    0 0 12px rgba(255, 215, 0, 0.9),
+    0 0 20px rgba(255, 215, 0, 0.6);
+}
+
+/* ==========================================================
+   CHAMPION BOX (RIGHT)
+========================================================== */
+
+.tournament-bracket-trophy {
+  min-width: 180px;
+  padding: 18px 16px;
+
+  border-radius: 14px;
+
+  background: radial-gradient(
+    circle at top,
+    rgba(255, 44, 251, 0.3),
+    rgba(0, 0, 0, 0.95)
+  );
+
+  border: 1px solid rgba(255, 44, 251, 0.55);
+  box-shadow:
+    0 0 18px rgba(255, 44, 251, 0.7),
+    inset 0 0 12px rgba(0, 0, 0, 0.8);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.tournament-bracket-trophy-avatar-wrap {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  overflow: hidden;
+
+  border: 2px solid rgba(255, 44, 251, 0.6);
+  box-shadow:
+    0 0 18px rgba(255, 44, 251, 0.6),
+    inset 0 0 10px rgba(255, 44, 251, 0.4);
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 6px 4px;
+  gap: 2px;
+}
+
+.tournament-bracket-trophy-avatar {
+  width: 55px;
+  height: 55px;
+  object-fit: cover;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tournament-bracket-champion-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffb6ff;
+}
