@@ -1,5 +1,6 @@
 import { generalData, userData } from "../config/constants";
 import { API_BASE } from "../config/endpoints";
+import { t } from "../i18n";
 import { sanitizeInput, sendMessage, wireIncomingChat } from "./chatHandler";
 import { Message } from "./types";
 
@@ -199,7 +200,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 
 	// Chat Header
 	const chatHeader = document.createElement("div");
-	chatHeader.textContent = "Global Chat";
+	chatHeader.textContent = t("chat.globalChat");
 	chatHeader.style.fontWeight = "600";
 	chatHeader.style.marginBottom = "8px";
 	chatHeader.style.color = "#00ffc8";
@@ -226,7 +227,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	// Input
 	const input = document.createElement("input");
 	input.type = "text";
-	input.placeholder = "Type a message…";
+	input.placeholder = t("chat.placeholder");
 	input.style.flex = "1";
 	input.style.border = "1px solid #00ffc8";
 	input.style.background = "rgba(0,0,0,0.6)";
@@ -243,7 +244,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 
 	// Send button
 	const sendBtn = document.createElement("button");
-	sendBtn.textContent = "Send";
+	sendBtn.textContent = t("chat.send");
 
 	sendBtn.style.background = "rgba(10,10,10,0.55)";
 	sendBtn.style.color = "#66ffc8";
@@ -268,7 +269,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 
 	// HEADER
 	const fHeader = document.createElement("div");
-	fHeader.textContent = "Channels";
+	fHeader.textContent = t("chat.channels");
 	fHeader.style.fontWeight = "bold";
 	fHeader.style.fontSize = "18px";
 	fHeader.style.margin = "8px";
@@ -295,7 +296,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	fHeader.style.writingMode = "horizontal-tb";
 	fHeader.style.margin = "8px";
 	fHeader.style.rotate = "0deg";
-	fHeader.textContent = "Channels";
+	fHeader.textContent = t("chat.channels");
 
 	// MINIMIZE CHAT
 	// Minimize button

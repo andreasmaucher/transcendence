@@ -119,4 +119,27 @@ export default {
     noFriends: "Keine Freunde.",
     failedLoad: "Profil konnte nicht geladen werden."
   },
+
+  chat: {
+    globalChat: "Globaler Chat",
+    chatWith: (name: string) => `Chat mit ${name}`,
+    channels: "Kanäle",
+    placeholder: "Nachricht eingeben…",
+    send: "Senden",
+    blockedByMe: (name: string) => `Du hast ${name} blockiert. Keine Konversation möglich!`,
+    blockedByOthers: (name: string) => `Du wurdest von ${name} blockiert. Nachricht nicht gesendet.`,
+    inviteExpired: (name: string) => `⚔️ Spieleinladung von ${name} (Abgelaufen)`,
+    acceptChallenge: "HERAUSFORDERUNG ANNEHMEN",
+    noOpenGames: "Keine offenen Spiele verfügbar.",
+    openProfile: "Profil öffnen",
+    challenge: "Zum Duell herausfordern",
+    blockUser: "Benutzer blockieren",
+    unblockUser: "Blockierung aufheben",
+    youBlocked: "Du hast blockiert: ",
+    youUnblocked: "Du hast entblockt: ",
+    channels: "Chat-Kanäle",
+    onlineUsers: "Online Benutzer",
+    friends: "Freunde",
+  },
+
 };

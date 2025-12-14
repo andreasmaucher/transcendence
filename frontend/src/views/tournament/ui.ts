@@ -14,6 +14,25 @@ export async function renderTournament(container: HTMLElement) {
 	container.innerHTML = "";
 	let cancelled = false;
 
+function getQueryParams(): { [key: string]: string } {
+	// This helper function extracts key/value query parameters (e.g., ?joinId=123)
+	// from the URL hash.
+	const params: { [key: string]: string } = {};
+	
+	// Splits the hash (e.g., "#/tournament?joinId=123") to isolate "joinId=123".
+	const queryString = window.location.hash.split('?')[1];
+	if (!queryString) return params;
+	
+	// Uses the native URLSearchParams API to parse the string into key/value pairs.
+	const urlParams = new URLSearchParams(queryString);
+	
+	// Iterates through the parsed pairs and returns them as a clean object (e.g., {joinId: '123'}).
+	for (const [key, value] of urlParams.entries()) {
+		params[key] = value;
+	}
+	return params;
+}
+
 	// SCREEN
 	const root = document.createElement("div");
 	root.className = "tournament-screen";
@@ -467,6 +486,36 @@ export async function renderTournament(container: HTMLElement) {
 
 				list.append(row);
 			});
+
+			// ------------------------------------------------------------------
+			// Automatic Join/Alias Modal Handling (Deeplink)
+			// Checks for 'joinId' in URL, usually passed from a chat invitation.
+			// ------------------------------------------------------------------
+			const params = getQueryParams();
+			const joinId = params.joinId;
+
+			if (joinId) {
+				// Attempt to find the specified tournament among the currently open ones.
+				const tournamentToJoin = tournaments.find((tour: Tournament) => tour.id === joinId);
+
+				if (tournamentToJoin) {
+					// If found, open the Alias input modal immediately.
+					showJoinTournamentModal(tournamentToJoin.id, tournamentToJoin.name);
+					
+					// Clean up the URL hash (remove ?joinId=...) using replaceState 
+					// to prevent the modal from popping up again on refresh.
+					const currentHash = window.location.hash.split('?')[0];
+					history.replaceState(null, '', currentHash);
+					
+				} else {
+					// Tournament not found (e.g., already started or deleted).
+					console.warn(`Tournament with ID ${joinId} not found or already ended.`);
+					
+					// Clean up the URL to remove the stale parameter.
+					const currentHash = window.location.hash.split('?')[0];
+					history.replaceState(null, '', currentHash);
+				}
+			}
 		} catch (err) {
 			if (!cancelled) {
 				status.textContent = t("tournaments.failed");
