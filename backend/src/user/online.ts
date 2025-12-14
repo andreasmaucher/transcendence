@@ -4,6 +4,13 @@ import { userBroadcast } from "../transport/broadcaster.js";
 import { User } from "../types/user.js";
 import type WebSocket from "ws";
 
+export function isUserAlreadyInGame(username: string): boolean {
+	const user: User | undefined = getUserOnline(username);
+	if (!user) return false;
+	if (user.gameWS) return true;
+	return false;
+}
+
 // Check if user is in the usersOnline map structure
 export function isUserOnline(username: string): boolean {
 	const online = usersOnline.get(username);

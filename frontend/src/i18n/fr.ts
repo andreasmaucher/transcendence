@@ -1,7 +1,7 @@
 export default {
   topbar: {
     login: "Connexion",
-    editProfile: "Modifier Profil",
+    editProfile: "Profil",
     logout: "Déconnexion",
   },
 
