@@ -45,6 +45,15 @@ let semiFinalMatchIds: {
 // ANDY: track match type by matchId (so we can determine match type even if currentMatchType was overwritten)
 const matchTypeMap = new Map<string, { round: number; type: string }>();
 
+//Check if a match is in round 2 (final or 3rd place)
+export function isMatchInRound2(matchId: string): boolean {
+	const matchInfo = matchTypeMap.get(matchId);
+	// ANDY: convert round to number for comparison (handles both number and string)
+	const round = matchInfo?.round;
+	const roundNum = round !== undefined ? (typeof round === 'number' ? round : parseInt(String(round), 10)) : undefined;
+	return roundNum === 2;
+}
+
 /**
  * Reset when entering a new tournament
  */
@@ -74,7 +83,9 @@ export function handleTournamentMatchAssigned(data: any) {
 	
 	// ANDY: store match type by matchId so we can look it up later
 	if (matchId && round && tournamentMatchType) {
-		matchTypeMap.set(matchId, { round, type: tournamentMatchType });
+		// ANDY: ensure round is stored as a number for consistent comparison
+		const roundNum = typeof round === 'number' ? round : parseInt(round, 10);
+		matchTypeMap.set(matchId, { round: roundNum, type: tournamentMatchType });
 	}
 
 	const me = userData.username ?? undefined;
