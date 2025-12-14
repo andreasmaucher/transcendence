@@ -25,7 +25,10 @@ export function handleChatMessages(raw: RawData) {
 	const msg: ChatMessage = convertToMessage(rawMsg);
 	msg.id = crypto.randomUUID();
 	msg.sentAt = createUTCTimestamp();
-	if (!isValidInput(msg.content)) return;
+	if ((msg.type === "direct" || msg.type === "broadcast") && !isValidInput(msg.content)) {
+		console.log("[WS] Chat message didn't pass validation");
+		return;
+	}
 	try {
 		addMessageDB(msg);
 		if (msg.type === "block" && msg.receiver) blockUserDB(msg.sender, msg.receiver);
