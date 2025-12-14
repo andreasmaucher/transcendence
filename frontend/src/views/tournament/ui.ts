@@ -365,9 +365,8 @@ export async function renderTournament(container: HTMLElement) {
 			confirmBtn.style.boxShadow = "none";
 		};
 		confirmBtn.onclick = async () => {
-			const tournamentId = crypto.randomUUID?.() || Math.random().toString(36).slice(2);
-			const me = await fetchMe();
-
+		const tournamentId = crypto.randomUUID?.() || Math.random().toString(36).slice(2);
+		const me = await fetchMe();
 			// ANDY: use custom tournament name from input if provided, otherwise use our old naming logic
 			const customName = nameInput.value.trim();
 			const tournamentName = customName
@@ -380,9 +379,11 @@ export async function renderTournament(container: HTMLElement) {
 			const customDisplayName = displayNameInput.value.trim();
 
 			modalOverlay.remove();
-			const displayNameParam = customDisplayName ? `&displayName=${encodeURIComponent(customDisplayName)}` : "";
-			navigate(
-				`#/game?mode=tournament&id=${tournamentId}&name=${encodeURIComponent(tournamentName)}${displayNameParam}`
+			const displayNameParam = customDisplayName ? `&displayName=${encodeURIComponent(customDisplayName)}` : '';
+		navigate(
+			`#/game?mode=tournament&id=${tournamentId}&name=${encodeURIComponent(
+				tournamentName
+				)}${displayNameParam}`
 			);
 		};
 
@@ -442,11 +443,11 @@ export async function renderTournament(container: HTMLElement) {
 				left.style.gap = "0.3rem";
 
 				const nameLine = document.createElement("div");
-				nameLine.textContent = tour.name || `Tournament${tour.id}`;
+				nameLine.textContent = tour.name || t("tournaments.tournamentNumber")(tour.id);
 				nameLine.style.fontWeight = "bold";
 
 				const statusLine = document.createElement("div");
-				statusLine.textContent = `Players: ${tour.playersJoined}/${tour.state.size}`;
+				statusLine.textContent = `${t("tournaments.players")}: ${tour.playersJoined}/${tour.state.size}`;
 				statusLine.style.fontSize = "0.9rem";
 				statusLine.style.color = "#aaa";
 

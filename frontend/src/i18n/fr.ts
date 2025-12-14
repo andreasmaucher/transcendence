@@ -16,6 +16,13 @@ export default {
   game: {
     exit: "Quitter le Match",
     leave: "Retour à la Lobby",
+    backToMenu: "Retour au Menu",
+    waitingForOpponent: "En attente d'un adversaire...",
+    youForfeited: "Vous avez abandonné le jeu.",
+    controlLeftPaddle: "Vous contrôlez: Pagaie GAUCHE (W/S)",
+    controlRightPaddle: "Vous contrôlez: Pagaie DROITE (↑/↓)",
+    player1: "Joueur 1",
+    player2: "Joueur 2",
   },
 
   tournaments: {
@@ -39,6 +46,13 @@ export default {
     nameError: "Seuls les caractères alphanumériques sont autorisés",
     displayNameLabel: "Votre nom d'affichage",
     displayNamePlaceholder: "Entrez votre nom d'affichage (optionnel)",
+    final: "FINALE",
+    thirdPlace: "3e PLACE",
+    champion: "Champion",
+    waitingForPlayers: "En attente de joueurs",
+    matchReady: "Match prêt",
+    players: "Joueurs",
+    tournamentNumber: (id: number) => `Tournoi #${id}`,
   },
 
   auth: {

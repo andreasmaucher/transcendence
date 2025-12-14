@@ -564,7 +564,7 @@ export function renderOnlineUsers(
 
 // METHODS /////////////////////////////////////////////////////////////////////
 
-export function sanitizeMessageInput(input: string): string {
+export function sanitizeInput(input: string): string {
 	if (!input) {
 		return "";
 	}
@@ -643,11 +643,10 @@ export function appendMessageToHistory(message: Message): void {
 		userData.chatHistory!.global.push(message);
 		return;
 	}
-	if (
-		message.type === "direct" ||
-		(message.type === "blockedByMeMessage" && message.sender === userData.username) ||
-		(message.type === "blockedByOthersMessage" && message.sender === userData.username)
-	) {
+	if (message.type === "direct" || 
+		message.type === "invite" ||
+		(message.type === "blockedByMeMessage" && message.sender === userData.username) || 
+		(message.type === "blockedByOthersMessage" && message.sender === userData.username)) {
 		const otherUser = message.sender === userData.chatHistory!.user ? message.receiver : message.sender;
 		if (!otherUser) return;
 		if (!userData.chatHistory!.private.has(otherUser)) userData.chatHistory!.private.set(otherUser, []);
@@ -763,9 +762,9 @@ export function wireIncomingChat(
 						break;
 					}
 					case "invite": {
-						if (userData.username === msg.receiver) {
-							await displayIncomingMessage(msg, chatMessages);
-						}
+						if (userData.username === msg.receiver && userData.activePrivateChat === msg.sender){
+								await displayIncomingMessage(msg, chatMessages);
+							}
 						appendMessageToHistory(msg);
 						break;
 					}

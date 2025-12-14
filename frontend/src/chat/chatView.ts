@@ -1,6 +1,6 @@
 import { generalData, userData } from "../config/constants";
 import { API_BASE } from "../config/endpoints";
-import { sanitizeMessageInput, sendMessage, wireIncomingChat } from "./chatHandler";
+import { sanitizeInput, sendMessage, wireIncomingChat } from "./chatHandler";
 import { Message } from "./types";
 
 export function updateLocalBlockState(
@@ -48,18 +48,20 @@ export function populatePrivateConv(username: string, privateMessages: Message[]
 			updateLocalBlockState(blockedUsersLocal, msg.sender!, msg.receiver!, msg.type);
 
 			if (msg.sender === username) {
-				const index = blockedByThem.indexOf(msg.receiver!);
+				const list = blockedByMe;
+				const index = list.indexOf(msg.receiver!);
 				if (msg.type === "block") {
-					if (index === -1) blockedByThem.push(msg.receiver!);
+					if (index === -1) list.push(msg.receiver!);
 				} else {
-					if (index !== -1) blockedByThem.splice(index, 1);
+					if (index !== -1) list.splice(index, 1);
 				}
 			} else if (msg.receiver === username) {
-				const index = blockedByMe.indexOf(msg.sender!);
+				const list = blockedByThem
+				const index = list.indexOf(msg.sender!);
 				if (msg.type === "block") {
-					if (index === -1) blockedByMe.push(msg.sender!);
+					if (index === -1) list.push(msg.sender!);
 				} else {
-					if (index !== -1) blockedByMe.splice(index, 1);
+					if (index !== -1) list.splice(index, 1);
 				}
 			}
 			continue;
@@ -110,7 +112,7 @@ export async function fetchUserData() {
 	userData.chatHistory = {
 		user: chatHistory.user,
 		global: chatHistory.global,
-		private: populatePrivateConv(chatHistory.user, chatHistory.private),
+		private: await populatePrivateConv(chatHistory.user, chatHistory.private),
 		tournament: chatHistory.tournament,
 	};
 
@@ -323,7 +325,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 		const messageContent = input.value.trim();
 		if (messageContent.length === 0) return;
 
-		let sanitizeMessage = sanitizeMessageInput(messageContent);
+		let sanitizeMessage = sanitizeInput(messageContent);
 
 		sendBtn.style.transform = "scale(0.97)";
 		setTimeout(() => (sendBtn.style.transform = "scale(1)"), 120);
@@ -348,7 +350,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 			const messageContent = input.value.trim();
 			if (messageContent.length === 0) return;
 
-			let sanitizeMessage = sanitizeMessageInput(messageContent);
+		let sanitizeMessage = sanitizeInput(messageContent);
 
 			sendBtn.style.transform = "scale(0.97)";
 			setTimeout(() => (sendBtn.style.transform = "scale(1)"), 120);
