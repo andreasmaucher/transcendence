@@ -29,11 +29,11 @@ export function updateLocalBlockState(
 	}
 }
 
-	export function populatePrivateConv(username: string, privateMessages: Message[]): Map<string, Message[]> {
-		const privateConvs = new Map<string, Message[]>();
-		const blockedUsersLocal = new Map<string, string[]>();
-		let blockedByMe: string[] = [];
-		let blockedByThem: string[] = [];
+export function populatePrivateConv(username: string, privateMessages: Message[]): Map<string, Message[]> {
+	const privateConvs = new Map<string, Message[]>();
+	const blockedUsersLocal = new Map<string, string[]>();
+	let blockedByMe: string[] = [];
+	let blockedByThem: string[] = [];
 
 	for (const msg of privateMessages) {
 		const otherUser = msg.sender === username ? msg.receiver : msg.sender;
@@ -60,36 +60,21 @@ export function updateLocalBlockState(
 					if (index === -1) blockedByMe.push(msg.sender!);
 				} else {
 					if (index !== -1) blockedByMe.splice(index, 1);
-			if (msg.type === "block" || msg.type === "unblock") {
-				updateLocalBlockState(blockedUsersLocal, msg.sender!, msg.receiver!, msg.type);
-				
-				if (msg.sender === username) {
-					const index = blockedByMe.indexOf(msg.receiver!);
-					if (msg.type === "block") {
-						if (index === -1) blockedByMe.push(msg.receiver!);
-					} else {
-						if (index !== -1) blockedByMe.splice(index, 1);
-					}
-				} else if (msg.receiver === username) {
-					const index = blockedByThem.indexOf(msg.sender!);
-					if (msg.type === "block") {
-						if (index === -1) blockedByThem.push(msg.sender!);
-					} else {
-						if (index !== -1) blockedByThem.splice(index, 1);
-					}
 				}
-				continue;
 			}
+			continue;
+		}
 
 		const senderBlockedTarget = blockedUsersLocal.get(msg.sender!)?.includes(msg.receiver!) ?? false;
-
 		const targetBlockedSender = blockedUsersLocal.get(msg.receiver!)?.includes(msg.sender!) ?? false;
 
 		if (
 			(msg.type === "blockedByMeMessage" || msg.type === "blockedByOthersMessage") &&
 			msg.sender === userData.username
-		)
+		) {
 			privateConvs.get(otherUser)!.push(msg);
+			continue;
+		}
 
 		if (senderBlockedTarget || targetBlockedSender) {
 			continue;
@@ -98,10 +83,10 @@ export function updateLocalBlockState(
 		privateConvs.get(otherUser)!.push(msg);
 	}
 
-		userData.blockedUsers = blockedByMe;
-		userData.blockedByUsers = blockedByThem;
-		return privateConvs;
-	}
+	userData.blockedUsers = blockedByMe;
+	userData.blockedByUsers = blockedByThem;
+	return privateConvs;
+}
 
 export async function fetchUserData() {
 	const response = await fetch(`${API_BASE}/api/user/data`, {
@@ -175,8 +160,8 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	if (!userData.chatHistory || !userData.blockedUsers || !userData.friends)
 		console.log("[CHAT] Error retrieving user data");
 
-	// LIVE CHAT /; ///////////////////////////////////////////////////////////////
-	// MAIN CHAT PANEL (Container für Chat + Friends)
+	// LIVE CHAT /////////////////////////////////////////////////////////////////
+	// MAIN CHAT PANEL
 
 	const panel = document.createElement("div");
 	panel.id = "chat-panel";
@@ -336,24 +321,20 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	// SEND MESSAGE ON CLICK
 	sendBtn.onclick = () => {
 		const messageContent = input.value.trim();
-		if (messageContent.length === 0)
-			return; 
+		if (messageContent.length === 0) return;
 
 		let sanitizeMessage = sanitizeMessageInput(messageContent);
 
 		sendBtn.style.transform = "scale(0.97)";
 		setTimeout(() => (sendBtn.style.transform = "scale(1)"), 120);
 
-		if (userData.activePrivateChat === "Global Chat")
-			sendMessage("broadcast", sanitizeMessage);
+		if (userData.activePrivateChat === "Global Chat") sendMessage("broadcast", sanitizeMessage);
 		else {
 			if (userData.blockedUsers?.includes(userData.activePrivateChat!)) {
-				sendMessage("blockedByMeMessage", '', userData.activePrivateChat);
+				sendMessage("blockedByMeMessage", "", userData.activePrivateChat);
 			} else if (userData.blockedByUsers?.includes(userData.activePrivateChat!)) {
-				sendMessage("blockedByOthersMessage", '', userData.activePrivateChat);
-			}
-			else
-				sendMessage("direct", sanitizeMessage, userData.activePrivateChat);
+				sendMessage("blockedByOthersMessage", "", userData.activePrivateChat);
+			} else sendMessage("direct", sanitizeMessage, userData.activePrivateChat);
 		}
 
 		input.value = "";
@@ -364,30 +345,27 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 		if (e.key === "Enter") {
 			e.preventDefault();
 
-		const messageContent = input.value.trim();
-		if (messageContent.length === 0)
-			return; 
+			const messageContent = input.value.trim();
+			if (messageContent.length === 0) return;
 
-		let sanitizeMessage = sanitizeMessageInput(messageContent);
+			let sanitizeMessage = sanitizeMessageInput(messageContent);
 
-		sendBtn.style.transform = "scale(0.97)";
-		setTimeout(() => sendBtn.style.transform = "scale(1)", 120);
+			sendBtn.style.transform = "scale(0.97)";
+			setTimeout(() => (sendBtn.style.transform = "scale(1)"), 120);
 
-		if (userData.activePrivateChat === "Global Chat")
-			sendMessage("broadcast", sanitizeMessage);
-		else {
-			if (userData.blockedUsers?.includes(userData.activePrivateChat!)) {
-				sendMessage("blockedByMeMessage", '', userData.activePrivateChat);
-			} else if (userData.blockedByUsers?.includes(userData.activePrivateChat!)) {
-				sendMessage("blockedByOthersMessage", '', userData.activePrivateChat);
+			if (userData.activePrivateChat === "Global Chat") sendMessage("broadcast", sanitizeMessage);
+			else {
+				if (userData.blockedUsers?.includes(userData.activePrivateChat!)) {
+					sendMessage("blockedByMeMessage", "", userData.activePrivateChat);
+				} else if (userData.blockedByUsers?.includes(userData.activePrivateChat!)) {
+					sendMessage("blockedByOthersMessage", "", userData.activePrivateChat);
+				} else sendMessage("direct", sanitizeMessage, userData.activePrivateChat);
 			}
-			else
-				sendMessage("direct", sanitizeMessage, userData.activePrivateChat);
-		}
 
 			input.value = "";
 		}
 	});
+
 	// hover
 	sendBtn.onmouseenter = () => {
 		sendBtn.style.backgroundColor = "rgba(0, 255, 200, 0.15)";
