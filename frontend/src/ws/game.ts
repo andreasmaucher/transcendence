@@ -11,6 +11,7 @@ import {
 	handleTournamentMatchState,
 	resetTournamentOrchestrator,
 	isMatchInRound2,
+	getMatchType,
 } from "../views/tournament/overlays/tournament_orchestrator";
 import { setMatchActive } from "../config/matchState";
 
@@ -343,6 +344,10 @@ export function connectToTournamentWS(
 					let foundMatchId: string | null = null;
 					let foundRound2MatchId: string | null = null;
 
+					// ANDY: Collect ALL matches where the winner matches (both Round 1 and Round 2)
+					// We need to process ALL matches that finished, not just one
+					//const allMatchingMatches: Array<{ matchId: string; players: { left: string | null; right: string | null }; isRound2: boolean }> = [];
+
 					for (const [matchId, players] of matchPlayersMap.entries()) {
 						const winnerUsername = state.winner === "left" ? players.left : players.right;
 						if (winnerUsername) {
@@ -368,6 +373,38 @@ export function connectToTournamentWS(
 							if (foundRound2MatchId) {
 								onMatchOver();
 							}
+							/*allMatchingMatches.push({ matchId, players, isRound2 });
+						}
+					}
+					
+					// ANDY: Process all matching matches, but prioritize:
+					// 1. Round 2 matches over Round 1
+					// 2. Final matches over 3rd place matches
+					allMatchingMatches.sort((a, b) => {
+						// Round 2 matches first
+						if (a.isRound2 && !b.isRound2) return -1;
+						if (!a.isRound2 && b.isRound2) return 1;
+						
+						// If both are Round 2, prioritize final over 3rd place
+						if (a.isRound2 && b.isRound2) {
+							const aType = getMatchType(a.matchId);
+							const bType = getMatchType(b.matchId);
+							if (aType === "final" && bType !== "final") return -1;
+							if (aType !== "final" && bType === "final") return 1;
+						}
+						
+						return 0;
+					});
+					
+					// ANDY: Only process the FIRST (prioritized) matching match
+					// The state message is for ONE specific match, so we should only process one
+					// Priority: Round 2 Final > Round 2 3rd Place > Round 1
+					if (allMatchingMatches.length > 0) {
+						const { matchId, players, isRound2 } = allMatchingMatches[0];
+						handleTournamentMatchState(state, matchId, players.left, players.right);
+						
+						if (isRound2) {
+							onMatchOver();*/
 						}
 					}
 				}

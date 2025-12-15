@@ -66,17 +66,17 @@ export default async function testRoutes(fastify: FastifyInstance) {
 		}
 	});
 
-	// // RETURN all messages and PRINT them in backend logs
-	// fastify.get("/api/test/print-messages", async (_request: FastifyRequest, reply: FastifyReply) => {
-	// 	try {
-	// 		const messages = getAllMessagesDB();
-	// 		console.log(messages);
-	// 		return reply.code(200).send({ success: true, data: messages });
-	// 	} catch (error: any) {
-	// 		console.error("[testRT]", error.message);
-	// 		return reply.code(500).send({ success: false, message: "Unable to retrieve messages" });
-	// 	}
-	// });
+	// RETURN all messages and PRINT them in backend logs
+	fastify.get("/api/test/print-messages", async (_request: FastifyRequest, reply: FastifyReply) => {
+		try {
+			const messages = getAllMessagesDB();
+			//console.log(messages);
+			return reply.code(200).send({ success: true, data: messages });
+		} catch (error: any) {
+			console.error("[testRT]", error.message);
+			return reply.code(500).send({ success: false, message: "Unable to retrieve messages" });
+		}
+	});
 
 	// // CREATE 5 test tournaments
 	// fastify.get("/api/test/create-tournaments", async (_request: FastifyRequest, reply: FastifyReply) => {
