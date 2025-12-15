@@ -501,6 +501,7 @@ export async function renderProfile(container: HTMLElement) {
 			.then((res) => {
 				if (!res.success) return;
 				const data = res.data;
+				console.log("User games", data);
 				renderTabContent("single", data);
 				singleTabBtn.onclick = () => renderTabContent("single", data);
 				tournamentTabBtn.onclick = () => renderTabContent("tournament", data);

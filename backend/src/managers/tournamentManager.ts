@@ -420,6 +420,12 @@ export function endTournament(tournament: Tournament) {
 	endTournamentDB(tournament.id, tournamentWinner);
 	tournament.state.isRunning = false;
 	tournament.state.isOver = true;
+
+	// JACO: Added a delay to clean up the tournament from memory to prevent memory leaks
+	setTimeout(() => {
+		tournaments.delete(tournament.id);
+		console.log(`[TM] Cleaned up finished tournament ${tournament.id} from memory.`);
+	}, 30 * 1000); // 30 seconds delay
 }
 
 export function forfeitTournament(tournamentId: string, playerId: string) {
