@@ -36,24 +36,28 @@ export interface BracketSnapshot4 {
 
 interface WaitingOverlayData {
     roundLabel?: string;
+    roundLabelKey?: string;
     bracket: BracketSnapshot4;
     focusedPlayerUsername?: string;
 }
 
 interface MatchReadyOverlayData {
     roundLabel?: string;
+    roundLabelKey?: string;
     bracket: BracketSnapshot4;
     focusedPlayerUsername?: string;
 }
 
 interface BetweenRoundsOverlayData {
     title?: string;
+    titleKey?: string;
     bracket: BracketSnapshot4;
     focusedPlayerUsername?: string;
 }
 
 interface FinalOverlayData {
     title?: string;
+    titleKey?: string;
     bracket: BracketSnapshot4;
     focusedPlayerUsername?: string;
 }
@@ -328,28 +332,28 @@ export function showTournamentOverlay(newMode: TournamentOverlayMode, rawData: O
 
     if (newMode === "waiting") {
         const data = rawData as WaitingOverlayData;
-        titleEl.textContent = data.roundLabel || t("tournaments.waitingForPlayers");
+        titleEl.textContent = data.roundLabelKey ? t(data.roundLabelKey as any) : t("tournaments.waitingForPlayers");
 
         const bracketEl = buildBracketView(data.bracket, focused, "normal");
         bodyEl.appendChild(bracketEl);
     }
     else if (newMode === "match-ready") {
         const data = rawData as MatchReadyOverlayData;
-        titleEl.textContent = data.roundLabel || t("tournaments.matchReady");
+        titleEl.textContent = data.roundLabelKey ? t(data.roundLabelKey as any) : t("tournaments.matchReady");
 
         const bracketEl = buildBracketView(data.bracket, focused, "normal");
         bodyEl.appendChild(bracketEl);
     }
     else if (newMode === "between-rounds") {
         const data = rawData as BetweenRoundsOverlayData;
-        titleEl.textContent = data.title || t("tournaments.roundComplete");
+        titleEl.textContent = data.titleKey ? t(data.titleKey as any) : t("tournaments.roundComplete");
 
         const bracketEl = buildBracketView(data.bracket, focused, "normal");
         bodyEl.appendChild(bracketEl);
     }
     else if (newMode === "final") {
         const data = rawData as FinalOverlayData;
-        titleEl.textContent = data.title || t("tournaments.tournamentFinished");
+        titleEl.textContent = data.titleKey ? t(data.titleKey as any) : t("tournaments.tournamentFinished");
 
         const bracketEl = buildBracketView(data.bracket, focused, "final");
         bodyEl.appendChild(bracketEl);
