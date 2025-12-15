@@ -166,6 +166,9 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	// LIVE CHAT /////////////////////////////////////////////////////////////////
 	// MAIN CHAT PANEL
 
+	const storedMinimized = localStorage.getItem('chatMinimized');
+    let minimized = storedMinimized === 'false' ? false : true;
+
 	const panel = document.createElement("div");
 	panel.id = "chat-panel";
 	panel.style.position = "fixed";
@@ -186,7 +189,6 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	panel.style.fontFamily = "Orbitron, sans-serif";
 	panel.style.zIndex = "9999";
 	panel.style.transition = "height 0.25s ease, width 0.25s ease";
-	let minimized = true;
 	panel.style.height = minimized ? "40px" : "450px";
 
 	// CHAT WINDOW - LEFT SIDE //////////////////////////////////////
@@ -301,7 +303,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 	// MINIMIZE CHAT
 	// Minimize button
 	const toggleBtn = document.createElement("div");
-	toggleBtn.textContent = "+";
+	toggleBtn.textContent = minimized ? "+" : "–";
 	toggleBtn.style.position = "absolute";
 	toggleBtn.style.top = "5px";
 	toggleBtn.style.right = "8px";
@@ -316,6 +318,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 		minimized = !minimized;
 		panel.style.height = minimized ? "40px" : "450px";
 		toggleBtn.textContent = minimized ? "+" : "–";
+		localStorage.setItem('chatMinimized', minimized ? 'true' : 'false');
 	};
 
 	// EVENTS //////
