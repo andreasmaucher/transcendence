@@ -15,6 +15,7 @@ import {
 import { handleChatMessages, handleGameMessages } from "./messages.js";
 import { authenticateWebSocket } from "../auth/verify.js";
 import { isValidInput } from "../utils/sanitize.js";
+import { resetMatchState } from "../game/state.js";
 
 export function registerWebsocketRoute(fastify: FastifyInstance) {
 	// Register user socket
@@ -76,6 +77,8 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			const singleGame = getOrCreateSingleGame(singleGameId, "local", payload.username);
 			const match: Match = singleGame.match;
 
+			resetMatchState(match);
+
 			// Add the current game info to the userOnline struct
 			addGameToUser(socket.username, socket, singleGame.id);
 
@@ -135,6 +138,8 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				socket.close(1008, "Match is already full");
 				return;
 			}
+
+			resetMatchState(match);
 
 			// ANDY: add socket to clients BEFORE addPlayerToMatch so it receives countdown messages
 			// reason is that addPlayerToMatch triggers startGameCountdown as soon as the second player joins but the new socket was not in match.clients yet
@@ -248,6 +253,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				socket: socket,
 			});
 			if (match) {
+				resetMatchState(match);
 				match.clients.add(socket);
 				// ANDY: store reference for Round 2 reassignment so we can pick a socket up after a match is over and drop it into the next match
 				socket.currentTournamentMatch = match; // track which match the socket belongs to
