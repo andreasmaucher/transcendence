@@ -14,7 +14,8 @@ import testRoutes from "./routes/test.js";
 import oauthRoutes from "./routes/oauth.js";
 import { forEachTournament } from "./managers/tournamentManagerHelpers.js";
 import { forEachSingleGame } from "./managers/singleGameManager.js";
-import { usersOnline } from "./config/structures.js";
+import { usersOnline, tournaments } from "./config/structures.js";
+import { removeUserOnline } from "./user/online.js";
 import singleGameRoutes from "./routes/singleGame.js";
 import userManagementRoutes from "./routes/userManagement.js";
 import chatRoutes from "./routes/chat.js";
@@ -127,26 +128,31 @@ setInterval(() => {
 
 			for (const match of matches) {
 				if (match.state.isRunning) {
+					const wasOver = match.state.isOver;
 					stepMatch(match, dt || 1 / UPDATE_FPS);
-					gameBroadcast(
-						buildPayload("state", {
-							...match.state,
-							playerLeft: toPlayerInfo(match.players.left),
-							playerRight: toPlayerInfo(match.players.right),
-						}),
-						match
-					);
-					/*const wasRunning = match.state.isRunning;
-				const wasOver = match.state.isOver;
-
-				if (match.state.isRunning) {
-					stepMatch(match, dt || 1 / UPDATE_FPS);
-				}
-
-				// Broadcast state if game was running (includes the frame when game just ended)
-				// The reset delay in messages.ts ensures the final score stays visible
-				if (wasRunning || (match.state.isOver && !wasOver)) {
-					gameBroadcast(buildPayload("state", match.state), match);*/
+					const statePayload = buildPayload("state", {
+						...match.state,
+						playerLeft: toPlayerInfo(match.players.left),
+						playerRight: toPlayerInfo(match.players.right),
+						matchId: match.id, // ANDY: include matchId so frontend knows which match this state belongs to
+					});
+					
+					// Broadcast to match clients (players in this match)
+					gameBroadcast(statePayload, match);
+					
+					// ANDY: When a Round 2 match finishes, also broadcast to ALL tournament players
+					// This ensures everyone (including 3rd place players) sees the final result and champion
+					if (match.state.isOver && !wasOver && match.tournament && match.tournament.round === 2) {
+						const tournament = tournaments.get(match.tournament.id);
+						if (tournament) {
+							for (const player of tournament.players) {
+								if (player.socket && player.socket.readyState === 1) {
+									// send state to all tournament players
+									player.socket.send(statePayload);
+								}
+							}
+						}
+					}
 				}
 			}
 		}
