@@ -11,6 +11,7 @@ import {
 	handleTournamentMatchState,
 	resetTournamentOrchestrator,
 	isMatchInRound2,
+	getMatchType,
 } from "../views/tournament/overlays/tournament_orchestrator";
 import { setMatchActive } from "../config/matchState";
 
@@ -337,35 +338,46 @@ export function connectToTournamentWS(
 				// ANDY: when a match finishes, call handleTournamentMatchState
 				// Find which match this state belongs to by checking all known matches (because we don't have matchid here)
 				if (state.isOver && state.winner && !wasOver) {
-					// ANDY: First collect all matches where the winner matches, prioritizing round 2 matches
-					let foundMatchId: string | null = null;
-					let foundRound2MatchId: string | null = null;
+					// ANDY: Collect ALL matches where the winner matches (both Round 1 and Round 2)
+					// We need to process ALL matches that finished, not just one
+					const allMatchingMatches: Array<{ matchId: string; players: { left: string | null; right: string | null }; isRound2: boolean }> = [];
 					
 					for (const [matchId, players] of matchPlayersMap.entries()) {
 						const winnerUsername = state.winner === "left" ? players.left : players.right;
 						if (winnerUsername) {
 							const isRound2 = isMatchInRound2(matchId);
-							
-							if (isRound2) {
-								// Found a round 2 match - this takes priority
-								foundRound2MatchId = matchId;
-							} else if (!foundMatchId) {
-								// Store first round 1 match found (fallback)
-								foundMatchId = matchId;
-							}
+							allMatchingMatches.push({ matchId, players, isRound2 });
 						}
 					}
 					
-					// Use round 2 match if found, otherwise use round 1 match
-					const targetMatchId = foundRound2MatchId || foundMatchId;
-					if (targetMatchId) {
-						const players = matchPlayersMap.get(targetMatchId);
-						if (players) {
-							handleTournamentMatchState(state, targetMatchId, players.left, players.right);
-							// ANDY: change button to "Back to Menu" only when a round 2 match (final or 3rd place) is over
-							if (foundRound2MatchId) {
-								onMatchOver();
-							}
+					// ANDY: Process all matching matches, but prioritize:
+					// 1. Round 2 matches over Round 1
+					// 2. Final matches over 3rd place matches
+					allMatchingMatches.sort((a, b) => {
+						// Round 2 matches first
+						if (a.isRound2 && !b.isRound2) return -1;
+						if (!a.isRound2 && b.isRound2) return 1;
+						
+						// If both are Round 2, prioritize final over 3rd place
+						if (a.isRound2 && b.isRound2) {
+							const aType = getMatchType(a.matchId);
+							const bType = getMatchType(b.matchId);
+							if (aType === "final" && bType !== "final") return -1;
+							if (aType !== "final" && bType === "final") return 1;
+						}
+						
+						return 0;
+					});
+					
+					// ANDY: Only process the FIRST (prioritized) matching match
+					// The state message is for ONE specific match, so we should only process one
+					// Priority: Round 2 Final > Round 2 3rd Place > Round 1
+					if (allMatchingMatches.length > 0) {
+						const { matchId, players, isRound2 } = allMatchingMatches[0];
+						handleTournamentMatchState(state, matchId, players.left, players.right);
+						
+						if (isRound2) {
+							onMatchOver();
 						}
 					}
 				}

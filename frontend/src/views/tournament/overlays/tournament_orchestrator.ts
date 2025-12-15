@@ -45,6 +45,11 @@ let semiFinalMatchIds: {
 // ANDY: track match type by matchId (so we can determine match type even if currentMatchType was overwritten)
 const matchTypeMap = new Map<string, { round: number; type: string }>();
 
+// ANDY: export function to get match type (for use in game.ts)
+export function getMatchType(matchId: string): string | undefined {
+	return matchTypeMap.get(matchId)?.type;
+}
+
 //Check if a match is in round 2 (final or 3rd place)
 export function isMatchInRound2(matchId: string): boolean {
 	const matchInfo = matchTypeMap.get(matchId);
@@ -248,10 +253,15 @@ export function handleTournamentMatchState(
 	// -------------------------------
 	if (matchRoundNum === 2) {
 		// ANDY: determine match type from matchId (use matchInfo from above)
+		// Priority 1: Check explicit match type from matchTypeMap
+		// Priority 2: Check if winner is a semifinal winner (final match)
+		// Priority 3: If matchTypeMap says it's NOT thirdPlace, assume it's final
 		const isFinalMatch = matchInfo?.type === "final" || 
 			// final match always has semifinal winners, while 3rd place match has semifinal losers
-			winner === internalBracket.results.semiFinal1Winner ||
-			winner === internalBracket.results.semiFinal2Winner;
+			(winner === internalBracket.results.semiFinal1Winner ||
+			winner === internalBracket.results.semiFinal2Winner) ||
+			// If matchTypeMap doesn't explicitly say "thirdPlace", and we're in Round 2, it's likely the final
+			(matchInfo?.type !== "thirdPlace" && matchInfo?.type !== undefined);
 
 		if (isFinalMatch) {
 			// FINAL MATCH
@@ -267,10 +277,18 @@ export function handleTournamentMatchState(
 			// 3RD PLACE MATCH
 			internalBracket.results.thirdPlaceWinner = winner;
 
-			// Only show 3rd place overlay if final hasn't finished yet
+			// ANDY: Only show 3rd place overlay if final hasn't finished yet
+			// If final has already finished, don't show 3rd place overlay (final overlay should remain visible)
 			if (!internalBracket.results.finalWinner) {
 				showTournamentOverlay("between-rounds", {
 					title: t("tournaments.thirdPlaceDecided"),
+					bracket: internalBracket as any,
+					focusedPlayerUsername: focused,
+				});
+			} else {
+				// Final has already finished - re-show the final overlay to ensure it's visible
+				showTournamentOverlay("final", {
+					title: t("tournaments.tournamentFinished"),
 					bracket: internalBracket as any,
 					focusedPlayerUsername: focused,
 				});
