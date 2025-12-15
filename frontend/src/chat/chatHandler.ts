@@ -708,13 +708,14 @@ export function wireIncomingChat(
 	friendList: HTMLElement,
 	chatHeader: HTMLElement,
 ): () => void {
-	const ws = userData.userSock;
+	//OLD
+	/*const ws = userData.userSock;
 	if (!ws) {
 		console.warn("Chat socket not connected");
 		return () => {};
 	}
 
-	const previousHandler = ws.onmessage;
+	const previousHandler = ws.onmessage;*/
 
 	// get the last chatPartner
 	const savedChatPartner = localStorage.getItem('activeChatPartner');
@@ -754,13 +755,16 @@ export function wireIncomingChat(
 
 	document.addEventListener('userListsUpdated', handleUserListsUpdated);
 
-	ws.onmessage = async (event) => {
+	const handleSocketMessage = async (e: Event) => {
 		try {
 			
-			const payload = JSON.parse(event.data);
+			const customEvent = e as CustomEvent; 
+			const payload = customEvent.detail;
+
+			//const payload = JSON.parse(event.data);
 			if (payload && payload.type === "chat") {
 				const msg: Message = payload.data;
-				console.log("WS EVENT:", msg);
+				console.log("DOM EVENT:", msg);
 
 				switch (msg.type) {
 					case "broadcast": {
@@ -869,8 +873,14 @@ export function wireIncomingChat(
 		}
 	};
 
+	document.addEventListener('userListsUpdated', handleUserListsUpdated);
+	document.addEventListener('socket-message', handleSocketMessage);
+
 	return () => {
-		ws.onmessage = previousHandler ?? null;
 		document.removeEventListener('userListsUpdated', handleUserListsUpdated);
+        document.removeEventListener('socket-message', handleSocketMessage);
+		//OLD
+		//ws.onmessage = previousHandler ?? null;
+		//document.removeEventListener('userListsUpdated', handleUserListsUpdated);
 	};
 }

@@ -156,12 +156,14 @@ export async function fetchOnlineUsers() {
 	generalData.onlineUsers = body.data;
 }
 
-export async function initChat(root: HTMLElement = document.body): Promise<() => void> {
-	await fetchUserData();
-	await fetchAllUsers();
-	await fetchOnlineUsers();
-	if (!userData.chatHistory || !userData.blockedUsers || !userData.friends)
-		console.log("[CHAT] Error retrieving user data");
+export async function initChat(root: HTMLElement = document.body, skipFetch: boolean = false): Promise<() => void> {
+	if (!skipFetch) {
+		await fetchUserData();
+		await fetchAllUsers();
+		await fetchOnlineUsers();
+		if (!userData.chatHistory || !userData.blockedUsers || !userData.friends)
+			console.log("[CHAT] Error retrieving user data");
+	}
 
 	// LIVE CHAT /////////////////////////////////////////////////////////////////
 	// MAIN CHAT PANEL
