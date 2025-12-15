@@ -13,60 +13,37 @@ export function teardownChat() {
 
 async function fetchAndLog() {
 	try {
-		//Matches
-		const res = await fetch(`${API_BASE}/api/test/print-users`, { credentials: "include" });
+		const users = await fetch(`${API_BASE}/api/test/print-users`);
+		const matches = await fetch(`${API_BASE}/api/test/print-matches`);
+		const tournaments = await fetch(`${API_BASE}/api/test/print-tournaments`);
+		const tournaments2 = await fetch(`${API_BASE}/api/test/print-tournaments2`);
+		const tournamentPlayers = await fetch(`${API_BASE}/api/test/print-tournament-players`);
+		const messages = await fetch(`${API_BASE}/api/test/print-messages`);
 
-		if (!res.ok) {
-			console.error("Request failed:", res.status, res.statusText);
-			return;
-		}
+		if (!users.ok) console.error("Request failed:", users.status, users.statusText);
+		else if (!matches.ok) console.error("Request failed:", matches.status, matches.statusText);
+		else if (!tournaments.ok) console.error("Request failed:", tournaments.status, tournaments.statusText);
+		else if (!tournaments2.ok) console.error("Request failed:", tournaments2.status, tournaments2.statusText);
+		else if (!tournamentPlayers.ok)
+			console.error("Request failed:", tournamentPlayers.status, tournamentPlayers.statusText);
+		else if (!messages.ok) console.error("Request failed:", messages.status, messages.statusText);
 
-		const data = await res.json();
-		console.log("Users:", data.data);
+		const usersData = await users.json();
+		const matchesData = await matches.json();
+		const tournamentsData = await tournaments.json();
+		const tournaments2Data = await tournaments2.json();
+		const tournamentPlayersData = await tournamentPlayers.json();
+		const messagesData = await messages.json();
 
-		//Matches
-		const res1 = await fetch(`${API_BASE}/api/test/print-matches`, { credentials: "include" });
-
-		if (!res1.ok) {
-			console.error("Request failed:", res1.status, res1.statusText);
-			return;
-		}
-
-		const data1 = await res1.json();
-		console.log("Matches:", data1.data);
-
-		// Tournaments
-		const res2 = await fetch(`${API_BASE}/api/test/print-tournaments`, { credentials: "include" });
-
-		if (!res2.ok) {
-			console.error("Request failed:", res2.status, res2.statusText);
-			return;
-		}
-
-		const data2 = await res2.json();
-		console.log("Tournaments:", data2.data);
-
-		// Tournaments2
-		const res3 = await fetch(`${API_BASE}/api/test/print-tournaments2`, { credentials: "include" });
-
-		if (!res3.ok) {
-			console.error("Request failed:", res3.status, res3.statusText);
-			return;
-		}
-
-		const data3 = await res3.json();
-		console.log("Tournaments2:", data3.data);
-
-		// Tournament players
-		const res4 = await fetch(`${API_BASE}/api/test/print-tournament-players`, { credentials: "include" });
-
-		if (!res4.ok) {
-			console.error("Request failed:", res4.status, res4.statusText);
-			return;
-		}
-
-		const data4 = await res4.json();
-		console.log("Tournament players:", data4.data);
+		const data = {
+			users: usersData.data,
+			matches: matchesData.data,
+			tournaments: tournamentsData.data,
+			tournaments2: tournaments2Data.data,
+			tournamentPlayers: tournamentPlayersData.data,
+			messages: messagesData.data,
+		};
+		console.log("Database:", data);
 	} catch (err) {
 		console.error("Fetch error:", err);
 	}
