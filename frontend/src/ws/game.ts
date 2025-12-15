@@ -194,6 +194,11 @@ export function connectToSingleGameWS(state: MatchState, roomId?: string): () =>
 				// payload.data is now MatchState
 				applyBackendState(state, payload.data);
 
+				// ANDY: when an online game finishes, update UI so the button changes to "Back to Menu"
+				if (state.isOver && !wasOver && state.winner) {
+					onMatchOver();
+				}
+
 				// Reset game
 				if (state.isOver && !wasOver && !resetRequested) {
 					ws.send(JSON.stringify({ type: "reset" }));
