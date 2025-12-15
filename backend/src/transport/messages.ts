@@ -64,13 +64,13 @@ export function handleGameMessages(raw: RawData, match: Match) {
 				setTimeout(() => {
 					// Only reset if game is still over (user hasn't started a new game)
 					if (match.state.isOver) {
-						resetMatchState(match);
+						//resetMatchState(match);
 						matchEndTimes.delete(match.id);
 					}
 				}, remainingDelay);
 			} else {
 				// Enough time has passed or game didn't just end, reset immediately
-				resetMatchState(match);
+				//resetMatchState(match);
 				matchEndTimes.delete(match.id);
 			}
 		}

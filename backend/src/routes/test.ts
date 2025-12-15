@@ -77,26 +77,4 @@ export default async function testRoutes(fastify: FastifyInstance) {
 			return reply.code(500).send({ success: false, message: "Unable to retrieve messages" });
 		}
 	});
-
-	// // CREATE 5 test tournaments
-	// fastify.get("/api/test/create-tournaments", async (_request: FastifyRequest, reply: FastifyReply) => {
-	// 	try {
-	// 		createTestTournaments();
-	// 		return reply.code(200).send({ success: true, message: "5 test tournaments created" });
-	// 	} catch (error: any) {
-	// 		console.error("[testRT]", error.message);
-	// 		return reply.code(500).send({ success: false, message: "Unable to create test tournaments" });
-	// 	}
-	// });
-
-	// // CREATE 5 test single games
-	// fastify.get("/api/test/create-single-games", async (_request: FastifyRequest, reply: FastifyReply) => {
-	// 	try {
-	// 		createTestSingleGames();
-	// 		return reply.code(200).send({ success: true, message: "5 test single games created" });
-	// 	} catch (error: any) {
-	// 		console.error("[testRT]", error.message);
-	// 		return reply.code(500).send({ success: false, message: "Unable to create test single games" });
-	// 	}
-	// });
 }

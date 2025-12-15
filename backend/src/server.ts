@@ -21,7 +21,6 @@ import type WebSocket from "ws";
 import userManagementRoutes from "./routes/userManagement.js";
 import chatRoutes from "./routes/chat.js";
 import gamesRoutes from "./routes/games.js";
-import path from "path";
 
 function toPlayerInfo(player?: { username: string; displayName?: string } | null) {
 	if (!player) return undefined;
@@ -32,7 +31,8 @@ const UPDATE_FPS = GAME_CONSTANTS.UPDATE_FPS;
 const useHttps = (process.env.USE_HTTPS ?? "").toLowerCase() === "true";
 
 let fastifyOptions: FastifyServerOptions & { https?: { key: Buffer; cert: Buffer } } = {
-	logger: true,
+	//logger: true,
+	logger: false,
 };
 
 if (useHttps) {
@@ -52,12 +52,9 @@ if (useHttps) {
 	};
 }
 const fastify: FastifyInstance = Fastify(fastifyOptions);
-//const fastify: FastifyInstance = Fastify({ logger: true });
-//const fastify: FastifyInstance = Fastify({ logger: false });
 
 await fastify.register(fastifyWebsocket);
 
-// fastify.get("/api/health", async () => ({ ok: true }));
 // Expose gameplay constants to the frontend so it can size the canvas, paddles, etc.
 fastify.get("/api/constants", async () => {
 	return {
@@ -75,32 +72,6 @@ fastify.get("/api/constants", async () => {
 		updateFps: UPDATE_FPS,
 	};
 });
-
-// fastify.post("/api/control", async (request, reply) => {
-// 	const { tournamentId, singleGameId, paddle, direction } = request.body as {
-// 		tournamentId?: string;
-// 		singleGameId?: string;
-// 		paddle?: PaddleSide;
-// 		direction?: "up" | "down" | "stop";
-// 	};
-// 	if (!tournamentId || !paddle || !direction) {
-// 		reply.code(400);
-// 		return { error: "tournamentId, paddle and direction are required" };
-// 	}
-
-// 	// const tournament = getTournament(tournamentId);
-// 	// if (tournament) {
-// 	// 	const input: PaddleInput = direction === "up" ? -1 : direction === "down" ? 1 : 0;
-// 	// 	tournament.matches[0].inputs[paddle] = input; // hardcoded first match for now
-// 	// 	return { ok: true };
-// 	// } else return { ok: false };
-// });
-
-// fastify.get<{ Params: { id: string } }>("/api/tournaments/:id/state", async (request) => {
-// 	const tournament = getTournament(request.params.id);
-// 	//if (tournament) return buildStatePayload(tournament.matches[0]); // hardcoded first match for now
-// 	//else return null;
-// });
 
 await fastify.register(userRoutes);
 await fastify.register(userManagementRoutes);
@@ -134,7 +105,7 @@ setInterval(() => {
 				}),
 				match
 			);
-		/*const wasRunning = match.state.isRunning;
+			/*const wasRunning = match.state.isRunning;
 		const wasOver = match.state.isOver;
 
 		if (match.state.isRunning) {
@@ -166,7 +137,7 @@ setInterval(() => {
 						}),
 						match
 					);
-				/*const wasRunning = match.state.isRunning;
+					/*const wasRunning = match.state.isRunning;
 				const wasOver = match.state.isOver;
 
 				if (match.state.isRunning) {

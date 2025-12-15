@@ -424,7 +424,7 @@ export function endTournament(tournament: Tournament) {
 	// JACO: Added a delay to clean up the tournament from memory to prevent memory leaks
 	setTimeout(() => {
 		tournaments.delete(tournament.id);
-		console.log(`[TM] Cleaned up finished tournament ${tournament.id} from memory.`);
+		console.log(`[TM] Deleting tournament local object with id: ${tournament.id} from memory.`);
 	}, 30 * 1000); // 30 seconds delay
 }
 

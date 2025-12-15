@@ -9,7 +9,6 @@ export function getAllTournamentPlayersDB(): any[] {
 	`);
 
 	const tournament_players: any = stmt.all();
-	if (tournament_players.length === 0) throw new Error(`[DB] No tournament players found`);
 
 	return tournament_players;
 }
