@@ -111,7 +111,10 @@ export function isSingleGameOpen(singleGame: SingleGame): boolean {
 export function getOpenSingleGames(): SingleGame[] {
 	const openSingleGames: SingleGame[] = [];
 	for (const singleGame of singleGames.values()) {
-		if (isSingleGameOpen(singleGame)) openSingleGames.push(singleGame);
+		// ANDY: only expose remote (online) games in the online lobby so local games don't show up in the online lobby anymore
+		if (singleGame.mode === "remote" && isSingleGameOpen(singleGame)) {
+			openSingleGames.push(singleGame);
+		}
 	}
 	return openSingleGames;
 }

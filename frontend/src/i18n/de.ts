@@ -14,7 +14,7 @@ export default {
   },
 
   game: {
-    exit: "Match Verlassen",
+    exit: "Spiel aufgeben",
     leave: "Zurück zur Lobby",
     backToMenu: "Zurück zum Menü",
     waitingForOpponent: "Warte auf Gegner...",
