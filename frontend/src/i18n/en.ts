@@ -151,7 +151,6 @@ export default {
 	unblockUser: "Unblock user",
 	youBlocked: "You blocked: ",
 	youUnblocked: "You unblocked: ",
-	channels: "Channels",
 	onlineUsers: "Online Users",
 	friends: "Friends",
 	},
