@@ -140,6 +140,7 @@ export function handleTournamentMatchAssigned(data: any) {
 
 		showTournamentOverlay("match-ready", {
 			roundLabel: t("tournaments.semiFinals"),
+			roundLabelKey: "tournaments.semiFinals",
 			bracket: internalBracket as any,
 			focusedPlayerUsername: me,
 		});
@@ -175,6 +176,7 @@ export function handleTournamentMatchAssigned(data: any) {
 			
 			showTournamentOverlay("match-ready", {
 				roundLabel: t("tournaments.finalMatch"),
+				roundLabelKey: "tournaments.finalMatch",
 				bracket: internalBracket as any,
 				focusedPlayerUsername: me,
 			});
@@ -185,6 +187,7 @@ export function handleTournamentMatchAssigned(data: any) {
 			// For 3rd place we can infer the losers from the players in the match
 			showTournamentOverlay("match-ready", {
 				roundLabel: t("tournaments.thirdPlaceFinal"),
+				roundLabelKey: "tournaments.thirdPlaceFinal",
 				bracket: internalBracket as any,
 				focusedPlayerUsername: me,
 			});
@@ -242,6 +245,7 @@ export function handleTournamentMatchState(
 
 		showTournamentOverlay("between-rounds", {
 			title: t("tournaments.roundComplete"),
+			titleKey: "tournaments.roundComplete",
 			bracket: internalBracket as any,
 			focusedPlayerUsername: focused,
 		});
@@ -269,6 +273,7 @@ export function handleTournamentMatchState(
 
 			showTournamentOverlay("final", {
 				title: t("tournaments.tournamentFinished"),
+				titleKey: "tournaments.tournamentFinished",
 				bracket: internalBracket as any,
 				focusedPlayerUsername: focused,
 			});
@@ -282,6 +287,7 @@ export function handleTournamentMatchState(
 			if (!internalBracket.results.finalWinner) {
 				showTournamentOverlay("between-rounds", {
 					title: t("tournaments.thirdPlaceDecided"),
+					titleKey: "tournaments.thirdPlaceDecided",
 					bracket: internalBracket as any,
 					focusedPlayerUsername: focused,
 				});
