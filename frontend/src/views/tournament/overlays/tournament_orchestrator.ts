@@ -217,10 +217,16 @@ export function handleTournamentMatchState(
 
 	const focused = userData.username ?? undefined;
 
+	// ANDY: determine round from matchTypeMap instead of relying on currentRound (which can be overwritten)
+	// This ensures we correctly identify Round 2 matches even if currentRound was overwritten by a later match-assigned message
+	const matchInfo = matchTypeMap.get(matchId);
+	const matchRound = matchInfo?.round;
+	const matchRoundNum = matchRound !== undefined ? (typeof matchRound === 'number' ? matchRound : parseInt(String(matchRound), 10)) : currentRound;
+
 	// -------------------------------
 	// ROUND 1 RESULTS
 	// -------------------------------
-	if (currentRound === 1) {
+	if (matchRoundNum === 1) {
 		if (matchId === semiFinalMatchIds.sf1) {
 			internalBracket.results.semiFinal1Winner = winner;
 		}
@@ -240,9 +246,8 @@ export function handleTournamentMatchState(
 	// -------------------------------
 	// ROUND 2: FINAL OR 3RD PLACE
 	// -------------------------------
-	if (currentRound === 2) {
-		// ANDY: determine match type from matchId
-		const matchInfo = matchTypeMap.get(matchId);
+	if (matchRoundNum === 2) {
+		// ANDY: determine match type from matchId (use matchInfo from above)
 		const isFinalMatch = matchInfo?.type === "final" || 
 			// final match always has semifinal winners, while 3rd place match has semifinal losers
 			winner === internalBracket.results.semiFinal1Winner ||
