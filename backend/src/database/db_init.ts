@@ -2,7 +2,6 @@
 import Database from "better-sqlite3";
 import fs from "fs";
 import path from "path";
-import { cleanupAbandonedTournamentsDB } from "./tournaments/setters.js";
 
 const dbPath = process.env.DB_PATH || "/app/data/database.sqlite";
 
@@ -97,6 +96,29 @@ db.exec(`
 	);
 `);
 
+function hasColumn(table: string, column: string): boolean {
+	try {
+		const rows = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
+		return rows.some((r) => r.name === column);
+	} catch {
+		return false;
+	}
+}
+
+function ensureTournamentsCreatedAtColumn() {
+	if (hasColumn("tournaments", "created_at")) return;
+	try {
+		db.exec("ALTER TABLE tournaments ADD COLUMN created_at DATETIME");
+		db.exec("UPDATE tournaments SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL");
+		console.log("[DB] Migrated tournaments table: added created_at");
+	} catch (error) {
+		console.error("[DB] Failed to migrate tournaments.created_at:", error);
+	}
+}
+
+// Best-effort migrations for older db files.
+ensureTournamentsCreatedAtColumn();
+
 function cleanupIncompleteGames() {
 	try {
 		const deletedMatches = db.prepare(`DELETE FROM matches WHERE winner IS NULL AND notes IS NULL`).run();
@@ -113,8 +135,22 @@ function cleanupIncompleteGames() {
 
 function cleanupAbandonedTournaments() {
 	try {
-		// ANDY: regularly cleanup tournaments from the db so the lobby does not get polluted
-		cleanupAbandonedTournamentsDB(3);
+		if (!hasColumn("tournaments", "created_at") || !hasColumn("tournaments", "started_at")) {
+			return;
+		}
+
+		// Regularly cleanup tournaments from the db so the lobby does not get polluted.
+		// NOTE: Implemented here to avoid a circular dependency between db init and tournament setters.
+		const minutesOld = 3;
+		const stmt = db.prepare(`
+			DELETE FROM tournaments 
+			WHERE started_at IS NULL 
+			AND datetime(created_at, '+' || ? || ' minutes') < datetime('now')
+		`);
+		const result = stmt.run(minutesOld);
+		if (result.changes > 0) {
+			console.log(`[DB] Cleaned up ${result.changes} abandoned tournament(s) older than ${minutesOld} minutes`);
+		}
 	} catch (error) {
 		console.error("[DB] Error cleaning up abandoned tournaments:", error);
 	}

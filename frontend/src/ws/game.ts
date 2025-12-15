@@ -1,5 +1,5 @@
 import { userData } from "../config/constants";
-import { ROOM_ID, WS_HOST, WS_PORT, WS_PROTOCOL } from "../config/endpoints";
+import * as endpoints from "../config/endpoints";
 import { flushInputs, queueInput, setActiveSocket, setAssignedSide } from "../game/input";
 import { applyBackendState } from "../game/state";
 import { MatchState } from "../types/game";
@@ -14,6 +14,8 @@ import {
 	getMatchType,
 } from "../views/tournament/overlays/tournament_orchestrator";
 import { setMatchActive } from "../config/matchState";
+
+const { ROOM_ID, WS_HOST, WS_PORT, WS_PROTOCOL } = endpoints;
 
 // no-op functions to avoid errors as long as the UI has not registered handlers by calling registerGameUiHandlers
 let waitingForPlayers: () => void = () => {};
@@ -338,15 +340,40 @@ export function connectToTournamentWS(
 				// ANDY: when a match finishes, call handleTournamentMatchState
 				// Find which match this state belongs to by checking all known matches (because we don't have matchid here)
 				if (state.isOver && state.winner && !wasOver) {
+					// ANDY: First collect all matches where the winner matches, prioritizing round 2 matches
+					let foundMatchId: string | null = null;
+					let foundRound2MatchId: string | null = null;
+
 					// ANDY: Collect ALL matches where the winner matches (both Round 1 and Round 2)
 					// We need to process ALL matches that finished, not just one
-					const allMatchingMatches: Array<{ matchId: string; players: { left: string | null; right: string | null }; isRound2: boolean }> = [];
-					
+					//const allMatchingMatches: Array<{ matchId: string; players: { left: string | null; right: string | null }; isRound2: boolean }> = [];
+
 					for (const [matchId, players] of matchPlayersMap.entries()) {
 						const winnerUsername = state.winner === "left" ? players.left : players.right;
 						if (winnerUsername) {
 							const isRound2 = isMatchInRound2(matchId);
-							allMatchingMatches.push({ matchId, players, isRound2 });
+
+							if (isRound2) {
+								// Found a round 2 match - this takes priority
+								foundRound2MatchId = matchId;
+							} else if (!foundMatchId) {
+								// Store first round 1 match found (fallback)
+								foundMatchId = matchId;
+							}
+						}
+					}
+
+					// Use round 2 match if found, otherwise use round 1 match
+					const targetMatchId = foundRound2MatchId || foundMatchId;
+					if (targetMatchId) {
+						const players = matchPlayersMap.get(targetMatchId);
+						if (players) {
+							handleTournamentMatchState(state, targetMatchId, players.left, players.right);
+							// ANDY: change button to "Back to Menu" only when a round 2 match (final or 3rd place) is over
+							if (foundRound2MatchId) {
+								onMatchOver();
+							}
+							/*allMatchingMatches.push({ matchId, players, isRound2 });
 						}
 					}
 					
@@ -377,7 +404,7 @@ export function connectToTournamentWS(
 						handleTournamentMatchState(state, matchId, players.left, players.right);
 						
 						if (isRound2) {
-							onMatchOver();
+							onMatchOver();*/
 						}
 					}
 				}

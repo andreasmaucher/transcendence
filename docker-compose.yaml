@@ -1,15 +1,25 @@
-name: ft_transcendence
 
 services:
   backend:
+    image: transcendence-backend:latest
+    secrets:
+      - tls_key
+      - tls_cert
+      - github_client_id
+      - github_client_secret
+      - chain_private_key
     build:
       context: ./backend
       dockerfile: Dockerfile
       args:
         - CACHEBUST=1
     container_name: transcendence-backend
-    ports:
-      - "4000:4000"
+    # ports:
+    #   - "4000:4000"
+    expose:
+      - "4000"
+    networks:
+      - internal
     env_file:
       - ./backend/.env
     environment:
@@ -24,14 +34,20 @@ services:
     restart: unless-stopped
 
   frontend:
+    image: transcendence-frontend:latest
+    secrets:
+      - tls_key
+      - tls_cert
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
         - CACHEBUST=1
-    container_name: transcendence-frontend
+    # container_name: transcendence-frontend
     ports:
       - "5173:5173"
+    networks:
+      - internal
     env_file:
       - ./frontend/.env
     environment:
@@ -45,3 +61,19 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+
+secrets:
+  tls_key:
+    file: ./certs/key.pem
+  tls_cert:
+    file: ./certs/cert.pem
+  github_client_id:
+    file: ./certs/github_client_id.txt
+  github_client_secret:
+    file: ./certs/github_client_secret.txt
+  chain_private_key:
+    file: ./certs/chain_private_key
+
+networks:
+  internal:
+    driver: bridge

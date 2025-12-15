@@ -134,8 +134,7 @@ export async function renderGame(container: HTMLElement) {
 	createTournamentOverlay(container);
 
 	// Floating UI (online / tournament only)
-	const ui =
-		mode === "local" ? null : document.createElement("div");
+	const ui = mode === "local" ? null : document.createElement("div");
 
 	if (ui) {
 		ui.style.position = "absolute";
@@ -149,7 +148,6 @@ export async function renderGame(container: HTMLElement) {
 		ui.style.zIndex = "9999";
 		wrapper.append(ui);
 	}
-
 
 	// USER INFO
 	let userBox: HTMLDivElement | null = null;
@@ -168,7 +166,6 @@ export async function renderGame(container: HTMLElement) {
 		userBox.style.backdropFilter = "blur(6px)";
 		ui.append(userBox);
 	}
-
 
 	(async () => {
 		const me = await fetchMe();
@@ -189,16 +186,11 @@ export async function renderGame(container: HTMLElement) {
 		userBox.append(avatar, name);
 	})();
 
-
 	// ==========================================================
 	// LOCAL GAME PLAYER UI (LEFT / RIGHT)
 	// ==========================================================
 	if (mode === "local") {
-		const createLocalPlayerBox = (
-			side: "left" | "right",
-			name: string,
-			instruction: string
-		) => {
+		const createLocalPlayerBox = (side: "left" | "right", name: string, instruction: string) => {
 			const box = document.createElement("div");
 			box.style.position = "absolute";
 			box.style.top = "-60px";
@@ -225,9 +217,8 @@ export async function renderGame(container: HTMLElement) {
 			const hint = document.createElement("div");
 			hint.textContent = instruction;
 			hint.style.fontSize = "12px";
-			hint.style.color = "#e6e6e6";   // light whitish
+			hint.style.color = "#e6e6e6"; // light whitish
 			hint.style.opacity = "0.95";
-
 
 			box.append(title, hint);
 			wrapper.append(box);
@@ -267,8 +258,7 @@ export async function renderGame(container: HTMLElement) {
 					userBox.style.flexDirection = "row-reverse";
 				}
 
-				sideIndicator.textContent =
-					side === "left" ? t("game.controlLeftPaddle") : t("game.controlRightPaddle");
+				sideIndicator.textContent = side === "left" ? t("game.controlLeftPaddle") : t("game.controlRightPaddle");
 
 				sideIndicator.style.display = "block";
 			});

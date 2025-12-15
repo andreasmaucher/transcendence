@@ -4,7 +4,6 @@ import { getAllMatchesDB } from "../database/matches/getters.js";
 import { getAllTournamentsDB } from "../database/tournaments/getters.js";
 import { getAllMessagesDB } from "../database/messages/getters.js";
 import { getAllTournamentPlayersDB, getAllTournamentsWithPlayersDB } from "../database/tournament_players/getters.js";
-import { createTestSingleGames, createTestTournaments } from "../utils/test.js";
 
 export default async function testRoutes(fastify: FastifyInstance) {
 	// RETURN all users and PRINT them in backend logs
@@ -79,25 +78,25 @@ export default async function testRoutes(fastify: FastifyInstance) {
 		}
 	});
 
-	// CREATE 5 test tournaments
-	fastify.get("/api/test/create-tournaments", async (_request: FastifyRequest, reply: FastifyReply) => {
-		try {
-			createTestTournaments();
-			return reply.code(200).send({ success: true, message: "5 test tournaments created" });
-		} catch (error: any) {
-			console.error("[testRT]", error.message);
-			return reply.code(500).send({ success: false, message: "Unable to create test tournaments" });
-		}
-	});
+	// // CREATE 5 test tournaments
+	// fastify.get("/api/test/create-tournaments", async (_request: FastifyRequest, reply: FastifyReply) => {
+	// 	try {
+	// 		createTestTournaments();
+	// 		return reply.code(200).send({ success: true, message: "5 test tournaments created" });
+	// 	} catch (error: any) {
+	// 		console.error("[testRT]", error.message);
+	// 		return reply.code(500).send({ success: false, message: "Unable to create test tournaments" });
+	// 	}
+	// });
 
-	// CREATE 5 test single games
-	fastify.get("/api/test/create-single-games", async (_request: FastifyRequest, reply: FastifyReply) => {
-		try {
-			createTestSingleGames();
-			return reply.code(200).send({ success: true, message: "5 test single games created" });
-		} catch (error: any) {
-			console.error("[testRT]", error.message);
-			return reply.code(500).send({ success: false, message: "Unable to create test single games" });
-		}
-	});
+	// // CREATE 5 test single games
+	// fastify.get("/api/test/create-single-games", async (_request: FastifyRequest, reply: FastifyReply) => {
+	// 	try {
+	// 		createTestSingleGames();
+	// 		return reply.code(200).send({ success: true, message: "5 test single games created" });
+	// 	} catch (error: any) {
+	// 		console.error("[testRT]", error.message);
+	// 		return reply.code(500).send({ success: false, message: "Unable to create test single games" });
+	// 	}
+	// });
 }
