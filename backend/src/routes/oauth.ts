@@ -6,12 +6,22 @@ import { createSessionToken, makeSessionCookie } from "../auth/session.js";
 import { getGithubUserByProviderIdDB, isUsernameDB } from "../database/users/getters.js";
 import { registerGithubUserDB } from "../database/users/setters.js";
 import { readCookie, setStateCookie } from "../auth/oauth.js";
+import fs from "fs";
 
 // OAuth config from .env
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN;
-const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
-const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
+function readSecret(path: string): string | undefined {
+	try {
+		const value = fs.readFileSync(path, "utf8").trim();
+		return value.length > 0 ? value : undefined;
+	} catch {
+		return undefined;
+	}
+}
 
+const GITHUB_CLIENT_ID = readSecret("/run/secrets/github_client_id");
+const GITHUB_CLIENT_SECRET = readSecret("/run/secrets/github_client_secret");
+console.log("GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET", GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET);
 export default async function oauthRoutes(fastify: FastifyInstance) {
 	fastify.get("/api/auth/github/start", async (request, reply) => {
 		if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
@@ -23,7 +33,7 @@ export default async function oauthRoutes(fastify: FastifyInstance) {
 
 		const protocol = request.protocol || "http";
 		const host = request.headers.host;
-		const redirectUri = `${protocol}://${host}/api/auth/github/callback`;
+		const redirectUri = process.env.GITHUB_REDIRECT_URI || "";
 
 		console.log("[OAuth] Starting GitHub OAuth with redirect_uri:", redirectUri);
 
@@ -47,7 +57,7 @@ export default async function oauthRoutes(fastify: FastifyInstance) {
 
 		const protocol = request.protocol || "http";
 		const host = request.headers.host;
-		const redirectUri = `${protocol}://${host}/api/auth/github/callback`;
+		const redirectUri = process.env.GITHUB_REDIRECT_URI || "";
 
 		console.log("[OAuth] Callback received with redirect_uri:", redirectUri);
 
