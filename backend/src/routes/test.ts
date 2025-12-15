@@ -11,7 +11,7 @@ export default async function testRoutes(fastify: FastifyInstance) {
 	fastify.get("/api/test/print-users", async (_request: FastifyRequest, reply: FastifyReply) => {
 		try {
 			const users = getAllUsersDB();
-			console.log(users);
+			//console.log(users);
 			return reply.code(200).send({ success: true, data: users });
 		} catch (error: any) {
 			console.error("[testRT]", error.message);
@@ -23,7 +23,7 @@ export default async function testRoutes(fastify: FastifyInstance) {
 	fastify.get("/api/test/print-matches", async (_request: FastifyRequest, reply: FastifyReply) => {
 		try {
 			const matches = getAllMatchesDB();
-			console.log(matches);
+			//console.log(matches);
 			return reply.code(200).send({ success: true, data: matches });
 		} catch (error: any) {
 			console.error("[testRT]", error.message);
@@ -35,7 +35,7 @@ export default async function testRoutes(fastify: FastifyInstance) {
 	fastify.get("/api/test/print-tournaments", async (_request: FastifyRequest, reply: FastifyReply) => {
 		try {
 			const tournaments = getAllTournamentsDB();
-			console.log(tournaments);
+			//console.log(tournaments);
 			return reply.code(200).send({ success: true, data: tournaments });
 		} catch (error: any) {
 			console.error("[testRT]", error.message);
@@ -47,7 +47,7 @@ export default async function testRoutes(fastify: FastifyInstance) {
 	fastify.get("/api/test/print-tournaments2", async (_request: FastifyRequest, reply: FastifyReply) => {
 		try {
 			const tournaments = getAllTournamentsWithPlayersDB();
-			console.log(tournaments);
+			//console.log(tournaments);
 			return reply.code(200).send({ success: true, data: tournaments });
 		} catch (error: any) {
 			console.error("[testRT]", error.message);
@@ -59,7 +59,7 @@ export default async function testRoutes(fastify: FastifyInstance) {
 	fastify.get("/api/test/print-tournament-players", async (_request: FastifyRequest, reply: FastifyReply) => {
 		try {
 			const tournamentPlayers = getAllTournamentPlayersDB();
-			console.log(tournamentPlayers);
+			//console.log(tournamentPlayers);
 			return reply.code(200).send({ success: true, data: tournamentPlayers });
 		} catch (error: any) {
 			console.error("[testRT]", error.message);
@@ -71,7 +71,7 @@ export default async function testRoutes(fastify: FastifyInstance) {
 	fastify.get("/api/test/print-messages", async (_request: FastifyRequest, reply: FastifyReply) => {
 		try {
 			const messages = getAllMessagesDB();
-			console.log(messages);
+			//console.log(messages);
 			return reply.code(200).send({ success: true, data: messages });
 		} catch (error: any) {
 			console.error("[testRT]", error.message);
