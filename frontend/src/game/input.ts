@@ -24,7 +24,7 @@ export function setActiveSocket(ws: WebSocket | null): void {
 export function setAssignedSide(side: PaddleSide | null): void {
 	assignedSide = side;
 	console.log(`[INPUT] Assigned to control: ${side || "both paddles (local mode)"}`);
-	
+
 	// make sure players see which paddle they are controlling (message printed in the UI)
 	// notify UI if callback is registered and side is not null
 	if (side && onSideAssignedCallback) {
@@ -88,7 +88,9 @@ export function setupInputs(): void {
 
 	// when a key is released
 	addEventListener("keyup", (e) => {
-		if ((assignedSide === null || assignedSide === "left") && (e.key === "w" || e.key === "s")) queueInput("left", "stop");
-		if ((assignedSide === null || assignedSide === "right") && (e.key === "ArrowUp" || e.key === "ArrowDown")) queueInput("right", "stop");
+		if ((assignedSide === null || assignedSide === "left") && (e.key === "w" || e.key === "s"))
+			queueInput("left", "stop");
+		if ((assignedSide === null || assignedSide === "right") && (e.key === "ArrowUp" || e.key === "ArrowDown"))
+			queueInput("right", "stop");
 	});
 }

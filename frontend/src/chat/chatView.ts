@@ -56,7 +56,7 @@ export function populatePrivateConv(username: string, privateMessages: Message[]
 					if (index !== -1) list.splice(index, 1);
 				}
 			} else if (msg.receiver === username) {
-				const list = blockedByThem
+				const list = blockedByThem;
 				const index = list.indexOf(msg.sender!);
 				if (msg.type === "block") {
 					if (index === -1) list.push(msg.sender!);
@@ -350,7 +350,7 @@ export async function initChat(root: HTMLElement = document.body): Promise<() =>
 			const messageContent = input.value.trim();
 			if (messageContent.length === 0) return;
 
-		let sanitizeMessage = sanitizeInput(messageContent);
+			let sanitizeMessage = sanitizeInput(messageContent);
 
 			sendBtn.style.transform = "scale(0.97)";
 			setTimeout(() => (sendBtn.style.transform = "scale(1)"), 120);

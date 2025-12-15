@@ -3,6 +3,16 @@
 import { ChatMessage } from "./chat.js";
 import { MatchState } from "./match.js";
 
+export type PlayerInfo = {
+	username: string;
+	displayName?: string;
+};
+
+export type MatchStatePayload = MatchState & {
+	playerLeft?: PlayerInfo;
+	playerRight?: PlayerInfo;
+};
+
 export type PayloadTypes =
 	| "state"
 	| "match-assigned"
@@ -15,7 +25,7 @@ export type PayloadTypes =
 	| "user-offline";
 
 export type PayloadDataTypes =
-	| MatchState
+	| MatchStatePayload
 	| { matchId: string; playerSide: string }
 	| { value: number }
 	| undefined

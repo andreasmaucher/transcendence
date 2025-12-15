@@ -1,5 +1,5 @@
 import { userData } from "../config/constants";
-import { ROOM_ID, WS_HOST, WS_PORT, WS_PROTOCOL } from "../config/endpoints";
+import * as endpoints from "../config/endpoints";
 import { flushInputs, queueInput, setActiveSocket, setAssignedSide } from "../game/input";
 import { applyBackendState } from "../game/state";
 import { MatchState } from "../types/game";
@@ -13,6 +13,8 @@ import {
 	isMatchInRound2,
 } from "../views/tournament/overlays/tournament_orchestrator";
 import { setMatchActive } from "../config/matchState";
+
+const { ROOM_ID, WS_HOST, WS_PORT, WS_PROTOCOL } = endpoints;
 
 // no-op functions to avoid errors as long as the UI has not registered handlers by calling registerGameUiHandlers
 let waitingForPlayers: () => void = () => {};
@@ -340,12 +342,12 @@ export function connectToTournamentWS(
 					// ANDY: First collect all matches where the winner matches, prioritizing round 2 matches
 					let foundMatchId: string | null = null;
 					let foundRound2MatchId: string | null = null;
-					
+
 					for (const [matchId, players] of matchPlayersMap.entries()) {
 						const winnerUsername = state.winner === "left" ? players.left : players.right;
 						if (winnerUsername) {
 							const isRound2 = isMatchInRound2(matchId);
-							
+
 							if (isRound2) {
 								// Found a round 2 match - this takes priority
 								foundRound2MatchId = matchId;
@@ -355,7 +357,7 @@ export function connectToTournamentWS(
 							}
 						}
 					}
-					
+
 					// Use round 2 match if found, otherwise use round 1 match
 					const targetMatchId = foundRound2MatchId || foundMatchId;
 					if (targetMatchId) {

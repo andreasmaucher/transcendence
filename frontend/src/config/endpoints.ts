@@ -1,13 +1,20 @@
-// web socket protocol selection (wss if https, ws if http)
 export const WS_PROTOCOL = window.location.protocol === "https:" ? "wss" : "ws";
 
-// web socket host selection (default to localhost if not specified)
 export const WS_HOST = new URLSearchParams(window.location.search).get("wsHost") ?? window.location.hostname;
 
-export const WS_PORT = Number(new URLSearchParams(window.location.search).get("wsPort") ?? 4000);
+const defaultPort =
+	window.location.port !== "" ? Number(window.location.port) : window.location.protocol === "https:" ? 443 : 80;
 
-// REST API base is built from the same host/port as WebSocket to avoid mismatches
-export const API_BASE = `${window.location.protocol === "https:" ? "https" : "http"}://${WS_HOST}:${WS_PORT}`;
+export const WS_PORT = Number(new URLSearchParams(window.location.search).get("wsPort") ?? defaultPort);
 
-// room ID selection (default to "default" if not specified)
-export const ROOM_ID = new URLSearchParams(window.location.search).get("roomId") ?? "default";
+export const API_BASE = `${window.location.protocol}//${WS_HOST}${WS_PORT ? `:${WS_PORT}` : ""}`;
+
+function getHashQueryParam(key: string): string | null {
+	const hash = window.location.hash || "";
+	const query = hash.includes("?") ? hash.split("?").slice(1).join("?") : "";
+	return new URLSearchParams(query).get(key);
+}
+
+// Used as a fallback by parts of the app that don't thread the id through explicitly.
+// Most game views pass `id` via `#/game?...`.
+export const ROOM_ID = getHashQueryParam("id") ?? new URLSearchParams(window.location.search).get("id") ?? "local";
