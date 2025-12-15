@@ -2,6 +2,11 @@ import { userData } from "../config/constants";
 import { WS_HOST, WS_PORT, WS_PROTOCOL } from "../config/endpoints";
 
 export function connectToUserWS(username: string) {
+	if (userData.userSock && userData.userSock.readyState === WebSocket.OPEN) {
+		console.log("[USER WS] Already connected. Skipping reconnect.");
+		return () => {};
+	}
+
 	const wsUrl = `${WS_PROTOCOL}://${WS_HOST}:${WS_PORT}/api/user/ws`;
 
 	const ws = new WebSocket(wsUrl);
@@ -14,23 +19,33 @@ export function connectToUserWS(username: string) {
 	userData.username = username;
 
 	ws.addEventListener("message", (event) => {
-		/* let parsed: any;
-
 		try {
-			parsed = JSON.parse(event.data);
-		} catch {
-			return;
-		}
+			const parsed = JSON.parse(event.data);
+			if (!parsed || typeof parsed !== "object") return;
 
-		if (!parsed || typeof parsed !== "object") return; */
+			const customEvent = new CustomEvent("socket-message", { detail: parsed });
+			document.dispatchEvent(customEvent);
+
+		} catch (err) {
+			console.error("[USER WS] Parsing error", err);
+		}
 	});
 
 	ws.addEventListener("close", () => {
-		console.log("[USER WS] Disconnected — retrying...");
-		setTimeout(() => connectToUserWS(username), 1000);
+		console.log("[USER WS] Disconnected.");
+		//OLD
+		//setTimeout(() => connectToUserWS(username), 1000);
 	});
 
-	ws.addEventListener("error", () => ws.close());
+	ws.addEventListener("error", () => {}); // error logic will be implemented
 
-	return () => ws.close();
+	return () => {};
+}
+
+// HELPER 
+export function disconnectUserWS() {
+	if (userData.userSock) {
+		userData.userSock.close();
+		userData.userSock = null;
+	}
 }

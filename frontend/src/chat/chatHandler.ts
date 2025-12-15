@@ -10,7 +10,7 @@ import {
 } from "./types";
 import { navigate } from "../router/router";
 import { API_BASE } from "../config/endpoints";
-import { convertUTCStringToLocal } from "../utils/time";
+import { t } from "../i18n";import { convertUTCStringToLocal } from "../utils/time";
 
 export function sendMessage(
 	type: ChatEvent,
@@ -73,8 +73,8 @@ export async function renderIncomingMessage(message: Message) {
 		const span = document.createElement("span");
 		span.style.color = "#ff0000";
 		span.style.fontWeight = "bold";
-		span.textContent = `You've blocked ${message.receiver}. No Conversation possible!`;
-
+		span.textContent = t("chat.blockedByMe")(message.receiver);; 
+		
 		messageElement.appendChild(span);
 	} else if (message.type === "blockedByOthersMessage") {
 		messageElement.style.background = "rgba(255, 170, 0, 0.15)";
@@ -82,7 +82,7 @@ export async function renderIncomingMessage(message: Message) {
 		const span = document.createElement("span");
 		span.style.color = "#ffaa00";
 		span.style.fontWeight = "bold";
-		span.textContent = `You have been blocked by ${message.receiver}. Message cannot be sent.`;
+		span.textContent = t("chat.blockedByOthers")(message.receiver);
 
 		messageElement.appendChild(span);
 	} else if (message.type === "invite") {
@@ -93,7 +93,7 @@ export async function renderIncomingMessage(message: Message) {
 			const expiredText = document.createElement("div");
 			expiredText.style.color = "#888";
 			expiredText.style.fontStyle = "italic";
-			expiredText.textContent = `⚔️ Game Invite from ${message.sender} (Expired)`;
+			expiredText.textContent = t("chat.inviteExpired")(message.sender);;
 			messageElement.appendChild(expiredText);
 		} else {
 			messageElement.appendChild(createHeader(message.sender, convertUTCStringToLocal(message.sentAt!)));
@@ -108,9 +108,9 @@ export async function renderIncomingMessage(message: Message) {
 			text.textContent = message.content || "";
 			text.style.color = "#fff";
 			text.style.margin = "0 0 5px 0";
-
-			const joinButton = document.createElement("button");
-			joinButton.textContent = "ACCEPT CHALLENGE";
+			
+			const joinButton = document.createElement('button');
+			joinButton.textContent = t("chat.acceptChallenge");
 			joinButton.style.cursor = "pointer";
 			joinButton.style.backgroundColor = "#00ffc8";
 			joinButton.style.color = "#000";
@@ -122,9 +122,7 @@ export async function renderIncomingMessage(message: Message) {
 			joinButton.onclick = (e) => {
 				e.stopPropagation();
 				if (message.content === "Are you up for a tournament") {
-					navigate(
-						`#/game?mode=tournament&id=${message.gameId}&name=${encodeURIComponent(message.tournamentName!)}`
-					);
+					navigate(`#/tournament?joinId=${message.gameId}`);
 				} else {
 					navigate(`#/game?mode=online&id=${message.gameId}`);
 				}
@@ -263,7 +261,7 @@ async function handleDuelChallenge(anchorElement: HTMLElement) {
 	}
 
 	if (availableGames.length === 0) {
-		alert(`No open games available.`);
+		alert(t("chat.noOpenGames"));
 		return;
 	}
 
@@ -351,7 +349,10 @@ export function renderChatHeaderButtons(chatHeader: HTMLElement, activeChat: str
 	const secondaryNeon = "#66ffc8"; // OLD "#33cc99";
 
 	const title = document.createElement("span");
-	title.textContent = activeChat === "Global Chat" ? "Global Chat" : `Chat with ${activeChat}`;
+	title.textContent =
+		activeChat === "Global Chat"
+			? t("chat.globalChat")
+			: t("chat.chatWith")(activeChat!);;
 
 	title.style.flex = "1";
 	title.style.fontWeight = "600";
@@ -427,29 +428,29 @@ export function renderChatHeaderButtons(chatHeader: HTMLElement, activeChat: str
 		return btn;
 	};
 
-	const btnProfile = createIconBtn("👤", "Open profile", () => {
+	const btnProfile = createIconBtn("👤", t("chat.openProfile"), () => {
 		navigate(`#/user/${encodeURIComponent(activeChat!)}`);
 	});
 
-	const btnDuel = createIconBtn("⚔️", "Challenge to match", (clickedButton) => {
+	const btnDuel = createIconBtn("⚔️", t("chat.challenge"), (clickedButton) => {
 		handleDuelChallenge(clickedButton);
 	});
 
 	const isBlocked = userData.blockedUsers?.includes(activeChat!);
 
 	const btnBlock = createIconBtn(
-		isBlocked ? "♻️" : "🚫",
-		isBlocked ? "Unblock user" : "Block user",
+		isBlocked? "♻️": "🚫",
+		isBlocked? t("chat.unblockUser") : t("chat.blockUser"),
 		() => {
 			const isBlockedNow = userData.blockedUsers?.includes(activeChat!) || false;
 
 			if (!isBlockedNow) {
 				userData.blockedUsers?.push(activeChat!);
-				sendMessage("block", `You've blocked ${activeChat}`, activeChat);
+				sendMessage('block', t("chat.youBlocked") + activeChat, activeChat);
 				console.log(`🚫 User ${activeChat} was blocked`);
 			} else {
-				userData.blockedUsers = userData.blockedUsers!.filter((u) => u !== activeChat);
-				sendMessage("unblock", `You've unblocked ${activeChat}`, activeChat);
+				userData.blockedUsers = userData.blockedUsers!.filter(u => u !== activeChat);
+				sendMessage('unblock', t("chat.youUnblocked") + activeChat, activeChat);
 				console.log(`♻️ User ${activeChat} was UNBLOCKED`);
 			}
 			renderChatHeaderButtons(chatHeader, activeChat);
@@ -550,19 +551,45 @@ export function renderOnlineUsers(
 
 	//friends online
 	if (friendsOnline.length > 0 || friendsOffline.length > 0) {
-		renderSectionHeader("Friends", headerGreen);
-		friendsOnline.forEach((f) => renderUserItem(f, false));
-		friendsOffline.forEach((f) => renderUserItem(f, true));
+		renderSectionHeader(t("chat.friends"), headerGreen);
+		friendsOnline.forEach(f => renderUserItem(f, false));
+		friendsOffline.forEach(f => renderUserItem(f, true));
 	}
 
 	//user online
 	if (othersOnline.length > 0) {
-		renderSectionHeader("Online Users", headerGreen);
-		othersOnline.forEach((f) => renderUserItem(f, false));
+		renderSectionHeader(t("chat.onlineUsers"), headerGreen);
+		othersOnline.forEach(f => renderUserItem(f, false));
 	}
 }
 
 // METHODS /////////////////////////////////////////////////////////////////////
+export function formatTime(isoString: string | undefined): string {
+	if (!isoString) {
+		return "";
+	}
+	
+	try {
+		const date = new Date(isoString);
+
+		if (isNaN(date.getTime())) {
+			throw new Error("Invalid date string provided.");
+		}
+		date.setMinutes(date.getMinutes() + 60);
+
+		const day = date.getDate().toString().padStart(2, '0');
+		const month = (date.getMonth() + 1).toString().padStart(2, '0');
+
+		const hours = date.getHours().toString().padStart(2, '0');
+		const minutes = date.getMinutes().toString().padStart(2, '0');
+
+		return `${day}.${month}. ${hours}:${minutes}`;
+		
+	} catch (e) {
+		console.error(`[TimeFormat Error] Failed to process timestamp: "${isoString}".`, e);
+		return "N/A";
+	}
+}
 
 export function sanitizeInput(input: string): string {
 	if (!input) {
@@ -664,13 +691,14 @@ export function wireIncomingChat(
 	friendList: HTMLElement,
 	chatHeader: HTMLElement
 ): () => void {
-	const ws = userData.userSock;
+	//OLD
+	/*const ws = userData.userSock;
 	if (!ws) {
 		console.warn("Chat socket not connected");
 		return () => {};
 	}
 
-	const previousHandler = ws.onmessage;
+	const previousHandler = ws.onmessage;*/
 
 	// get the last chatPartner
 	const savedChatPartner = localStorage.getItem("activeChatPartner");
@@ -710,12 +738,16 @@ export function wireIncomingChat(
 
 	document.addEventListener("userListsUpdated", handleUserListsUpdated);
 
-	ws.onmessage = async (event) => {
+	const handleSocketMessage = async (e: Event) => {
 		try {
-			const payload = JSON.parse(event.data);
+			
+			const customEvent = e as CustomEvent; 
+			const payload = customEvent.detail;
+
+			//const payload = JSON.parse(event.data);
 			if (payload && payload.type === "chat") {
 				const msg: Message = payload.data;
-				console.log("WS EVENT:", msg);
+				console.log("DOM EVENT:", msg);
 
 				switch (msg.type) {
 					case "broadcast": {
@@ -809,8 +841,11 @@ export function wireIncomingChat(
 		}
 	};
 
+	document.addEventListener('userListsUpdated', handleUserListsUpdated);
+	document.addEventListener('socket-message', handleSocketMessage);
+
 	return () => {
-		ws.onmessage = previousHandler ?? null;
-		document.removeEventListener("userListsUpdated", handleUserListsUpdated);
+		document.removeEventListener('userListsUpdated', handleUserListsUpdated);
+        document.removeEventListener('socket-message', handleSocketMessage);
 	};
 }

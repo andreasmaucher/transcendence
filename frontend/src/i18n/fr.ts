@@ -120,4 +120,26 @@ export default {
     failedLoad: "Échec du chargement du profil."
   },
 
+    chat: {
+    globalChat: "Chat Global",
+    chatWith: (name: string) => `Chat avec ${name}`,
+    channels: "Canaux",
+    placeholder: "Écrivez un message…",
+    send: "Envoyer",
+    blockedByMe: (name: string) => `Vous avez bloqué ${name}. Conversation impossible !`,
+    blockedByOthers: (name: string) => `Vous avez été bloqué par ${name}. Message non envoyé.`,
+    inviteExpired: (name: string) => `⚔️ Invitation à jouer de ${name} (Expirée)`,
+    acceptChallenge: "ACCEPTER LE DÉFI",
+    noOpenGames: "Aucune partie ouverte disponible.",
+    openProfile: "Voir le profil",
+    challenge: "Défier en duel",
+    blockUser: "Bloquer l'utilisateur",
+    unblockUser: "Débloquer l'utilisateur",
+    youBlocked: "Vous avez bloqué : ",
+    youUnblocked: "Vous avez débloqué : ",
+    channels: "Canaux",
+    onlineUsers: "Utilisateurs en ligne",
+    friends: "Amis",
+  },
+
 };
