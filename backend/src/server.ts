@@ -1,7 +1,8 @@
 // Backend server that handles the game logic and websocket connections
 
-import Fastify, { FastifyInstance } from "fastify";
+import Fastify, { FastifyInstance, FastifyServerOptions } from "fastify";
 import fastifyWebsocket from "@fastify/websocket";
+import fs from "fs";
 import { GAME_CONSTANTS } from "./config/constants.js";
 import { stepMatch } from "./game/engine.js";
 import { buildPayload, gameBroadcast } from "./transport/broadcaster.js";
@@ -21,14 +22,38 @@ import userManagementRoutes from "./routes/userManagement.js";
 import chatRoutes from "./routes/chat.js";
 import gamesRoutes from "./routes/games.js";
 
-const UPDATE_FPS = GAME_CONSTANTS.UPDATE_FPS;
+function toPlayerInfo(player?: { username: string; displayName?: string } | null) {
+	if (!player) return undefined;
+	return { username: player.username, displayName: player.displayName };
+}
 
-//const fastify: FastifyInstance = Fastify({ logger: true });
-const fastify: FastifyInstance = Fastify({ logger: false });
+const UPDATE_FPS = GAME_CONSTANTS.UPDATE_FPS;
+const useHttps = (process.env.USE_HTTPS ?? "").toLowerCase() === "true";
+
+let fastifyOptions: FastifyServerOptions & { https?: { key: Buffer; cert: Buffer } } = {
+	//logger: true,
+	logger: false,
+};
+
+if (useHttps) {
+	const keyPath = process.env.HTTPS_KEY_PATH;
+	const certPath = process.env.HTTPS_CERT_PATH;
+
+	if (!keyPath || !certPath) {
+		throw new Error("USE_HTTPS is true but HTTPS_KEY_PATH or HTTPS_CERT_PATH is not set");
+	}
+
+	fastifyOptions = {
+		...fastifyOptions,
+		https: {
+			key: fs.readFileSync(keyPath),
+			cert: fs.readFileSync(certPath),
+		},
+	};
+}
+const fastify: FastifyInstance = Fastify(fastifyOptions);
 
 await fastify.register(fastifyWebsocket);
-
-// fastify.get("/api/health", async () => ({ ok: true }));
 
 // Expose gameplay constants to the frontend so it can size the canvas, paddles, etc.
 fastify.get("/api/constants", async () => {
@@ -47,32 +72,6 @@ fastify.get("/api/constants", async () => {
 		updateFps: UPDATE_FPS,
 	};
 });
-
-// fastify.post("/api/control", async (request, reply) => {
-// 	const { tournamentId, singleGameId, paddle, direction } = request.body as {
-// 		tournamentId?: string;
-// 		singleGameId?: string;
-// 		paddle?: PaddleSide;
-// 		direction?: "up" | "down" | "stop";
-// 	};
-// 	if (!tournamentId || !paddle || !direction) {
-// 		reply.code(400);
-// 		return { error: "tournamentId, paddle and direction are required" };
-// 	}
-
-// 	// const tournament = getTournament(tournamentId);
-// 	// if (tournament) {
-// 	// 	const input: PaddleInput = direction === "up" ? -1 : direction === "down" ? 1 : 0;
-// 	// 	tournament.matches[0].inputs[paddle] = input; // hardcoded first match for now
-// 	// 	return { ok: true };
-// 	// } else return { ok: false };
-// });
-
-// fastify.get<{ Params: { id: string } }>("/api/tournaments/:id/state", async (request) => {
-// 	const tournament = getTournament(request.params.id);
-// 	//if (tournament) return buildStatePayload(tournament.matches[0]); // hardcoded first match for now
-// 	//else return null;
-// });
 
 await fastify.register(userRoutes);
 await fastify.register(userManagementRoutes);
@@ -96,7 +95,17 @@ setInterval(() => {
 	// Single games loop
 	forEachSingleGame((singleGame) => {
 		const match = singleGame.match;
-		const wasRunning = match.state.isRunning;
+		if (match.state.isRunning) {
+			stepMatch(match, dt || 1 / UPDATE_FPS);
+			gameBroadcast(
+				buildPayload("state", {
+					...match.state,
+					playerLeft: toPlayerInfo(match.players.left),
+					playerRight: toPlayerInfo(match.players.right),
+				}),
+				match
+			);
+			/*const wasRunning = match.state.isRunning;
 		const wasOver = match.state.isOver;
 
 		if (match.state.isRunning) {
@@ -106,7 +115,7 @@ setInterval(() => {
 		// Broadcast state if game was running (includes the frame when game just ended)
 		// The reset delay in messages.ts ensures the final score stays visible
 		if (wasRunning || (match.state.isOver && !wasOver)) {
-			gameBroadcast(buildPayload("state", match.state), match);
+			gameBroadcast(buildPayload("state", match.state), match);*/
 		}
 	});
 	// Tournaments loop
@@ -118,7 +127,17 @@ setInterval(() => {
 			if (!matches || matches.length === 0) return;
 
 			for (const match of matches) {
-				const wasRunning = match.state.isRunning;
+				if (match.state.isRunning) {
+					stepMatch(match, dt || 1 / UPDATE_FPS);
+					gameBroadcast(
+						buildPayload("state", {
+							...match.state,
+							playerLeft: toPlayerInfo(match.players.left),
+							playerRight: toPlayerInfo(match.players.right),
+						}),
+						match
+					);
+					/*const wasRunning = match.state.isRunning;
 				const wasOver = match.state.isOver;
 
 				if (match.state.isRunning) {
@@ -128,7 +147,7 @@ setInterval(() => {
 				// Broadcast state if game was running (includes the frame when game just ended)
 				// The reset delay in messages.ts ensures the final score stays visible
 				if (wasRunning || (match.state.isOver && !wasOver)) {
-					gameBroadcast(buildPayload("state", match.state), match);
+					gameBroadcast(buildPayload("state", match.state), match);*/
 				}
 			}
 		}

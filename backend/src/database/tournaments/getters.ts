@@ -9,7 +9,6 @@ export function getAllTournamentsDB(): any[] {
 	`);
 
 	const tournaments: any = stmt.all();
-	if (tournaments.length === 0) throw new Error(`[DB] No tournaments found`);
 
 	return tournaments;
 }

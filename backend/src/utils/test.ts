@@ -1,17 +1,4 @@
-import { getOrCreateSingleGame } from "../managers/singleGameManager.js";
-import { getOrCreateTournament } from "../managers/tournamentManager.js";
 
-export function createTestTournaments() {
-	for (let i = 1; i <= 5; i++) {
-		const id: string = "test_" + crypto.randomUUID();
-		const name: string = `testTournament${i}`;
-		getOrCreateTournament({ id, name, size: 4 });
-	}
-}
-
-export function createTestSingleGames() {
-	for (let i = 1; i <= 5; i++) {
-		const id: string = "test_" + crypto.randomUUID();
-		getOrCreateSingleGame(id, "remote");
-	}
-}
+// Disabled: dev-only seeding helpers. This file is intentionally a no-op so
+// `tsc` doesn't fail the Docker build.
+export {};

@@ -2,12 +2,14 @@ import { COLOR_BACKGROUND, COLOR_CENTERLINE, COLOR_PADDLE_BALL_LIGHT, COLOR_SCOR
 import { showSaveMatchPrompt } from "../wallet/prompt";
 import { saveMatchOnChain } from "../wallet/contract";
 import { getWalletState } from "../wallet/wallet";
-import { ROOM_ID } from "../config/endpoints";
+import * as endpoints from "../config/endpoints";
 import { fetchMe } from "../api/http";
 
 import { t } from "../i18n";
 import { navigate } from "../router/router";
 import { MatchState } from "../types/game";
+
+const { ROOM_ID } = endpoints;
 
 // Draw everything (reads state but does not change it, since there is no game logic here)
 // function takes in a 2D canvas context ctx and the gurrent game State s
@@ -65,43 +67,43 @@ export function draw(ctx: CanvasRenderingContext2D, s: MatchState): void {
 		// Only show blockchain save prompt for non-tournament matches
 		if (s.mode !== "tournament") {
 			showSaveMatchPrompt(s, async ({ address, state: gameState }) => {
-			// Build the payload for the smart contract.
-			// NOTE: Contract address/ABI/function are placeholders in config/contract.ts
-			// and should be updated when the real contract is provided.
+				// Build the payload for the smart contract.
+				// NOTE: Contract address/ABI/function are placeholders in config/contract.ts
+				// and should be updated when the real contract is provided.
 
-			// Determine participants (usernames). We only know the currently-authenticated user here.
-			const me = await fetchMe().catch(() => null);
-			const currentUser = me?.username ?? "player";
+				// Determine participants (usernames). We only know the currently-authenticated user here.
+				const me = await fetchMe().catch(() => null);
+				const currentUser = me?.username ?? "player";
 
-			// Without backend metadata for sides/opponent, use placeholders that can be refined later.
-			const playerLeft = "left:" + currentUser;
-			const playerRight = "right:opponent"; // TODO: replace with real opponent username when available
+				// Without backend metadata for sides/opponent, use placeholders that can be refined later.
+				const playerLeft = "left:" + currentUser;
+				const playerRight = "right:opponent"; // TODO: replace with real opponent username when available
 
-			// Compute a gameId and index placeholders; update when backend/contract specify exact values.
-			const now = Date.now();
-			const gameId = `${ROOM_ID}-${now}`; // e.g., "tournament-123-1699999999999"
-			const gameIndex = 0; // TODO: inject real index from tournament bracket
+				// Compute a gameId and index placeholders; update when backend/contract specify exact values.
+				const now = Date.now();
+				const gameId = `${ROOM_ID}-${now}`; // e.g., "tournament-123-1699999999999"
+				const gameIndex = 0; // TODO: inject real index from tournament bracket
 
-			const s2 = gameState as MatchState;
-			const params = {
-				tournamentId: ROOM_ID,
-				gameId,
-				gameIndex,
-				playerLeft,
-				playerRight,
-				scoreLeft: s2.scoreL,
-				scoreRight: s2.scoreR,
-			};
+				const s2 = gameState as MatchState;
+				const params = {
+					tournamentId: ROOM_ID,
+					gameId,
+					gameIndex,
+					playerLeft,
+					playerRight,
+					scoreLeft: s2.scoreL,
+					scoreRight: s2.scoreR,
+				};
 
-			const { provider } = getWalletState();
-			if (!provider) throw new Error("Wallet not connected");
-			const txHash = await saveMatchOnChain(provider, params);
-			return {
-				tournamentId: params.tournamentId,
-				gameId: params.gameId,
-				txHash,
-			};
-		});
+				const { provider } = getWalletState();
+				if (!provider) throw new Error("Wallet not connected");
+				const txHash = await saveMatchOnChain(provider, params);
+				return {
+					tournamentId: params.tournamentId,
+					gameId: params.gameId,
+					txHash,
+				};
+			});
 		} // Close the "if (s.mode !== "tournament")" block
 		ctx.textAlign = "left"; // reset text alignment
 	}
