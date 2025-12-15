@@ -5,7 +5,7 @@ import { User } from "../types/user.js";
 import type WebSocket from "ws";
 
 export function isUserAlreadyInGame(username: string): boolean {
-	const user: User | undefined = getUserOnline(username);
+	const user = usersOnline.get(username);
 	if (!user) return false;
 	if (user.gameWS) return true;
 	return false;
@@ -19,36 +19,45 @@ export function isUserOnline(username: string): boolean {
 
 // Add user to the usersOnline map structure (if not already there)
 export function addUserOnline(username: string, socket: WebSocket): User | undefined {
-	const userDB = getUserByUsernameDB(username);
-	if (userDB && !isUserOnline(userDB.username)) {
-		const user: User = {
-			username: userDB.username,
-			provider: userDB.provider,
-			providerId: userDB.provider_id,
-			avatar: userDB.avatar,
-			userWS: socket,
-			isAlive: true,
-			//friends: JSON.parse(userDB.friends),
-			//blocked: JSON.parse(userDB.blocked),
-			createdAt: userDB.created_at,
-		};
+	let user = usersOnline.get(username);
 
-		if (usersOnline.has(user.username)) {
-			console.log("USER ALREADY ONLINE → will disconnect previous socket");
-		}
-		usersOnline.set(user.username, user);
-		console.log(`User ${user.username} is now online`);
-
-		// Notify that user is online to other online users
-		userBroadcast("user-online", { username: user.username });
-
+	if (user) {
+		// Case A: User is already online (opened a new tab)
+		// Add the new socket to the map and mark it as alive
+		user.connections.set(socket, true);
 		return user;
-	} else return undefined;
+	} else {
+		// Case B: User is coming online for the first time
+		const userDB = getUserByUsernameDB(username);
+
+		if (userDB) {
+			user = {
+				username: userDB.username,
+				provider: userDB.provider,
+				providerId: userDB.provider_id,
+				avatar: userDB.avatar,
+				createdAt: userDB.created_at,
+
+				// Initialize the Map with this first socket
+				connections: new Map([[socket, true]]),
+			};
+
+			usersOnline.set(user.username, user);
+			console.log(`User ${user.username} is now online`);
+
+			// Notify friends
+			userBroadcast("user-online", { username: user.username });
+
+			return user;
+		} else {
+			return undefined;
+		}
+	}
 }
 
 // Add the game socket and the game id to the userOnline structure
 export function addGameToUser(username: string, gameWS: WebSocket, gameId: string) {
-	const user = getUserOnline(username);
+	const user = usersOnline.get(username);
 	if (user) {
 		user.gameWS = gameWS;
 		user.gameId = gameId;
@@ -57,7 +66,7 @@ export function addGameToUser(username: string, gameWS: WebSocket, gameId: strin
 
 // Remove the game socket and the game id from the userOnline structure
 export function removeGameFromUser(username: string): void {
-	const user = getUserOnline(username);
+	const user = usersOnline.get(username);
 	if (user) {
 		user.gameWS = undefined;
 		user.gameId = undefined;
@@ -65,40 +74,54 @@ export function removeGameFromUser(username: string): void {
 }
 
 // Update information (username and avatar) stored in the usersOnline map structure
-export function updateUserOnline({
-	username,
-	newUsername,
-	newAvatar,
-}: {
-	username: string;
-	newUsername?: string;
-	newAvatar?: string;
-}) {
-	if (isUserOnline(username)) {
-		const user = usersOnline.get(username);
-		if (user && newUsername) {
-			user.username = newUsername;
-			usersOnline.delete(username);
-			usersOnline.set(newUsername, user);
-		} else if (user && newAvatar) user.avatar = newAvatar;
-	}
+export function updateUserOnline(username: string, newAvatar: string) {
+	const user = usersOnline.get(username);
+	if (user) user.avatar = newAvatar;
 }
 
 // Remove user from usersOnline map structure
-export function removeUserOnline(username: string) {
-	if (!isUserOnline(username)) return;
+export function removeUserWS(username: string, socket: WebSocket) {
+	const user = usersOnline.get(username);
 
-	usersOnline.delete(username);
-	console.log(`User ${username} is now offline`);
+	if (!user) return;
 
-	// Notify that user is offline to other online users
-	userBroadcast("user-offline", { username: username });
+	// Remove the specific socket
+	user.connections.delete(socket);
+
+	// Check if that was the last one
+	if (user.connections.size === 0) {
+		usersOnline.delete(username);
+		console.log(`User ${username} is now offline`);
+
+		// Notify others
+		userBroadcast("user-offline", { username: username });
+	}
 }
 
-// Return user data from usersOnline Map structure (if present)
-export function getUserOnline(username: string): User | undefined {
-	if (isUserOnline(username)) return usersOnline.get(username);
-	else return undefined;
+export function userLogout(username: string) {
+	const user = usersOnline.get(username);
+	if (!user) return;
+
+	// Remove the user from the global map
+	usersOnline.delete(username);
+
+	console.log(`Logging out ${username} from all devices`);
+
+	// Broadcast to friends that the user is offline
+	userBroadcast("user-offline", { username });
+
+	// Iterate over the sockets
+	for (const socket of user.connections.keys()) {
+		try {
+			// Close the connection
+			socket.close(1000, "User logged out");
+		} catch (err) {
+			// Socket might already be closed, ignore error
+		}
+	}
+
+	// Clear the map for good measure (helps garbage collection)
+	user.connections.clear();
 }
 
 export function getAllOnlineUsers(): string[] {

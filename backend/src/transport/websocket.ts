@@ -10,7 +10,7 @@ import {
 	addUserOnline,
 	isUserAlreadyInGame,
 	removeGameFromUser,
-	removeUserOnline,
+	removeUserWS,
 } from "../user/online.js";
 import { handleChatMessages, handleGameMessages } from "./messages.js";
 import { authenticateWebSocket } from "../auth/verify.js";
@@ -22,7 +22,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 	fastify.get("/api/user/ws", { websocket: true }, (socket: any, request: any) => {
 		const payload = authenticateWebSocket(request, socket);
 		if (!payload) return;
-		console.log(`[userWS] Websocket for User: ${payload.username} registered`);
+
 		socket.username = payload.username;
 		const user = addUserOnline(payload.username, socket);
 		if (!user) {
@@ -30,9 +30,11 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			return;
 		}
 
+		console.log(`[userWS] Websocket for User: ${payload.username} registered`);
+
 		// Client responds to ping with pong automatically
 		socket.on("pong", () => {
-			user.isAlive = true;
+			user.connections.set(socket, true);
 		});
 
 		socket.on("message", (raw: RawData) => {
@@ -44,7 +46,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 		});
 
 		socket.on("close", () => {
-			removeUserOnline(socket.username);
+			removeUserWS(socket.username, socket);
 		});
 	});
 
@@ -246,6 +248,10 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 
 			// ANDY: use custom display name from query parameter if provided, otherwise use username
 			const playerDisplayName = userDisplayName || socket.username;
+
+			// Add the current game info to the userOnline struct
+			addGameToUser(socket.username, socket, tournament.id);
+
 			const match = addPlayerToTournament({
 				tournament: tournament,
 				playerId: socket.username,

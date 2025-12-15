@@ -7,13 +7,9 @@ export type User = {
 	provider: string;
 	providerId?: string;
 	avatar: string;
-	userWS: WebSocket;
-	isAlive: boolean;
+	connections: Map<WebSocket, boolean>;
 	gameWS?: WebSocket;
 	gameId?: string;
-	//blocked: User[];
-	//friends: User[];
-	//stats: string | null;
 	createdAt: string;
 };
 
