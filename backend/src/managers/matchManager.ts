@@ -100,15 +100,15 @@ export function startGameCountdown(match: Match) {
 		console.log(`[MM] Broadcasting countdown ${sec} to ${match.clients.size} clients`);
 		gameBroadcast(buildPayload("countdown", { value: sec }), match);
 
-	if (sec === 0) {
-		clearInterval(interval);
-		console.log(`[MM] Countdown finished, starting match ${match.id}`);
+		if (sec === 0) {
+			clearInterval(interval);
+			console.log(`[MM] Countdown finished, starting match ${match.id}`);
 
-		setTimeout(() => {
-			startMatch(match);
-			gameBroadcast(buildPayload("start", undefined), match);
-		}, 1000);
-	}
+			setTimeout(() => {
+				startMatch(match);
+				gameBroadcast(buildPayload("start", undefined), match);
+			}, 1000);
+		}
 
 		sec--;
 	}, 1000);
@@ -156,7 +156,7 @@ export function addPlayerToMatch(match: Match, playerId: string, socket: any, di
 				socket: socket,
 			};
 		}
-		
+
 		if (match.singleGameId && checkMatchFull(match)) {
 			startGameCountdown(match);
 		}
@@ -172,11 +172,12 @@ export function checkMatchFull(match: Match) {
 
 export function forfeitMatch(match: Match, playerId: string) {
 	if (match.singleGameId) {
+		if (match.state.isOver) return;
 		// ANDY: Check if match is full/started - if not, just remove the player and keep the game open
 		// this was needed to avoid forfeiting when players go from waiting mode back to the lobby in online games
 		const isMatchFull = checkMatchFull(match);
 		const isMatchStarted = match.state.isRunning;
-		
+
 		if (!isMatchFull && !isMatchStarted) {
 			// Remove player from match in memory
 			if (match.players.left?.username === playerId) {
@@ -188,7 +189,7 @@ export function forfeitMatch(match: Match, playerId: string) {
 			}
 			return;
 		}
-		
+
 		// If theatch is full/started - forfeit the entire match
 		match.state.isRunning = false;
 		for (const client of match.clients) {

@@ -35,23 +35,8 @@ let fastifyOptions: FastifyServerOptions & { https?: { key: Buffer; cert: Buffer
 	logger: true,
 };
 
-if (useHttps) {
-	const keyPath = process.env.HTTPS_KEY_PATH;
-	const certPath = process.env.HTTPS_CERT_PATH;
-
-	if (!keyPath || !certPath) {
-		throw new Error("USE_HTTPS is true but HTTPS_KEY_PATH or HTTPS_CERT_PATH is not set");
-	}
-
-	fastifyOptions = {
-		...fastifyOptions,
-		https: {
-			key: fs.readFileSync(keyPath),
-			cert: fs.readFileSync(certPath),
-		},
-	};
-}
-const fastify: FastifyInstance = Fastify(fastifyOptions);
+//const fastify: FastifyInstance = Fastify({ logger: true });
+const fastify: FastifyInstance = Fastify({ logger: false });
 
 await fastify.register(fastifyWebsocket);
 
@@ -122,6 +107,8 @@ setInterval(() => {
 	// Single games loop
 	forEachSingleGame((singleGame) => {
 		const match = singleGame.match;
+    
+    //check
 		if (match.state.isRunning) {
 			stepMatch(match, dt || 1 / UPDATE_FPS);
 			gameBroadcast(
@@ -132,8 +119,20 @@ setInterval(() => {
 				}),
 				match
 			);
+		const wasRunning = match.state.isRunning;
+		const wasOver = match.state.isOver;
+    //check
+		if (match.state.isRunning) {
+			stepMatch(match, dt || 1 / UPDATE_FPS);
+		}
+
+		// Broadcast state if game was running (includes the frame when game just ended)
+		// The reset delay in messages.ts ensures the final score stays visible
+		if (wasRunning || (match.state.isOver && !wasOver)) {
+			gameBroadcast(buildPayload("state", match.state), match);
 		}
 	});
+   //end check
 	// Tournaments loop
 	forEachTournament((tournament) => {
 		if (tournament.state.isRunning) {
@@ -143,6 +142,7 @@ setInterval(() => {
 			if (!matches || matches.length === 0) return;
 
 			for (const match of matches) {
+        //check
 				if (match.state.isRunning) {
 					stepMatch(match, dt || 1 / UPDATE_FPS);
 					gameBroadcast(
@@ -153,6 +153,18 @@ setInterval(() => {
 						}),
 						match
 					);
+				const wasRunning = match.state.isRunning;
+				const wasOver = match.state.isOver;
+
+				if (match.state.isRunning) {
+					stepMatch(match, dt || 1 / UPDATE_FPS);
+				}
+
+				// Broadcast state if game was running (includes the frame when game just ended)
+				// The reset delay in messages.ts ensures the final score stays visible
+				if (wasRunning || (match.state.isOver && !wasOver)) {
+					gameBroadcast(buildPayload("state", match.state), match);
+          //end check
 				}
 			}
 		}

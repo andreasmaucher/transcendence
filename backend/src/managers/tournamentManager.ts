@@ -430,7 +430,7 @@ export function endTournament(tournament: Tournament) {
 
 export function forfeitTournament(tournamentId: string, playerId: string) {
 	const tournament = getTournament(tournamentId);
-	if (tournament) {
+	if (tournament && !tournament.state.isOver) {
 		// Don't end the whole tournament if a player leaves before it starts
 		const roundMatches = tournament.matches.get(tournament.state.round);
 		if (roundMatches) {

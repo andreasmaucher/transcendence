@@ -63,6 +63,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 
 			// Check user is not already connected to another game socket
 			if (isUserAlreadyInGame(payload.username)) {
+				console.log("[gameWS] User is already in a game");
 				socket.close(1011, "user is already playing");
 				return;
 			}
@@ -115,6 +116,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 
 			// Check user is not already connected to another game socket
 			if (isUserAlreadyInGame(payload.username)) {
+				console.log("[gameWS] User is already in a game");
 				socket.close(1011, "user is already playing");
 				return;
 			}
@@ -190,8 +192,6 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			const tournamentName = request.query.name;
 			const tournamentSize = request.query.size;
 			const userDisplayName = request.query.displayName;
-			console.log("tournamentName", tournamentName);
-			console.log("userDisplayName", userDisplayName);
 			if (!tournamentId) {
 				socket.close(1011, "Tournament id missing");
 				return;
@@ -199,12 +199,14 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				(tournamentName && !isValidInput(tournamentName)) ||
 				(userDisplayName && !isValidInput(userDisplayName))
 			) {
+				console.log("[gameWS] Invalid tournament name or display name");
 				socket.close(1011, "Invalid tournament name or display name");
 				return;
 			}
 
+			// Check user is not already connected to another game socket
 			if (isUserAlreadyInGame(payload.username)) {
-				// Check user is not already connected to another game socket
+				console.log("[gameWS] User is already in a game");
 				socket.close(1011, "user is already playing");
 				return;
 			}
