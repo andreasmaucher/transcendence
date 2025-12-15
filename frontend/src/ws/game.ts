@@ -1,3 +1,5 @@
+// Store blockchain tx status for tournament
+let blockchainTxStatus: { status: "pending"|"success"|"fail", txHash?: string } | null = null;
 import { userData } from "../config/constants";
 import * as endpoints from "../config/endpoints";
 import { flushInputs, queueInput, setActiveSocket, setAssignedSide } from "../game/input";
@@ -300,6 +302,37 @@ export function connectToTournamentWS(
 		if (!parsed || typeof parsed !== "object") return;
 
 		const payload = parsed as Payload;
+
+		// Listen for blockchain tx status
+		if (payload.type === "blockchain-tx-status") {
+			blockchainTxStatus = payload.data;
+			showBlockchainTxStatus(blockchainTxStatus);
+			return;
+		}
+// Show blockchain tx status in overlay
+function showBlockchainTxStatus(statusObj: { status: "pending"|"success"|"fail", txHash?: string }) {
+	let el = document.getElementById("blockchain-tx-status");
+	if (!el) {
+		el = document.createElement("div");
+		el.id = "blockchain-tx-status";
+		el.style.cssText = "margin:16px 0;padding:12px;border-radius:8px;font-family:monospace;font-size:15px;text-align:center;";
+		const overlay = document.querySelector(".tournament-overlay-content");
+		if (overlay) overlay.appendChild(el);
+	}
+	if (statusObj.status === "pending") {
+		el.textContent = "Saving winning match to blockchain... (pending)";
+		el.style.background = "#fffbe6";
+		el.style.color = "#b59f00";
+	} else if (statusObj.status === "success") {
+		el.innerHTML = `Saved to blockchain! Tx: <a href='https://testnet.snowtrace.io/tx/${statusObj.txHash}' target='_blank' rel='noopener'>${statusObj.txHash}</a>`;
+		el.style.background = "#e6fff2";
+		el.style.color = "#008c4a";
+	} else if (statusObj.status === "fail") {
+		el.textContent = "Blockchain save failed: " + (statusObj.txHash || "unknown error");
+		el.style.background = "#ffe6e6";
+		el.style.color = "#b00020";
+	}
+}
 
 		switch (payload.type) {
 			case "match-assigned": {
