@@ -37,6 +37,9 @@ export function setLanguage(lang: Language)
 
   // Update <html lang="">
   document.documentElement.lang = lang;
+
+  const event = new CustomEvent("language-changed", { detail: { lang } });
+  document.dispatchEvent(event);
 }
 
 export function getLanguage(): Language {

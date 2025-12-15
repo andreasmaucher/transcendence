@@ -133,4 +133,27 @@ export default {
 		noFriends: "No friends.",
 		failedLoad: "Failed to load profile.",
 	},
+
+	chat: {
+	globalChat: "Global Chat",
+	chatWith: (name: string) => `Chat with ${name}`,
+	channels: "Channels",
+	placeholder: "Type a message…",
+	send: "Send",
+	blockedByMe: (name: string) => `You've blocked ${name}. No Conversation possible!`,
+	blockedByOthers: (name: string) => `You have been blocked by ${name}. Message cannot be sent.`,
+	inviteExpired: (name: string) => `⚔️ Game Invite from ${name} (Expired)`,
+	acceptChallenge: "ACCEPT CHALLENGE",
+	noOpenGames: "No open games available.",
+	openProfile: "Open profile",
+	challenge: "Challenge to match",
+	blockUser: "Block user",
+	unblockUser: "Unblock user",
+	youBlocked: "You blocked: ",
+	youUnblocked: "You unblocked: ",
+	channels: "Channels",
+	onlineUsers: "Online Users",
+	friends: "Friends",
+	},
+
 };
