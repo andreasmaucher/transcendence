@@ -137,7 +137,7 @@ setInterval(() => {
 						matchId: match.id, // ANDY: include matchId so frontend knows which match this state belongs to
 					});
 					
-					// ANDY: Broadcast to match clients (players in this match)
+					// Broadcast to match clients (players in this match)
 					gameBroadcast(statePayload, match);
 					
 					// ANDY: When a Round 2 match finishes, also broadcast to ALL tournament players
@@ -147,27 +147,12 @@ setInterval(() => {
 						if (tournament) {
 							for (const player of tournament.players) {
 								if (player.socket && player.socket.readyState === 1) {
-									// WebSocket.OPEN
-									try {
-										player.socket.send(statePayload);
-									} catch {
-										// Socket closed, ignore
-									}
+									// send state to all tournament players
+									player.socket.send(statePayload);
 								}
 							}
 						}
 					}
-					/*const wasRunning = match.state.isRunning;
-				const wasOver = match.state.isOver;
-
-				if (match.state.isRunning) {
-					stepMatch(match, dt || 1 / UPDATE_FPS);
-				}
-
-				// Broadcast state if game was running (includes the frame when game just ended)
-				// The reset delay in messages.ts ensures the final score stays visible
-				if (wasRunning || (match.state.isOver && !wasOver)) {
-					gameBroadcast(buildPayload("state", match.state), match);*/
 				}
 			}
 		}

@@ -103,28 +103,18 @@ export function getMatchInSingleGame(matchId: string): Match | undefined {
 export function isSingleGameOpen(singleGame: SingleGame): boolean {
 	// Game must not be running and not already finished
 	if (singleGame.match.state.isOver || singleGame.match.state.isRunning) return false;
-	// For our lobby purposes, any non-running remote single game is considered "open"
+	// any non-running remote single game is considered "open"
 	return true;
 }
 
 // Get all open (waiting for players) single games
 export function getOpenSingleGames(): SingleGame[] {
 	const openSingleGames: SingleGame[] = [];
-	console.log("[SGM] getOpenSingleGames: singleGames.size =", singleGames.size);
 	for (const singleGame of singleGames.values()) {
 		const isOpen = isSingleGameOpen(singleGame);
-		console.log(
-			"[SGM] singleGame",
-			singleGame.id,
-			"mode=",
-			singleGame.mode,
-			"isOpen=",
-			isOpen
-		);
-		// ANDY: only expose remote (online) games in the online lobby so local games don't show up in the online lobby anymore
+		// only expose remote (online) games in the online lobby so local games don't show up in the online lobby anymore
 		if (singleGame.mode === "remote" && isOpen) openSingleGames.push(singleGame);
 	}
-	console.log("[SGM] getOpenSingleGames: openSingleGames.length =", openSingleGames.length);
 	return openSingleGames;
 }
 
