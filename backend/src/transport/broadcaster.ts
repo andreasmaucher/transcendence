@@ -3,7 +3,7 @@ import { Match } from "../types/match.js";
 import { Payload, PayloadDataTypes, PayloadTypes } from "../types/payload.js";
 import { ChatMessage } from "../types/chat.js";
 import { usersOnline } from "../config/structures.js";
-import { removeUserOnline } from "../user/online.js";
+import { removeUserWS } from "../user/online.js";
 import { User } from "../types/user.js";
 
 // Create and stringify the Payload for the WebSocket
@@ -42,28 +42,24 @@ export function shouldSendMessage(message: ChatMessage, user: User): boolean {
 
 export function userBroadcast(type: PayloadTypes, data: PayloadDataTypes): void {
 	usersOnline.forEach((user) => {
-		const ws = user.userWS;
+		// Check 'shouldSendMessage' ONCE per user, not per socket
+		if (type === "chat") {
+			const message = data as ChatMessage;
+			if (!shouldSendMessage(message, user)) {
+				return; // Skip this user entirely
+			}
+		}
 
-		if (ws.readyState === ws.OPEN) {
-			if (type === "chat") {
-				const message = data as ChatMessage;
-				if (shouldSendMessage(message, user)) {
-					try {
-						ws.send(buildPayload(type, message));
-					} catch {
-						try {
-							removeUserOnline(user.username);
-							ws.close();
-						} catch {}
-					}
-				}
-			} else if (type === "user-online" || type === "user-offline") {
+		// Iterate over all active connections for this user
+		for (const [socket] of user.connections) {
+			if (socket.readyState === socket.OPEN) {
 				try {
-					ws.send(buildPayload(type, data));
+					socket.send(buildPayload(type, data));
 				} catch {
+					// If sending fails, remove ONLY this specific socket.
 					try {
-						removeUserOnline(user.username);
-						ws.close();
+						socket.terminate();
+						removeUserWS(user.username, socket);
 					} catch {}
 				}
 			}
