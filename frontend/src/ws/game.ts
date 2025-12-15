@@ -79,6 +79,11 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 				// payload.data is now MatchState
 				applyBackendState(state, payload.data);
 
+				// ANDY: when a local game finishe update the UI so the button changes to "Return to Menu"
+				if (state.isOver && !wasOver && state.winner) {
+					onMatchOver();
+				}
+
 				// Reset game
 				if (state.isOver && !wasOver && !resetRequested) {
 					ws.send(JSON.stringify({ type: "reset" }));
