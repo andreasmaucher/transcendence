@@ -224,7 +224,13 @@ export async function renderGame(container: HTMLElement) {
 			wrapper.append(box);
 		};
 
-		createLocalPlayerBox("left", t("game.player1"), "W / S");
+		const leftPlayerName =
+		typeof userData.username === "string"
+			? userData.username
+			: t("game.player1");
+
+		createLocalPlayerBox("left", leftPlayerName, "W / S");
+
 		createLocalPlayerBox("right", t("game.player2"), "↑ / ↓");
 	}
 
