@@ -165,6 +165,10 @@ function renderLoggedIn(userBox: HTMLDivElement, me: any) {
   const logoutBtn = document.createElement("button");
   logoutBtn.textContent = t("topbar.logout");
   logoutBtn.onclick = async () => {
+    // Remove any open tournament modals before logging out to prevent modals from overlaying the login screen
+    const openModals = document.querySelectorAll(".tournament-modal-overlay");
+    openModals.forEach((modal) => modal.remove());
+
     await logout({ username: me.username });
     if (disconnectUserWS) {
       disconnectUserWS();
