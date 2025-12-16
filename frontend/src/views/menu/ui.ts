@@ -1,8 +1,9 @@
 import { navigate } from "../../router/router";
 import { t } from "../../i18n";
-import { initChat } from "../../chat/chatView";
+import { fetchAllUsers, fetchOnlineUsers, initChat } from "../../chat/chatView";
 import "./menu.css";
 import { API_BASE } from "../../config/endpoints";
+import { generalData, userData } from "../../config/constants";
 
 export let disposeChat: (() => void | Promise<void>) | null = null;
 
@@ -49,7 +50,15 @@ async function fetchAndLog() {
 	}
 }
 
+export async function fetchGeneralData() {
+	await fetchAllUsers();
+	await fetchOnlineUsers();
+
+	if (!generalData.allUsers || !generalData.onlineUsers) console.log("[MENU] Error fetching allUsers and onlineUsers");
+}
+
 fetchAndLog();
+fetchGeneralData();
 
 export async function renderMenu(container: HTMLElement) {
 	container.innerHTML = "";

@@ -146,6 +146,54 @@
 	opacity: 0.7;
 }
 
+/* Wrapper to hold the image and the dot relative to each other */
+.profile-avatar-wrapper {
+	position: relative;
+	width: 140px; /* Matches your existing img size */
+	height: 140px; /* Matches your existing img size */
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	/* Ensure the glow from the avatar doesn't get cut off */
+	margin: 10px;
+}
+
+/* Ensure avatar fills the wrapper (Update existing class) */
+.profile-avatar {
+	width: 100%;
+	height: 100%;
+	border-radius: 100%;
+	object-fit: cover;
+	border: 3px solid var(--primary);
+	box-shadow: 0 0 14px var(--primary-glow);
+	/* Remove margins if you had them on the avatar previously, 
+       as the wrapper handles spacing now */
+	margin: 0;
+}
+
+/* The Green Dot - Top Right */
+.profile-avatar-status {
+	position: absolute;
+	/* CHANGED: Position at TOP right */
+	top: 10px;
+	right: 10px;
+
+	width: 24px;
+	height: 24px;
+
+	background-color: #00ff78; /* Bright solid green */
+	border-radius: 50%;
+
+	/* A dark border makes the dot pop out from the avatar image background */
+	border: 4px solid rgba(10, 10, 10, 1); /* Matches your theme background */
+
+	box-shadow: 0 0 10px var(--green-glow);
+
+	z-index: 100; /* Ensure it is strictly above the image */
+	pointer-events: auto; /* Force the element to accept mouse hovers */
+	cursor: pointer;
+}
+
 /* ==========================================================
    ACTION BUTTONS
 ========================================================== */
