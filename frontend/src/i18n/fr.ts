@@ -59,6 +59,8 @@ export default {
     rankSecond: "Deuxième place",
     rankThird: "Troisième place",
     rankFourth: "Quatrième place",
+    youWin: "Victoire !",
+    youLost: "Défaite !",
   },
 
   auth: {

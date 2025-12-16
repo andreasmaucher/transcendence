@@ -60,6 +60,8 @@ export default {
 		rankSecond: "Second Place",
 		rankThird: "Third Place",
 		rankFourth: "Fourth Place",
+		youWin: "You win!",
+		youLost: "You lost!",
 	},
 
 	auth: {

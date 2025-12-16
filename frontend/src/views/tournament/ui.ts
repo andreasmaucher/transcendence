@@ -536,5 +536,8 @@ function getQueryParams(): { [key: string]: string } {
 		cancelled = true;
 		clearInterval(interval);
 		backBtn.onclick = null;
+		// Remove any open tournament modals when navigating away from tournament view to prevent modals from showing when the user navigates to other views
+		const openModals = document.querySelectorAll(".tournament-modal-overlay");
+		openModals.forEach((modal) => modal.remove());
 	};
 }

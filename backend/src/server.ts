@@ -15,7 +15,6 @@ import oauthRoutes from "./routes/oauth.js";
 import { forEachTournament } from "./managers/tournamentManagerHelpers.js";
 import { forEachSingleGame } from "./managers/singleGameManager.js";
 import { usersOnline, tournaments } from "./config/structures.js";
-import { removeUserOnline } from "./user/online.js";
 import singleGameRoutes from "./routes/singleGame.js";
 import userManagementRoutes from "./routes/userManagement.js";
 import chatRoutes from "./routes/chat.js";

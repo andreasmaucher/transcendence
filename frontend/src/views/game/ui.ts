@@ -11,7 +11,9 @@ import {
 	connectToSingleGameWS,
 	connectToTournamentWS,
 	registerGameUiHandlers,
+	getCurrentPlayerMatchId,
 } from "../../ws/game";
+import { isMatchInRound2 } from "../tournament/overlays/tournament_orchestrator";
 import { showCountdown } from "../game/countdown";
 import { showMessageOverlay } from "./forfeit_overlay";
 import { t } from "../../i18n";
@@ -527,11 +529,21 @@ export async function renderGame(container: HTMLElement) {
 		},
 
 		// ANDY: change button to "Back to Menu" when the match is over (works separately for final and 3rd place matches)
-	onMatchOver: async () => {
+	onMatchOver: async (matchId?: string) => {
 		if (cancelled) return;
 
-		isMatchOver = true;
-		updateButtonText(); // "Back to Menu"
+		// ANDY: for tournaments, only set isMatchOver if it's a Round 2 match (final or 3rd place)
+		// Round 1 matches should not change the button to "Back to Menu"
+		if (mode === "tournament" && matchId) {
+			if (isMatchInRound2(matchId)) {
+				isMatchOver = true;
+				updateButtonText(); // "Back to Menu"
+			}
+		} else {
+			// For local/online games, always set isMatchOver
+			isMatchOver = true;
+			updateButtonText(); // "Back to Menu"
+		}
 
 		// LOCAL GAME: left/right player
 		if (mode === "local" && state.winner) {
@@ -558,15 +570,21 @@ export async function renderGame(container: HTMLElement) {
 		}
 
 		// TOURNAMENT GAME: you win / you lost
-		if (mode === "tournament" && state.winner && currentAssignedSide) {
-			setMatchActive(false);
+		// TOURNAMENT GAME: you win / you lost
+		if (mode === "tournament" && state.winner && matchId) {
+			const currentPlayerMatchId = getCurrentPlayerMatchId();
+			
+			// Only show win/lose message if this match is the one the player is playing in
+			if (currentPlayerMatchId === matchId && currentAssignedSide) {
+				setMatchActive(false);
 
-			const message =
-				state.winner === currentAssignedSide
-					? t("tournaments.youWin")
-					: t("tournaments.youLost");
+				const message =
+					state.winner === currentAssignedSide
+						? t("tournaments.youWin")
+						: t("tournaments.youLost");
 
-			await showMessageOverlay(message);
+				await showMessageOverlay(message);
+			}
 		}
 	},
 
