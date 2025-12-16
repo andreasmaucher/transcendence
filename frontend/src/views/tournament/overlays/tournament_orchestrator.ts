@@ -42,8 +42,27 @@ let semiFinalMatchIds: {
 	sf2?: string;
 } = {};
 
+// ---- ROUND 2 MATCH IDS ----
+let round2MatchIds: {
+	final?: string;
+	thirdPlace?: string;
+} = {};
+
 // ANDY: track match type by matchId (so we can determine match type even if currentMatchType was overwritten)
 const matchTypeMap = new Map<string, { round: number; type: string }>();
+
+// Export function to get all tournament match IDs for tx status display
+export function getTournamentMatchIds(): {
+	sf1?: string;
+	sf2?: string;
+	final?: string;
+	thirdPlace?: string;
+} {
+	return {
+		...semiFinalMatchIds,
+		...round2MatchIds,
+	};
+}
 
 // ANDY: export function to get match type (for use in game.ts)
 export function getMatchType(matchId: string): string | undefined {
@@ -66,6 +85,7 @@ export function resetTournamentOrchestrator() {
 	internalBracket.players = [null, null, null, null];
 	internalBracket.results = {};
 	semiFinalMatchIds = {};
+	round2MatchIds = {};
 	currentRound = 1;
 	currentMatchType = null;
 	matchTypeMap.clear();
@@ -153,6 +173,9 @@ export function handleTournamentMatchAssigned(data: any) {
 	if (currentRound === 2) {
 		// ANDY: update results from match-assigned messages to show final/3rd place players
 		if (tournamentMatchType === "final") {
+			// Store final match ID for tx status tracking
+			round2MatchIds.final = matchId;
+			
 			// If both players are set, we can determine who won each semifinal
 			if (leftPlayer?.username && rightPlayer?.username) {
 				// Check which semifinal each player came from
@@ -184,6 +207,9 @@ export function handleTournamentMatchAssigned(data: any) {
 		}
 
 		if (tournamentMatchType === "thirdPlace") {
+			// Store 3rd place match ID for tx status tracking
+			round2MatchIds.thirdPlace = matchId;
+			
 			// For 3rd place we can infer the losers from the players in the match
 			showTournamentOverlay("match-ready", {
 				roundLabel: t("tournaments.thirdPlaceFinal"),

@@ -125,3 +125,15 @@ export function removeMatchDB(id: string): void {
 	if (result.changes === 0) throw new Error(`[DB] Failed to remove match ${id}`); // If DB run fails, throws error
 	else console.log(`[DB] Match ${id} removed`);
 }
+
+// Update the tx_hash for a match after blockchain save
+export function updateMatchTxHashDB(id: string, txHash: string): void {
+	const stmt = db.prepare(`
+		UPDATE matches
+		SET tx_hash = ?
+		WHERE id = ?
+	`);
+	const result = stmt.run(txHash, id);
+	if (result.changes === 0) console.warn(`[DB] Failed to update tx_hash for match ${id}`);
+	else console.log(`[DB] Match ${id} tx_hash updated: ${txHash.slice(0, 10)}...`);
+}

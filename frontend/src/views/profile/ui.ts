@@ -446,22 +446,25 @@ export async function renderProfile(container: HTMLElement) {
 					const mContainerRow = document.createElement("tr");
 					mContainerRow.className = "tournament-matches-row";
 					const mContainerCell = document.createElement("td");
-					mContainerCell.colSpan = 5;
+					mContainerCell.colSpan = 6;
 					mContainerCell.style.padding = "0";
 					mContainerCell.style.borderBottom = "none";
 
 					let matchesHtml = `<table class="sub-stats-table"><thead><tr><th>${t("profile.adversary")}</th><th>${t(
 						"profile.winner"
-					)}</th><th>${t("profile.round")}</th><th>${t("profile.placementRange")}</th></tr></thead><tbody>`;
+					)}</th><th>${t("profile.round")}</th><th>${t("profile.placementRange")}</th><th>⛓️</th></tr></thead><tbody>`;
 
 					tourney.matches.forEach((m: any) => {
+						const txLink = m.tx_hash 
+							? `<a href="https://testnet.snowtrace.io/tx/${m.tx_hash}" target="_blank" rel="noopener" title="View on blockchain">⛓️</a>`
+							: "—";
 						matchesHtml += `<tr><td>${getAdversaryName(
 							m.player_left,
 							m.player_right,
 							username
 						)}</td><td>${getWinnerName(m.winner, m.player_left, m.player_right)}</td><td>${
 							m.round ?? "—"
-						}</td><td>${formatPlacement(m.placement_range)}</td></tr>`;
+						}</td><td>${formatPlacement(m.placement_range)}</td><td>${txLink}</td></tr>`;
 					});
 					matchesHtml += `</tbody></table>`;
 					mContainerCell.innerHTML = matchesHtml;
