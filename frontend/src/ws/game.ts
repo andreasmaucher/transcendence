@@ -32,13 +32,21 @@ import { setMatchActive } from "../config/matchState";
 
 const { ROOM_ID, WS_HOST, WS_PORT, WS_PROTOCOL } = endpoints;
 
+// track the current matchId for the player to know the match they are currently playing in
+let currentPlayerMatchId: string | null = null;
+
+// export getter function so ui.ts can check if player is in a specific match
+export function getCurrentPlayerMatchId(): string | null {
+	return currentPlayerMatchId;
+}
+
 // no-op functions to avoid errors as long as the UI has not registered handlers by calling registerGameUiHandlers
 let waitingForPlayers: () => void = () => {};
 let countdownToGame: (n: number, side?: "left" | "right") => void = () => {};
 let startGame: () => void = () => {};
 let tournamentMatchType: (type: string, round: number) => void = () => {};
 let showPlayerLeftMessage: (message: string) => Promise<void> = async () => {};
-let onMatchOver: () => void = () => {};
+let onMatchOver: (matchId?: string) => void = () => {};
 
 // function that registers the UI handlers (replaces the no-op functions above with the actual handlers)
 export function registerGameUiHandlers(handlers: {
@@ -47,7 +55,7 @@ export function registerGameUiHandlers(handlers: {
 	startGame?: () => void;
 	tournamentMatchType?: (type: string, round: number) => void;
 	showPlayerLeftMessage?: (message: string) => Promise<void>;
-	onMatchOver?: () => void;
+	onMatchOver?: (matchId?: string) => void;
 }) {
 	if (handlers.waitingForPlayers) waitingForPlayers = handlers.waitingForPlayers;
 	if (handlers.countdownToGame) countdownToGame = handlers.countdownToGame;
@@ -96,7 +104,7 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 
 				// ANDY: when a local game finishe update the UI so the button changes to "Return to Menu"
 				if (state.isOver && !wasOver && state.winner) {
-					onMatchOver();
+					onMatchOver(); // Local games don't have matchId
 				}
 
 				// Reset game
@@ -309,6 +317,7 @@ export function connectToTournamentWS(
 	ws.addEventListener("open", () => {
 		resetTournamentOrchestrator();
 		matchTxStatusMap.clear(); // Clear per-match tx status on new tournament connection
+		currentPlayerMatchId = null; // reset the current match a player is assigned to when starting new tournament (only for ui win/lose purposes)
 		queueInput("left", "stop");
 		queueInput("right", "stop");
 		flushInputs();
@@ -382,6 +391,10 @@ function showBlockchainTxStatus(statusObj: { status: "pending"|"success"|"fail",
 				// but it will not change the paddle they control
 				if (data?.playerSide !== null && data?.playerSide !== undefined) {
 					setAssignedSide(data.playerSide);
+					// track the matchId for the match the player is actually playing in
+					if (data?.matchId) {
+						currentPlayerMatchId = data.matchId;
+					}
 				}
 
 				// ANDY: store match players so we can determine winner later
@@ -420,9 +433,13 @@ function showBlockchainTxStatus(statusObj: { status: "pending"|"success"|"fail",
 					const players = matchPlayersMap.get(matchId);
 					if (players) {
 						handleTournamentMatchState(state, matchId, players.left, players.right);
-						// ANDY: change button to "Back to Menu" only when a round 2 match (final or 3rd place) is over
+						// ANDY: call onMatchOver for all rounds, passing matchId so UI can check if player is in this match
+						// For Round 2, also change button to "Back to Menu"
 						if (isMatchInRound2(matchId)) {
-							onMatchOver();
+							onMatchOver(matchId);
+						} else {
+							// Round 1: call onMatchOver with matchId so players in that match get win/lose message
+							onMatchOver(matchId);
 						}
 					}
 				}
