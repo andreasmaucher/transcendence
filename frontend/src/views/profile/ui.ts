@@ -452,7 +452,7 @@ export async function renderProfile(container: HTMLElement) {
 
 					let matchesHtml = `<table class="sub-stats-table"><thead><tr><th>${t("profile.adversary")}</th><th>${t(
 						"profile.winner"
-					)}</th><th>${t("profile.round")}</th><th>${t("profile.placementRange")}</th><th>⛓️</th></tr></thead><tbody>`;
+					)}</th><th>${t("profile.round")}</th><th>${t("profile.placementRange")}</th><th>tx</th></tr></thead><tbody>`;
 
 					tourney.matches.forEach((m: any) => {
 						const txLink = m.tx_hash 
