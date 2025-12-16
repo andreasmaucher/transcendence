@@ -242,13 +242,6 @@ export function handleTournamentMatchState(
 	// -------------------------------
 	if (!state.isOver || state.winner == null) return;
 
-	const me = userData.username;
-	const isMyMatch =
-		me === leftUsername || me === rightUsername;
-
-	// If this match is not the one the user is playing, do nothing
-	if (!isMyMatch) return;
-
 	const winner =
 		state.winner === "left" ? leftUsername :
 		state.winner === "right" ? rightUsername :
@@ -264,10 +257,17 @@ export function handleTournamentMatchState(
 	const matchRound = matchInfo?.round;
 	const matchRoundNum = matchRound !== undefined ? (typeof matchRound === 'number' ? matchRound : parseInt(String(matchRound), 10)) : currentRound;
 
+	const me = userData.username;
+	const isMyMatch =
+		me === leftUsername || me === rightUsername;
+
 	// -------------------------------
 	// ROUND 1 RESULTS
 	// -------------------------------
 	if (matchRoundNum === 1) {
+		// For Round 1, only process if this is the player's match
+		if (!isMyMatch) return;
+
 		if (matchId === semiFinalMatchIds.sf1) {
 			internalBracket.results.semiFinal1Winner = winner;
 		}
@@ -289,7 +289,6 @@ export function handleTournamentMatchState(
 	// ROUND 2: FINAL OR 3RD PLACE
 	// -------------------------------
 	if (matchRoundNum === 2) {
-		const me = userData.username;
 		let rankTitleKey: string | null = null;
 
 		const isFinalMatch =
@@ -299,24 +298,44 @@ export function handleTournamentMatchState(
 			matchInfo?.type !== "thirdPlace";
 
 		if (isFinalMatch) {
-			// FINAL MATCH
+			// FINAL MATCH: run this for all players (including 3rd place players) so everyone sees the champion
 			internalBracket.results.finalWinner = winner;
 
-			rankTitleKey =
-				winner === me
-					? "tournaments.rankChampion"
-					: "tournaments.rankSecond";
+			// Only show overlay with rank title if this player is in the final match
+			// Otherwise, just update the bracket data so the champion appears in the overlay
+			if (isMyMatch) {
+				rankTitleKey =
+					winner === me
+						? "tournaments.rankChampion"
+						: "tournaments.rankSecond";
 
-			showTournamentOverlay("final", {
-				title: t(rankTitleKey),
-				titleKey: rankTitleKey,
-				bracket: internalBracket as any,
-				focusedPlayerUsername: focused,
-			});
+				showTournamentOverlay("final", {
+					title: t(rankTitleKey),
+					titleKey: rankTitleKey,
+					bracket: internalBracket as any,
+					focusedPlayerUsername: focused,
+				});
+			} else {
+				// 3rd place player: show final overlay with their rank (3rd or 4th)
+				// but with the champion filled in
+				rankTitleKey =
+					internalBracket.results.thirdPlaceWinner === me
+						? "tournaments.rankThird"
+						: "tournaments.rankFourth";
+
+				showTournamentOverlay("final", {
+					title: t(rankTitleKey),
+					titleKey: rankTitleKey,
+					bracket: internalBracket as any,
+					focusedPlayerUsername: focused,
+				});
+			}
 
 			return;
 		} else {
-			// 3RD PLACE MATCH
+			// 3RD PLACE MATCH: Only process if this is the player's match
+			if (!isMyMatch) return;
+
 			internalBracket.results.thirdPlaceWinner = winner;
 
 			rankTitleKey =
