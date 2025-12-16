@@ -53,6 +53,10 @@ export default {
 		matchReady: "Match ready",
 		players: "Players",
 		tournamentNumber: (id: number) => `Tournament #${id}`,
+		rankChampion: "Champion",
+		rankSecond: "Second Place",
+		rankThird: "Third Place",
+		rankFourth: "Fourth Place",
 	},
 
 	auth: {

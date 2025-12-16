@@ -53,6 +53,10 @@ export default {
     matchReady: "Spiel bereit",
     players: "Spieler",
     tournamentNumber: (id: number) => `Turnier #${id}`,
+    rankChampion: "Meister",
+    rankSecond: "Zweiter Platz",
+    rankThird: "Dritter Platz",
+    rankFourth: "Vierter Platz",
   },
 
   auth: {
@@ -137,7 +141,6 @@ export default {
     unblockUser: "Blockierung aufheben",
     youBlocked: "Du hast blockiert: ",
     youUnblocked: "Du hast entblockt: ",
-    channels: "Chat-Kanäle",
     onlineUsers: "Online Benutzer",
     friends: "Freunde",
   },

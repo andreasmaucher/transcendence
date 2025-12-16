@@ -216,6 +216,13 @@ export function handleTournamentMatchState(
 	// -------------------------------
 	if (!state.isOver || state.winner == null) return;
 
+	const me = userData.username;
+	const isMyMatch =
+		me === leftUsername || me === rightUsername;
+
+	// If this match is not the one the user is playing, do nothing
+	if (!isMyMatch) return;
+
 	const winner =
 		state.winner === "left" ? leftUsername :
 		state.winner === "right" ? rightUsername :
@@ -256,49 +263,49 @@ export function handleTournamentMatchState(
 	// ROUND 2: FINAL OR 3RD PLACE
 	// -------------------------------
 	if (matchRoundNum === 2) {
-		// ANDY: determine match type from matchId (use matchInfo from above)
-		// Priority 1: Check explicit match type from matchTypeMap
-		// Priority 2: Check if winner is a semifinal winner (final match)
-		// Priority 3: If matchTypeMap doesn't explicitly say "thirdPlace", assume it's final
-		const isFinalMatch = matchInfo?.type === "final" || 
-			// final match always has semifinal winners, while 3rd place match has semifinal losers
-			(winner === internalBracket.results.semiFinal1Winner ||
-			winner === internalBracket.results.semiFinal2Winner) ||
-			// If matchTypeMap doesn't explicitly say "thirdPlace", assume it's final (even if matchInfo is undefined)
-			(matchInfo?.type !== "thirdPlace");
+		const me = userData.username;
+		let rankTitleKey: string | null = null;
+
+		const isFinalMatch =
+			matchInfo?.type === "final" ||
+			winner === internalBracket.results.semiFinal1Winner ||
+			winner === internalBracket.results.semiFinal2Winner ||
+			matchInfo?.type !== "thirdPlace";
 
 		if (isFinalMatch) {
 			// FINAL MATCH
 			internalBracket.results.finalWinner = winner;
 
+			rankTitleKey =
+				winner === me
+					? "tournaments.rankChampion"
+					: "tournaments.rankSecond";
+
 			showTournamentOverlay("final", {
-				title: t("tournaments.tournamentFinished"),
-				titleKey: "tournaments.tournamentFinished",
+				title: t(rankTitleKey),
+				titleKey: rankTitleKey,
 				bracket: internalBracket as any,
 				focusedPlayerUsername: focused,
 			});
+
 			return;
 		} else {
 			// 3RD PLACE MATCH
 			internalBracket.results.thirdPlaceWinner = winner;
 
-			// ANDY: Only show 3rd place overlay if final hasn't finished yet
-			// If final has already finished, don't show 3rd place overlay (final overlay should remain visible)
-			if (!internalBracket.results.finalWinner) {
-				showTournamentOverlay("between-rounds", {
-					title: t("tournaments.thirdPlaceDecided"),
-					titleKey: "tournaments.thirdPlaceDecided",
-					bracket: internalBracket as any,
-					focusedPlayerUsername: focused,
-				});
-			} else {
-				// Final has already finished - re-show the final overlay to ensure it's visible
-				showTournamentOverlay("final", {
-					title: t("tournaments.tournamentFinished"),
-					bracket: internalBracket as any,
-					focusedPlayerUsername: focused,
-				});
-			}
+			rankTitleKey =
+				winner === me
+					? "tournaments.rankThird"
+					: "tournaments.rankFourth";
+
+			showTournamentOverlay("final", {
+				title: t(rankTitleKey),
+				titleKey: rankTitleKey,
+				bracket: internalBracket as any,
+				focusedPlayerUsername: focused,
+			});
+
+			return;
 		}
 	}
 }
