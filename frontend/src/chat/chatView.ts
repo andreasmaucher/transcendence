@@ -208,7 +208,7 @@ export async function initChat(root: HTMLElement = document.body, skipFetch: boo
 	chatHeader.textContent = t("chat.globalChat");
 	chatHeader.style.fontWeight = "600";
 	chatHeader.style.marginTop = "0px";
-	chatHeader.style.marginBottom = "8px";
+	chatHeader.style.marginBottom = "10px";
 	chatHeader.style.color = "#00ffc8";
 	chatHeader.style.textShadow = "0 0 5px #66ffc8";
 	chat.append(chatHeader);

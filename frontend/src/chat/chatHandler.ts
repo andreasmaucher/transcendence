@@ -87,54 +87,146 @@ export async function renderIncomingMessage(message: Message) {
 
 		messageElement.appendChild(span);
 	} else if (message.type === "invite") {
-		const isGameStillAvailable = await isGameStillOpen(message.gameId!);
-		const isExpired = !isGameStillAvailable;
+		if (message.receiver === userData.username) {
+			const isGameStillAvailable = await isGameStillOpen(message.gameId!);
+			const isExpired = !isGameStillAvailable;
 
-		if (isExpired) {
+			if (isExpired) {
+				const expiredText = document.createElement("div");
+				expiredText.style.color = "#888";
+				expiredText.style.fontStyle = "italic";
+				expiredText.textContent = t("chat.inviteExpired")(message.sender);;
+				messageElement.appendChild(expiredText);
+			} else {
+				messageElement.appendChild(createHeader(message.sender, convertUTCStringToLocal(message.sentAt!)));
+
+				const getTranslatedInviteText = (content: string) => {
+					if (content === "Are you up for a tournament") {
+						return t("chat.inviteTypeTournament");
+					}
+					return t("chat.inviteTypeSingleGame");
+				};
+				const translatedContent = getTranslatedInviteText(message.content || "");
+			
+				const inviteContainer = document.createElement("div");
+				inviteContainer.style.background = "rgba(0, 0, 0, 0.3)";
+				inviteContainer.style.border = "1px solid #00ffc8";
+				inviteContainer.style.padding = "10px";
+				inviteContainer.style.borderRadius = "5px";
+
+				const text = document.createElement("p");
+				text.textContent = translatedContent || "";
+				text.style.color = "#fff";
+				text.style.margin = "0 0 5px 0";
+				
+				const joinButton = document.createElement('button');
+				joinButton.textContent = t("chat.acceptChallenge");
+				joinButton.style.cursor = "pointer";
+				joinButton.style.backgroundColor = "#00ffc8";
+				joinButton.style.color = "#000";
+				joinButton.style.border = "none";
+				joinButton.style.padding = "5px 10px";
+				joinButton.style.borderRadius = "3px";
+				joinButton.style.fontWeight = "bold";
+
+				joinButton.onclick = (e) => {
+					e.stopPropagation();
+					if (message.content === "Are you up for a tournament") {
+						navigate(`#/tournament?joinId=${message.gameId}`);
+					} else {
+						navigate(`#/game?mode=online&id=${message.gameId}`);
+					}
+					console.log("Joining game:", message.gameId);
+				};
+
+				inviteContainer.appendChild(text);
+				inviteContainer.appendChild(joinButton);
+				messageElement.appendChild(inviteContainer);
+			}
+		} else {
+			messageElement.appendChild(createHeader(message.sender, convertUTCStringToLocal(message.sentAt!)));
+			
+			const contentSpan = document.createElement("span");
+			contentSpan.style.color = "#aaa";
+			contentSpan.style.fontStyle = "italic";
+			const gameType = message.content === "Are you up for a tournament" ? "Tournament" : "Single Game";
+
+			contentSpan.textContent = t("chat.inviteSent")(message.receiver, gameType);
+
+			messageElement.appendChild(contentSpan);
+		}
+	} else if (message.type === "broadcast" && message.gameId) {
+		
+		const tournamentId = message.gameId;
+		let isTournamentOpen = true;
+
+		if (tournamentId) {
+			isTournamentOpen = await isGameStillOpen(tournamentId); 
+		}
+
+		if (!isTournamentOpen) {
 			const expiredText = document.createElement("div");
 			expiredText.style.color = "#888";
 			expiredText.style.fontStyle = "italic";
-			expiredText.textContent = t("chat.inviteExpired")(message.sender);
+			expiredText.textContent = t("chat.tournamentExpired")(message.content);
 			messageElement.appendChild(expiredText);
+			
 		} else {
-			messageElement.appendChild(createHeader(message.sender, convertUTCStringToLocal(message.sentAt!)));
+			messageElement.appendChild(createHeader(t("chat.system"), convertUTCStringToLocal(message.sentAt!)));
 
-			const inviteContainer = document.createElement("div");
-			inviteContainer.style.background = "rgba(0, 0, 0, 0.3)";
-			inviteContainer.style.border = "1px solid #00ffc8";
-			inviteContainer.style.padding = "10px";
-			inviteContainer.style.borderRadius = "5px";
+			const broadcastContainer = document.createElement("div");
+			broadcastContainer.style.background = "rgba(0, 0, 0, 0.6)";
+			broadcastContainer.style.border = "1px solid #00ffc8";
+			broadcastContainer.style.boxShadow = "0 0 10px rgba(0, 255, 200, 0.4)";
+			broadcastContainer.style.padding = "12px 15px";
+			broadcastContainer.style.borderRadius = "8px";
 
-			const text = document.createElement("p");
-			text.textContent = message.content || "";
-			text.style.color = "#fff";
-			text.style.margin = "0 0 5px 0";
+			const headerText = document.createElement("h4");
+			headerText.textContent = t("chat.tournamentNewTitle"); 
+			headerText.style.color = "#ffaa00";
+			headerText.style.textTransform = "uppercase";
+			headerText.style.letterSpacing = "1px";
+			headerText.style.margin = "0 0 5px 0";
 
-			const joinButton = document.createElement("button");
-			joinButton.textContent = t("chat.acceptChallenge");
-			joinButton.style.cursor = "pointer";
-			joinButton.style.backgroundColor = "#00ffc8";
-			joinButton.style.color = "#000";
-			joinButton.style.border = "none";
-			joinButton.style.padding = "5px 10px";
-			joinButton.style.borderRadius = "3px";
-			joinButton.style.fontWeight = "bold";
+			const nameText = document.createElement("p");
+			nameText.textContent = `🏆 ${message.content}`;
+			nameText.style.color = "#ffffff";
+			nameText.style.fontSize = "16px";
+			nameText.style.fontWeight = "bold";
+			nameText.style.margin = "0 0 10px 0";
 
-			joinButton.onclick = (e) => {
-				e.stopPropagation();
-				if (message.content === "Are you up for a tournament") {
-					navigate(`#/tournament?joinId=${message.gameId}`);
-				} else {
-					navigate(`#/game?mode=online&id=${message.gameId}`);
-				}
-				console.log("Joining game:", message.gameId);
+			const viewButton = document.createElement('button');
+			viewButton.textContent = t("chat.viewTournament"); 
+			viewButton.style.cursor = "pointer";
+			viewButton.style.backgroundColor = "#00ffc8";
+			viewButton.style.color = "#000";
+			viewButton.style.border = "none";
+			viewButton.style.padding = "8px 15px";
+			viewButton.style.borderRadius = "4px";
+			viewButton.style.fontWeight = "bold";
+			viewButton.style.transition = "background-color 0.2s, box-shadow 0.2s";
+			
+			//hover
+			viewButton.onmouseenter = () => {
+				viewButton.style.backgroundColor = "#66ffc8";
+				viewButton.style.boxShadow = "0 0 8px #00ffc8";
+			};
+			viewButton.onmouseleave = () => {
+				viewButton.style.backgroundColor = "#00ffc8";
+				viewButton.style.boxShadow = "none";
 			};
 
-			inviteContainer.appendChild(text);
-			inviteContainer.appendChild(joinButton);
-			messageElement.appendChild(inviteContainer);
+			viewButton.onclick = (e) => {
+				e.stopPropagation();
+				navigate(`#/tournament?joinId=${tournamentId}`);
+			};
+
+			broadcastContainer.appendChild(headerText);
+			broadcastContainer.appendChild(nameText);
+			broadcastContainer.appendChild(viewButton);
+			messageElement.appendChild(broadcastContainer);
 		}
-	} else {
+	 } else {
 		messageElement.appendChild(createHeader(message.sender, convertUTCStringToLocal(message.sentAt!)));
 
 		const contentSpan = document.createElement("span");
@@ -346,8 +438,8 @@ async function handleDuelChallenge(anchorElement: HTMLElement) {
 export function renderChatHeaderButtons(chatHeader: HTMLElement, activeChat: string | null) {
 	chatHeader.textContent = "";
 
-	const primaryNeon = "#00ffc8"; // OLD "#00e0b3";
-	const secondaryNeon = "#66ffc8"; // OLD "#33cc99";
+	const primaryNeon = "#00ffc8";
+	const secondaryNeon = "#66ffc8";
 
 	const title = document.createElement("span");
 	title.textContent = activeChat === "Global Chat" ? t("chat.globalChat") : t("chat.chatWith")(activeChat!);
@@ -690,15 +782,6 @@ export function wireIncomingChat(
 	friendList: HTMLElement,
 	chatHeader: HTMLElement
 ): () => void {
-	//OLD
-	/*const ws = userData.userSock;
-	if (!ws) {
-		console.warn("Chat socket not connected");
-		return () => {};
-	}
-
-	const previousHandler = ws.onmessage;*/
-
 	// get the last chatPartner
 	const savedChatPartner = localStorage.getItem("activeChatPartner");
 	if (savedChatPartner) {
@@ -742,10 +825,8 @@ export function wireIncomingChat(
 			const customEvent = e as CustomEvent;
 			const payload = customEvent.detail;
 
-			//const payload = JSON.parse(event.data);
 			if (payload && payload.type === "chat") {
 				const msg: Message = payload.data;
-				console.log("DOM EVENT:", msg);
 
 				switch (msg.type) {
 					case "broadcast": {
@@ -792,9 +873,12 @@ export function wireIncomingChat(
 						break;
 					}
 					case "invite": {
-						if (userData.username === msg.receiver && userData.activePrivateChat === msg.sender) {
-							await displayIncomingMessage(msg, chatMessages);
-						}
+						if (
+							(userData.username === msg.receiver && userData.activePrivateChat === msg.sender) ||
+							(userData.username === msg.sender && userData.activePrivateChat === msg.receiver)
+						) {
+								await displayIncomingMessage(msg, chatMessages);
+							}
 						appendMessageToHistory(msg);
 						break;
 					}
