@@ -116,8 +116,19 @@ function ensureTournamentsCreatedAtColumn() {
 	}
 }
 
+function ensureMatchesTxHashColumn() {
+	if (hasColumn("matches", "tx_hash")) return;
+	try {
+		db.exec("ALTER TABLE matches ADD COLUMN tx_hash TEXT");
+		console.log("[DB] Migrated matches table: added tx_hash");
+	} catch (error) {
+		console.error("[DB] Failed to migrate matches.tx_hash:", error);
+	}
+}
+
 // Best-effort migrations for older db files.
 ensureTournamentsCreatedAtColumn();
+ensureMatchesTxHashColumn();
 
 function cleanupIncompleteGames() {
 	try {

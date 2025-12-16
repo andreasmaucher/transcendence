@@ -1,3 +1,18 @@
+// Store blockchain tx status for tournament (legacy - single status)
+let blockchainTxStatus: { status: "pending"|"success"|"fail", txHash?: string } | null = null;
+
+// Store per-match blockchain tx status for tournament matches
+const matchTxStatusMap = new Map<string, { status: "pending"|"success"|"fail", txHash?: string }>();
+
+// Export function to get match tx status for overlay display
+export function getMatchTxStatus(matchId: string): { status: "pending"|"success"|"fail", txHash?: string } | undefined {
+	return matchTxStatusMap.get(matchId);
+}
+
+// Export function to clear match tx status (called when resetting tournament orchestrator)
+export function clearMatchTxStatusMap() {
+	matchTxStatusMap.clear();
+}
 import { userData } from "../config/constants";
 import * as endpoints from "../config/endpoints";
 import { flushInputs, queueInput, setActiveSocket, setAssignedSide } from "../game/input";
@@ -293,6 +308,7 @@ export function connectToTournamentWS(
 
 	ws.addEventListener("open", () => {
 		resetTournamentOrchestrator();
+		matchTxStatusMap.clear(); // Clear per-match tx status on new tournament connection
 		queueInput("left", "stop");
 		queueInput("right", "stop");
 		flushInputs();
@@ -310,6 +326,50 @@ export function connectToTournamentWS(
 		if (!parsed || typeof parsed !== "object") return;
 
 		const payload = parsed as Payload;
+
+		// Listen for blockchain tx status
+		if (payload.type === "blockchain-tx-status") {
+			blockchainTxStatus = payload.data;
+			if (blockchainTxStatus) {
+				showBlockchainTxStatus(blockchainTxStatus);
+			}
+			return;
+		}
+
+		// Listen for per-match blockchain tx status
+		if (payload.type === "match-tx-status") {
+			const data = payload.data as { matchId: string; status: "pending"|"success"|"fail"; txHash?: string };
+			if (data?.matchId) {
+				matchTxStatusMap.set(data.matchId, { status: data.status, txHash: data.txHash });
+				// Trigger overlay update by dispatching a custom event
+				window.dispatchEvent(new CustomEvent("match-tx-status-update", { detail: data }));
+			}
+			return;
+		}
+// Show blockchain tx status in overlay
+function showBlockchainTxStatus(statusObj: { status: "pending"|"success"|"fail", txHash?: string }) {
+	let el = document.getElementById("blockchain-tx-status");
+	if (!el) {
+		el = document.createElement("div");
+		el.id = "blockchain-tx-status";
+		el.style.cssText = "margin:16px 0;padding:12px;border-radius:8px;font-family:monospace;font-size:15px;text-align:center;";
+		const overlay = document.querySelector(".tournament-overlay-content");
+		if (overlay) overlay.appendChild(el);
+	}
+	if (statusObj.status === "pending") {
+		el.textContent = "Saving winning match to blockchain... (pending)";
+		el.style.background = "#fffbe6";
+		el.style.color = "#b59f00";
+	} else if (statusObj.status === "success") {
+		el.innerHTML = `Saved to blockchain! Tx: <a href='https://testnet.snowtrace.io/tx/${statusObj.txHash}' target='_blank' rel='noopener'>${statusObj.txHash}</a>`;
+		el.style.background = "#e6fff2";
+		el.style.color = "#008c4a";
+	} else if (statusObj.status === "fail") {
+		el.textContent = "Blockchain save failed: " + (statusObj.txHash || "unknown error");
+		el.style.background = "#ffe6e6";
+		el.style.color = "#b00020";
+	}
+}
 
 		switch (payload.type) {
 			case "match-assigned": {
