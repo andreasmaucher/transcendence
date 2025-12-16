@@ -23,6 +23,8 @@ export default {
     controlRightPaddle: "Du steuerst: RECHTER Schläger (↑/↓)",
     player1: "Spieler 1",
     player2: "Spieler 2",
+    youWin: "Du hast gewonnen!",
+    youLost: "Du hast verloren!",
   },
 
   tournaments: {
@@ -53,6 +55,12 @@ export default {
     matchReady: "Spiel bereit",
     players: "Spieler",
     tournamentNumber: (id: number) => `Turnier #${id}`,
+    rankChampion: "Meister",
+    rankSecond: "Zweiter Platz",
+    rankThird: "Dritter Platz",
+    rankFourth: "Vierter Platz",
+    youWin: "Du hast gewonnen!",
+    youLost: "Du hast verloren!",
   },
 
   auth: {
@@ -137,7 +145,6 @@ export default {
     unblockUser: "Blockierung aufheben",
     youBlocked: "Du hast blockiert: ",
     youUnblocked: "Du hast entblockt: ",
-    channels: "Chat-Kanäle",
     onlineUsers: "Online Benutzer",
     friends: "Freunde",
   },

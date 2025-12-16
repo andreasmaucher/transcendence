@@ -23,6 +23,9 @@ export default {
 		controlRightPaddle: "You control: RIGHT paddle (↑/↓)",
 		player1: "Player 1",
 		player2: "Player 2",
+		youWin: "You win!",
+		youLost: "You lost!",
+		
 	},
 
 	tournaments: {
@@ -53,6 +56,10 @@ export default {
 		matchReady: "Match ready",
 		players: "Players",
 		tournamentNumber: (id: number) => `Tournament #${id}`,
+		rankChampion: "Champion",
+		rankSecond: "Second Place",
+		rankThird: "Third Place",
+		rankFourth: "Fourth Place",
 	},
 
 	auth: {

@@ -224,7 +224,13 @@ export async function renderGame(container: HTMLElement) {
 			wrapper.append(box);
 		};
 
-		createLocalPlayerBox("left", t("game.player1"), "W / S");
+		const leftPlayerName =
+		typeof userData.username === "string"
+			? userData.username
+			: t("game.player1");
+
+		createLocalPlayerBox("left", leftPlayerName, "W / S");
+
 		createLocalPlayerBox("right", t("game.player2"), "↑ / ↓");
 	}
 
@@ -521,11 +527,51 @@ export async function renderGame(container: HTMLElement) {
 		},
 
 		// ANDY: change button to "Back to Menu" when the match is over (works separately for final and 3rd place matches)
-		onMatchOver: () => {
-			if (cancelled) return;
-			isMatchOver = true;
-			updateButtonText(); // Update button text to "Back to Menu"
-		},
+	onMatchOver: async () => {
+		if (cancelled) return;
+
+		isMatchOver = true;
+		updateButtonText(); // "Back to Menu"
+
+		// LOCAL GAME: left/right player
+		if (mode === "local" && state.winner) {
+			setMatchActive(false);
+
+			const message =
+				state.winner === "left"
+					? t("gameOver.leftWins")
+					: t("gameOver.rightWins");
+
+			await showMessageOverlay(message);
+		}
+
+		// ONLINE GAME: you win / you lost
+		if (mode === "online" && state.winner && currentAssignedSide) {
+			setMatchActive(false);
+
+			const message =
+				state.winner === currentAssignedSide
+					? t("game.youWin")
+					: t("game.youLost");
+
+			await showMessageOverlay(message);
+		}
+
+		// TOURNAMENT GAME: you win / you lost
+		if (mode === "tournament" && state.winner && currentAssignedSide) {
+			setMatchActive(false);
+
+			const message =
+				state.winner === currentAssignedSide
+					? t("tournaments.youWin")
+					: t("tournaments.youLost");
+
+			await showMessageOverlay(message);
+		}
+	},
+
+
+
 	});
 
 	const cleanupWS =

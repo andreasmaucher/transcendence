@@ -127,3 +127,7 @@ export function userLogout(username: string) {
 export function getAllOnlineUsers(): string[] {
 	return Array.from(usersOnline.keys());
 }
+
+export function removeUserOnline(username: string) {
+	userLogout(username);
+}

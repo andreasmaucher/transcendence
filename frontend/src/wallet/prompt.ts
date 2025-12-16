@@ -12,6 +12,7 @@ let overlayEl: HTMLDivElement | null = null;
 let lastShownForTick = -1;
 
 export function showSaveMatchPrompt(gameState: any, onSave: SaveHandler) {
+	return;
 	function isOnFuji(chainId?: string | null) {
 		return (chainId || "").toLowerCase() === FUJI_CHAIN_ID_HEX.toLowerCase();
 	}
