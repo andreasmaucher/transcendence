@@ -21,7 +21,6 @@ function readSecret(path: string): string | undefined {
 
 const GITHUB_CLIENT_ID = readSecret("/run/secrets/github_client_id");
 const GITHUB_CLIENT_SECRET = readSecret("/run/secrets/github_client_secret");
-console.log("GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET", GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET);
 export default async function oauthRoutes(fastify: FastifyInstance) {
 	fastify.get("/api/auth/github/start", async (request, reply) => {
 		if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
