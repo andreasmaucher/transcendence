@@ -101,20 +101,19 @@ export function getMatchInSingleGame(matchId: string): Match | undefined {
 
 // Check if single game is open (waiting for players)
 export function isSingleGameOpen(singleGame: SingleGame): boolean {
+	// Game must not be running and not already finished
 	if (singleGame.match.state.isOver || singleGame.match.state.isRunning) return false;
-	const { players } = singleGame.match;
-	if (!players.right || !players.left) return true;
-	return false;
+	// any non-running remote single game is considered "open"
+	return true;
 }
 
 // Get all open (waiting for players) single games
 export function getOpenSingleGames(): SingleGame[] {
 	const openSingleGames: SingleGame[] = [];
 	for (const singleGame of singleGames.values()) {
-		// ANDY: only expose remote (online) games in the online lobby so local games don't show up in the online lobby anymore
-		if (singleGame.mode === "remote" && isSingleGameOpen(singleGame)) {
-			openSingleGames.push(singleGame);
-		}
+		const isOpen = isSingleGameOpen(singleGame);
+		// only expose remote (online) games in the online lobby so local games don't show up in the online lobby anymore
+		if (singleGame.mode === "remote" && isOpen) openSingleGames.push(singleGame);
 	}
 	return openSingleGames;
 }

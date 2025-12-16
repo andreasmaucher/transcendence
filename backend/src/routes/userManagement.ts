@@ -3,7 +3,6 @@ import { getUserByUsernameDB, getUserFriendsDB, isUsernameDB } from "../database
 import { verifyPassword, hashPassword } from "../user/password.js";
 import {
 	registerUserDB,
-	updateUsernameDB,
 	updatePasswordDB,
 	updateAvatarDB,
 	addFriendDB,
@@ -12,7 +11,7 @@ import {
 import { clearSessionCookie, createSessionToken, makeSessionCookie } from "../auth/session.js";
 import { uploadAvatar } from "../user/cloudinary.js";
 import { DEFAULT_AVATAR_URL } from "../config/constants.js";
-import { getUserOnline, updateUserOnline } from "../user/online.js";
+import { updateUserOnline, userLogout } from "../user/online.js";
 import { authenticateRequest } from "../auth/verify.js";
 import { isValidInput, sanitizeInput } from "../utils/sanitize.js";
 
@@ -37,9 +36,6 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 
 		if (!isValidInput(username) || !isValidInput(password))
 			return reply.code(400).send({ success: false, message: "Invalid username and/or password" });
-
-		const sanUsername = sanitizeInput(username);
-		const sanPassword = sanitizeInput(password);
 
 		// Duplicate username check (clear message for users)
 		if (isUsernameDB(username)) return reply.code(409).send({ success: false, message: "Username already taken" });
@@ -77,6 +73,8 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 		if (!isValidInput(username) || !isValidInput(password))
 			return reply.code(400).send({ success: false, message: "Invalid username and/or password" });
 
+		if (!isUsernameDB(username)) return reply.code(401).send({ success: false, message: "Username not registered" });
+
 		// Check if the password matches the stored hash for this username
 		const isRightPassword = await verifyPassword(username, password);
 		if (!isRightPassword) return reply.code(401).send({ success: false, message: "Invalid password" });
@@ -95,9 +93,9 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 		const { username } = request.body as {
 			username: string;
 		};
-		const user = getUserOnline(username);
-		// Close user websocket connection
-		if (user) user.userWS.close(1000, "User logged out");
+
+		// Close all userSockets
+		userLogout(username);
 
 		// Expire the cookie immediately
 		clearSessionCookie(reply);
@@ -136,10 +134,7 @@ export default async function userManagementRoutes(fastify: FastifyInstance) {
 			try {
 				const avatarUrl = await uploadAvatar(newAvatar);
 				updateAvatarDB(payload.username, avatarUrl);
-				updateUserOnline({
-					username: payload.username,
-					newAvatar: newAvatar,
-				});
+				updateUserOnline(payload.username, newAvatar);
 				return reply.code(200).send({ success: true, message: "Avatar updated successfully" });
 			} catch (error: any) {
 				console.error("[userRT]", error.message);

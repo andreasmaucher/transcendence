@@ -259,13 +259,13 @@ export function handleTournamentMatchState(
 		// ANDY: determine match type from matchId (use matchInfo from above)
 		// Priority 1: Check explicit match type from matchTypeMap
 		// Priority 2: Check if winner is a semifinal winner (final match)
-		// Priority 3: If matchTypeMap says it's NOT thirdPlace, assume it's final
+		// Priority 3: If matchTypeMap doesn't explicitly say "thirdPlace", assume it's final
 		const isFinalMatch = matchInfo?.type === "final" || 
 			// final match always has semifinal winners, while 3rd place match has semifinal losers
 			(winner === internalBracket.results.semiFinal1Winner ||
 			winner === internalBracket.results.semiFinal2Winner) ||
-			// If matchTypeMap doesn't explicitly say "thirdPlace", and we're in Round 2, it's likely the final
-			(matchInfo?.type !== "thirdPlace" && matchInfo?.type !== undefined);
+			// If matchTypeMap doesn't explicitly say "thirdPlace", assume it's final (even if matchInfo is undefined)
+			(matchInfo?.type !== "thirdPlace");
 
 		if (isFinalMatch) {
 			// FINAL MATCH
