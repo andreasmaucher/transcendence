@@ -2,7 +2,7 @@ import "./userProfile.css";
 import { navigate } from "../../router/router";
 import { t } from "../../i18n";
 import { fetchUserPublic } from "../../api/http";
-import { userData } from "../../config/constants";
+import { generalData, userData } from "../../config/constants";
 import { API_BASE } from "../../config/endpoints";
 import { sendMessage } from "../../chat/chatHandler";
 import { convertUTCStringToLocal } from "../../utils/time";
@@ -11,6 +11,7 @@ export async function renderUserProfile(container: HTMLElement, username?: strin
 	container.innerHTML = "";
 	let cancelled = false;
 
+	// 1. Fetch current user data (friends/blocks) to ensure UI is accurate
 	try {
 		const meRes = await fetch(`${API_BASE}/api/user/data`, { credentials: "include" });
 		const meBody = await meRes.json();
@@ -47,6 +48,9 @@ export async function renderUserProfile(container: HTMLElement, username?: strin
 	status.textContent = t("userProfile.loading");
 	card.append(status);
 
+	// Variable to hold our event listener cleanup function
+	let cleanupListener: (() => void) | null = null;
+
 	try {
 		const user = await fetchUserPublic(username!);
 		if (cancelled) return;
@@ -57,10 +61,46 @@ export async function renderUserProfile(container: HTMLElement, username?: strin
 		top.className = "profile-top-card";
 		card.append(top);
 
+		// ============================================================
+		// AVATAR & DYNAMIC STATUS SECTION
+		// ============================================================
+		const avatarWrapper = document.createElement("div");
+		avatarWrapper.className = "profile-avatar-wrapper";
+		top.append(avatarWrapper);
+
 		const avatar = document.createElement("img");
 		avatar.className = "profile-avatar";
 		avatar.src = user.avatar || "/default-avatar.png";
-		top.append(avatar);
+		avatarWrapper.append(avatar);
+
+		// Function to check global state and toggle the dot
+		const updateOnlineStatus = () => {
+			const isOnline = generalData.onlineUsers?.includes(user.username);
+			const existingDot = avatarWrapper.querySelector(".profile-avatar-status");
+
+			if (isOnline && !existingDot) {
+				// User is online but no dot exists -> Add it
+				const onlineDot = document.createElement("div");
+				onlineDot.className = "profile-avatar-status";
+				onlineDot.title = "User is online"; // Native tooltip
+				avatarWrapper.append(onlineDot);
+			} else if (!isOnline && existingDot) {
+				// User went offline but dot exists -> Remove it
+				existingDot.remove();
+			}
+		};
+
+		// 1. Run immediately
+		updateOnlineStatus();
+
+		// 2. Listen for updates from fetchOnlineUsers()
+		document.addEventListener("onlineUsersUpdated", updateOnlineStatus);
+
+		// 3. Define cleanup logic for when user leaves this view
+		cleanupListener = () => {
+			document.removeEventListener("onlineUsersUpdated", updateOnlineStatus);
+		};
+		// ============================================================
 
 		const name = document.createElement("div");
 		name.className = "profile-name";
@@ -410,5 +450,7 @@ export async function renderUserProfile(container: HTMLElement, username?: strin
 	return () => {
 		cancelled = true;
 		back.onclick = null;
+		// Clean up the listener so we don't try to update a profile that isn't there
+		if (cleanupListener) cleanupListener();
 	};
 }
