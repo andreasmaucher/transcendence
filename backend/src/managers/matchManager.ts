@@ -14,6 +14,25 @@ import { isRoundOver, isTournamentOver } from "./tournamentManagerHelpers.js";
 import { endTournament, forfeitTournament, goToNextRound } from "./tournamentManager.js";
 import { Match, TournamentMatchInfo, TournamentMatchType } from "../types/match.js";
 import { buildPayload, gameBroadcast } from "../transport/broadcaster.js";
+import { saveMatchToBlockchain } from "../blockchain/saveMatch.js";
+
+// Helper to broadcast per-match blockchain tx status to all tournament players
+function broadcastMatchTxStatus(
+	tournament: Tournament,
+	matchId: string,
+	status: "pending" | "success" | "fail",
+	txHash?: string
+) {
+	const payload = JSON.stringify({
+		type: "match-tx-status",
+		data: { matchId, status, txHash }
+	});
+	for (const player of tournament.players) {
+		if (player.socket && player.socket.readyState === 1) {
+			player.socket.send(payload);
+		}
+	}
+}
 
 // Set the starting state of the tournament match info
 export function initTournamentMatchInfo(
@@ -118,6 +137,43 @@ export function startGameCountdown(match: Match) {
 export function endMatch(match: Match) {
 	match.state.isRunning = false;
 	endMatchDB(match); // Update database
+
+	// Save match to blockchain for tournament matches
+	if (match.tournament) {
+		const tournament = tournaments.get(match.tournament.id);
+		if (
+			tournament &&
+			match.players.left?.username &&
+			match.players.right?.username
+		) {
+			const gameIndex = match.tournament.round;
+			const playerLeft = match.players.left.username;
+			const playerRight = match.players.right.username;
+			const scoreLeft = typeof match.state.score.left === 'number' ? match.state.score.left : 0;
+			const scoreRight = typeof match.state.score.right === 'number' ? match.state.score.right : 0;
+
+			// Broadcast pending status
+			broadcastMatchTxStatus(tournament, match.id, "pending");
+
+			saveMatchToBlockchain(
+				match.tournament.id,
+				match.id,
+				gameIndex,
+				playerLeft,
+				playerRight,
+				scoreLeft,
+				scoreRight
+			)
+				.then((txHash) => {
+					broadcastMatchTxStatus(tournament, match.id, "success", txHash);
+				})
+				.catch((err) => {
+					console.error("[Blockchain] Failed to save match:", err);
+					broadcastMatchTxStatus(tournament, match.id, "fail", err?.message);
+				});
+		}
+	}
+
 	// Stops here if it's a single game
 	if (!match.tournament) return;
 	const tournament = tournaments.get(match.tournament.id);

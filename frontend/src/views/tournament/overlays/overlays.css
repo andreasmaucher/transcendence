@@ -82,8 +82,10 @@
   display: flex;
   flex-direction: row;
   justify-content: center;
-  align-items: center;        /* center all three columns vertically */
-  gap: 56px;                  /* a bit more space between columns */
+  align-items: center;
+  /* center all three columns vertically */
+  gap: 56px;
+  /* a bit more space between columns */
 }
 
 /* left + middle columns */
@@ -207,11 +209,9 @@
 
   border-radius: 14px;
 
-  background: radial-gradient(
-    circle at top,
-    rgba(255, 44, 251, 0.3),
-    rgba(0, 0, 0, 0.95)
-  );
+  background: radial-gradient(circle at top,
+      rgba(255, 44, 251, 0.3),
+      rgba(0, 0, 0, 0.95));
 
   border: 1px solid rgba(255, 44, 251, 0.55);
   box-shadow:
@@ -255,4 +255,21 @@
   font-size: 16px;
   font-weight: 700;
   color: #ffb6ff;
+}
+
+/* ==========================================================
+   BLOCKCHAIN TRANSACTION LINK (per match)
+========================================================== */
+
+.tournament-match-tx-link {
+  font-size: 14px;
+  text-decoration: none;
+  margin-top: 4px;
+  display: inline-block;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.tournament-match-tx-link:hover {
+  transform: scale(1.2);
+  filter: brightness(1.2);
 }

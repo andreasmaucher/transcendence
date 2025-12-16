@@ -1,5 +1,4 @@
 import type { Tournament } from "../types/game.js";
-import { saveMatchToBlockchain } from "../blockchain/saveMatch.js";
 import {
 	createTournamentDB,
 	startTournamentDB,
@@ -422,57 +421,13 @@ export function endTournament(tournament: Tournament) {
 	tournament.state.isRunning = false;
 	tournament.state.isOver = true;
 
-	// Blockchain save: trigger after tournament ends
-	if (
-		tournamentWinner &&
-		finalMatch.id &&
-		finalMatch.tournament &&
-		finalMatch.players.left?.username &&
-		finalMatch.players.right?.username
-	) {
-		const gameIndex = typeof finalMatch.tournament.round === 'number' ? finalMatch.tournament.round : 0;
-		const playerLeft = finalMatch.players.left.username;
-		const playerRight = finalMatch.players.right.username;
-		const scoreLeft = typeof finalMatch.state.score.left === 'number' ? finalMatch.state.score.left : 0;
-		const scoreRight = typeof finalMatch.state.score.right === 'number' ? finalMatch.state.score.right : 0;
-
-		// Notify frontend: tx pending
-		broadcastTournamentTxStatus(tournament.id, "pending");
-		saveMatchToBlockchain(
-			tournament.id,
-			finalMatch.id,
-			gameIndex,
-			playerLeft,
-			playerRight,
-			scoreLeft,
-			scoreRight
-		)
-			.then((txHash) => {
-				broadcastTournamentTxStatus(tournament.id, "success", txHash);
-			})
-			.catch((err) => {
-				console.error("[Blockchain] Failed to save match:", err);
-				broadcastTournamentTxStatus(tournament.id, "fail", err?.message);
-			});
-	}
+	// Note: Blockchain saving is now done per-match in endMatch() in matchManager.ts
 
 	// JACO: Added a delay to clean up the tournament from memory to prevent memory leaks
 	setTimeout(() => {
 		tournaments.delete(tournament.id);
 		console.log(`[TM] Deleting tournament local object with id: ${tournament.id} from memory.`);
 	}, 30 * 1000); // 30 seconds delay
-}
-
-// Helper to broadcast tx status to all tournament players
-function broadcastTournamentTxStatus(tournamentId: string, status: "pending"|"success"|"fail", txHash?: string) {
-	const tournament = getTournament(tournamentId);
-	if (!tournament) return;
-	const payload = { status, txHash };
-	for (const player of tournament.players) {
-		if (player.socket && player.socket.readyState === 1) {
-			player.socket.send(JSON.stringify({ type: "blockchain-tx-status", data: payload }));
-		}
-	}
 }
 
 export function forfeitTournament(tournamentId: string, playerId: string) {

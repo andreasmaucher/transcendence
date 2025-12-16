@@ -1,5 +1,18 @@
-// Store blockchain tx status for tournament
+// Store blockchain tx status for tournament (legacy - single status)
 let blockchainTxStatus: { status: "pending"|"success"|"fail", txHash?: string } | null = null;
+
+// Store per-match blockchain tx status for tournament matches
+const matchTxStatusMap = new Map<string, { status: "pending"|"success"|"fail", txHash?: string }>();
+
+// Export function to get match tx status for overlay display
+export function getMatchTxStatus(matchId: string): { status: "pending"|"success"|"fail", txHash?: string } | undefined {
+	return matchTxStatusMap.get(matchId);
+}
+
+// Export function to clear match tx status (called when resetting tournament orchestrator)
+export function clearMatchTxStatusMap() {
+	matchTxStatusMap.clear();
+}
 import { userData } from "../config/constants";
 import * as endpoints from "../config/endpoints";
 import { flushInputs, queueInput, setActiveSocket, setAssignedSide } from "../game/input";
@@ -285,6 +298,7 @@ export function connectToTournamentWS(
 
 	ws.addEventListener("open", () => {
 		resetTournamentOrchestrator();
+		matchTxStatusMap.clear(); // Clear per-match tx status on new tournament connection
 		queueInput("left", "stop");
 		queueInput("right", "stop");
 		flushInputs();
@@ -306,7 +320,20 @@ export function connectToTournamentWS(
 		// Listen for blockchain tx status
 		if (payload.type === "blockchain-tx-status") {
 			blockchainTxStatus = payload.data;
-			showBlockchainTxStatus(blockchainTxStatus);
+			if (blockchainTxStatus) {
+				showBlockchainTxStatus(blockchainTxStatus);
+			}
+			return;
+		}
+
+		// Listen for per-match blockchain tx status
+		if (payload.type === "match-tx-status") {
+			const data = payload.data as { matchId: string; status: "pending"|"success"|"fail"; txHash?: string };
+			if (data?.matchId) {
+				matchTxStatusMap.set(data.matchId, { status: data.status, txHash: data.txHash });
+				// Trigger overlay update by dispatching a custom event
+				window.dispatchEvent(new CustomEvent("match-tx-status-update", { detail: data }));
+			}
 			return;
 		}
 // Show blockchain tx status in overlay
