@@ -313,11 +313,14 @@ export function connectToTournamentWS(
 	let isHandlingForfeit = false;
 	// ANDY: store match info (players) for each match we see
 	const matchPlayersMap = new Map<string, { left: string | null; right: string | null }>();
+	// track which matches have already finished (to prevent duplicate onMatchOver calls)
+	const finishedMatches = new Set<string>();
 
 	ws.addEventListener("open", () => {
 		resetTournamentOrchestrator();
 		matchTxStatusMap.clear(); // Clear per-match tx status on new tournament connection
 		currentPlayerMatchId = null; // reset the current match a player is assigned to when starting new tournament (only for ui win/lose purposes)
+		finishedMatches.clear(); // reset finished matches when starting new tournament
 		queueInput("left", "stop");
 		queueInput("right", "stop");
 		flushInputs();
@@ -416,18 +419,25 @@ function showBlockchainTxStatus(statusObj: { status: "pending"|"success"|"fail",
 
 			case "state": {
 				const wasOver = state.isOver;
+				// extract matchId and check if match is finishing before applying state
+				// This prevents the shared state object from being overwritten when multiple matches finish
+				const matchId = (payload.data as any).matchId;
+				const remoteIsOver = (payload.data as any).isOver;
+				const remoteWinner = (payload.data as any).winner;
+				
+				// Check if this specific match is finishing (track per-match and not shared state)
+				// finishedMatches set track which matches have already been processed
+				const isMatchFinishing = remoteIsOver && remoteWinner && matchId && !finishedMatches.has(matchId);
+				
 // payload.data is now MatchState (with optional matchId for tournaments)
 				
 				applyBackendState(state, payload.data);
 
 				// ANDY: when a tournament match finishes, call handleTournamentMatchState
 				// Backend includes matchId in state payload for tournament matches
-				if (state.isOver && state.winner && !wasOver) {
-					const matchId = (payload.data as any).matchId;
-					if (!matchId) {
-						console.warn("[WS] Tournament state message missing matchId");
-						return;
-					}
+				if (isMatchFinishing) {
+					// Mark this match as finished to prevent duplicate processing
+					finishedMatches.add(matchId);
 					
 					// Get player usernames from matchPlayersMap (populated from match-assigned messages)
 					const players = matchPlayersMap.get(matchId);
@@ -442,6 +452,8 @@ function showBlockchainTxStatus(statusObj: { status: "pending"|"success"|"fail",
 							onMatchOver(matchId);
 						}
 					}
+				} else if (remoteIsOver && remoteWinner && !matchId) {
+					console.warn("[WS] Tournament state message missing matchId");
 				}
 
 				// Reset game
