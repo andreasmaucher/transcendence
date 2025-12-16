@@ -7,6 +7,7 @@ import {
 	forfeitMatchDB,
 	removePlayerFromMatchDB,
 	startMatchDB,
+	updateMatchTxHashDB,
 } from "../database/matches/setters.js";
 import { forfeitSingleGame, getSingleGame } from "./singleGameManager.js";
 import { tournaments } from "../config/structures.js";
@@ -165,6 +166,7 @@ export function endMatch(match: Match) {
 				scoreRight
 			)
 				.then((txHash) => {
+					updateMatchTxHashDB(match.id, txHash); // Persist tx_hash to database
 					broadcastMatchTxStatus(tournament, match.id, "success", txHash);
 				})
 				.catch((err) => {
