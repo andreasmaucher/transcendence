@@ -52,16 +52,13 @@ export function draw(ctx: CanvasRenderingContext2D, s: MatchState): void {
 		ctx.textAlign = "center";
 
 		// translated winner text
-		const winnerText = s.winner === "left" ? t("gameOver.leftWins") : t("gameOver.rightWins");
+		//const winnerText = s.winner === "left" ? t("gameOver.leftWins") : t("gameOver.rightWins");
 
 		// Only show winner text for non-tournament matches
-		if (s.mode !== "tournament") {
-			ctx.fillText(winnerText, s.width / 2, s.height / 2);
-		}
 
 		// Only show refresh text for non-tournament matches
 		if (s.mode !== "tournament") {
-			ctx.fillText(t("gameOver.refresh"), s.width / 2, s.height / 2 + 40);
+			ctx.fillText(t("gameOver.refresh"), s.width / 2, s.height / 2 -20);
 		}
 
 		// Only show blockchain save prompt for non-tournament matches

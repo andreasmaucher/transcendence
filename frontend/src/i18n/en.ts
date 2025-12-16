@@ -23,6 +23,9 @@ export default {
 		controlRightPaddle: "You control: RIGHT paddle (↑/↓)",
 		player1: "Player 1",
 		player2: "Player 2",
+		youWin: "You win!",
+		youLost: "You lost!",
+		
 	},
 
 	tournaments: {

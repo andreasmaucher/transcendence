@@ -23,6 +23,8 @@ export default {
     controlRightPaddle: "Vous contrôlez: Pagaie DROITE (↑/↓)",
     player1: "Joueur 1",
     player2: "Joueur 2",
+    youWin: "Victoire !",
+    youLost: "Défaite !",
   },
 
   tournaments: {
