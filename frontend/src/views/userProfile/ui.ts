@@ -368,7 +368,7 @@ export async function renderUserProfile(container: HTMLElement, username?: strin
 						"profile.adversary"
 					)}</th><th>${t("profile.winner")}</th><th>${t("profile.round")}</th><th>${t(
 						"profile.placementRange"
-					)}</th><th>⛓️</th></tr></thead><tbody>`;
+					)}</th><th>tx</th></tr></thead><tbody>`;
 					tourney.matches.forEach((m: any) => {
 						const txLink = m.tx_hash
 							? `<a href="https://testnet.snowtrace.io/tx/${m.tx_hash}" target="_blank" rel="noopener" title="View on blockchain">⛓️</a>`
