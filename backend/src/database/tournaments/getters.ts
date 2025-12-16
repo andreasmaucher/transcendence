@@ -49,7 +49,8 @@ export function getTournamentsByUserDB(username: string) {
             m.winner AS match_winner,
             m.started_at AS match_started_at,
             m.in_tournament_placement_range,
-            m.ended_at AS match_ended_at
+            m.ended_at AS match_ended_at,
+            m.tx_hash
         FROM tournaments t
         LEFT JOIN matches m 
             ON m.tournament_id = t.id 
@@ -95,6 +96,7 @@ export function getTournamentsByUserDB(username: string) {
 				placement_range: row.in_tournament_placement_range,
 				started_at: row.match_started_at,
 				ended_at: row.match_ended_at,
+				tx_hash: row.tx_hash,
 			});
 		}
 	}

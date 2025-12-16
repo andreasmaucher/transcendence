@@ -2,6 +2,8 @@
 
 import { fetchUserPublic } from "../../../api/http";
 import { t } from "../../../i18n";
+import { getMatchTxStatus } from "../../../ws/game";
+import { getTournamentMatchIds } from "./tournament_orchestrator";
 
 type TournamentOverlayMode = "waiting" | "match-ready" | "between-rounds" | "final";
 
@@ -137,6 +139,27 @@ function createBracketSlot(
     return slot;
 }
 
+// Helper to create transaction status element for a match
+// Only shows ⛓️ emoji as a clickable link once txHash is confirmed
+function createMatchTxStatus(matchId: string | undefined): HTMLElement | null {
+    if (!matchId) return null;
+    
+    const txStatus = getMatchTxStatus(matchId);
+    // Only show when we have a successful transaction with hash
+    if (!txStatus || txStatus.status !== "success" || !txStatus.txHash) return null;
+    
+    const link = document.createElement("a");
+    link.className = "tournament-match-tx-link";
+    link.href = `https://testnet.snowtrace.io/tx/${txStatus.txHash}`;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.textContent = "⛓️";
+    link.title = "View on blockchain";
+    
+    return link;
+}
+
+
 function buildBracketView(
     bracket: BracketSnapshot4,
     focusedPlayerUsername?: string,
@@ -148,6 +171,9 @@ function buildBracketView(
     const [p1, p2, p3, p4] = bracket.players;
     const players = bracket.players;
     const results = bracket.results || {};
+    
+    // Get match IDs for tx status display
+    const matchIds = getTournamentMatchIds();
 
     // ---------- SEMIFINALS ----------
     const col1 = document.createElement("div");
@@ -165,6 +191,9 @@ function buildBracketView(
             highlight: isFocusedUsername(focusedPlayerUsername, p2?.username),
         })
     );
+    // Add tx status for semifinal 1
+    const sf1TxStatus = createMatchTxStatus(matchIds.sf1);
+    if (sf1TxStatus) sf1.appendChild(sf1TxStatus);
 
     const sf2 = document.createElement("div");
     sf2.className = "tournament-bracket-match";
@@ -178,6 +207,9 @@ function buildBracketView(
             highlight: isFocusedUsername(focusedPlayerUsername, p4?.username),
         })
     );
+    // Add tx status for semifinal 2
+    const sf2TxStatus = createMatchTxStatus(matchIds.sf2);
+    if (sf2TxStatus) sf2.appendChild(sf2TxStatus);
 
     col1.appendChild(sf1);
     col1.appendChild(sf2);
@@ -230,6 +262,9 @@ function buildBracketView(
             highlight: !!finalP2 && isFocusedUsername(focusedPlayerUsername, finalP2.username),
         })
     );
+    // Add tx status for final match
+    const finalTxStatus = createMatchTxStatus(matchIds.final);
+    if (finalTxStatus) finalMatch.appendChild(finalTxStatus);
 
     // THIRD PLACE
     const thirdMatch = document.createElement("div");
@@ -252,6 +287,9 @@ function buildBracketView(
             highlight: !!thirdP2 && isFocusedUsername(focusedPlayerUsername, thirdP2.username),
         })
     );
+    // Add tx status for third place match
+    const thirdTxStatus = createMatchTxStatus(matchIds.thirdPlace);
+    if (thirdTxStatus) thirdMatch.appendChild(thirdTxStatus);
 
     col2.appendChild(finalMatch);
     col2.appendChild(thirdMatch);
@@ -377,4 +415,10 @@ export function updateTournamentOverlayTranslations() {
     showTournamentOverlay(mode, currentOverlayData);
 }
 
-
+// Listen for match tx status updates to re-render overlay with new tx status
+window.addEventListener("match-tx-status-update", () => {
+    if (overlayEl && mode && currentOverlayData) {
+        // Re-render the overlay to show updated tx status
+        showTournamentOverlay(mode, currentOverlayData);
+    }
+});

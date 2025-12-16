@@ -421,6 +421,8 @@ export function endTournament(tournament: Tournament) {
 	tournament.state.isRunning = false;
 	tournament.state.isOver = true;
 
+	// Note: Blockchain saving is now done per-match in endMatch() in matchManager.ts
+
 	// JACO: Added a delay to clean up the tournament from memory to prevent memory leaks
 	setTimeout(() => {
 		tournaments.delete(tournament.id);

@@ -62,46 +62,46 @@ export function draw(ctx: CanvasRenderingContext2D, s: MatchState): void {
 		}
 
 		// Only show blockchain save prompt for non-tournament matches
-		if (s.mode !== "tournament") {
-			showSaveMatchPrompt(s, async ({ address, state: gameState }) => {
-				// Build the payload for the smart contract.
-				// NOTE: Contract address/ABI/function are placeholders in config/contract.ts
-				// and should be updated when the real contract is provided.
+		// if (s.mode !== "tournament") {
+		// 	showSaveMatchPrompt(s, async ({ address, state: gameState }) => {
+		// 		// Build the payload for the smart contract.
+		// 		// NOTE: Contract address/ABI/function are placeholders in config/contract.ts
+		// 		// and should be updated when the real contract is provided.
 
-				// Determine participants (usernames). We only know the currently-authenticated user here.
-				const me = await fetchMe().catch(() => null);
-				const currentUser = me?.username ?? "player";
+		// 		// Determine participants (usernames). We only know the currently-authenticated user here.
+		// 		const me = await fetchMe().catch(() => null);
+		// 		const currentUser = me?.username ?? "player";
 
-				// Without backend metadata for sides/opponent, use placeholders that can be refined later.
-				const playerLeft = "left:" + currentUser;
-				const playerRight = "right:opponent"; // TODO: replace with real opponent username when available
+		// 		// Without backend metadata for sides/opponent, use placeholders that can be refined later.
+		// 		const playerLeft = "left:" + currentUser;
+		// 		const playerRight = "right:opponent"; // TODO: replace with real opponent username when available
 
-				// Compute a gameId and index placeholders; update when backend/contract specify exact values.
-				const now = Date.now();
-				const gameId = `${ROOM_ID}-${now}`; // e.g., "tournament-123-1699999999999"
-				const gameIndex = 0; // TODO: inject real index from tournament bracket
+		// 		// Compute a gameId and index placeholders; update when backend/contract specify exact values.
+		// 		const now = Date.now();
+		// 		const gameId = `${ROOM_ID}-${now}`; // e.g., "tournament-123-1699999999999"
+		// 		const gameIndex = 0; // TODO: inject real index from tournament bracket
 
-				const s2 = gameState as MatchState;
-				const params = {
-					tournamentId: ROOM_ID,
-					gameId,
-					gameIndex,
-					playerLeft,
-					playerRight,
-					scoreLeft: s2.scoreL,
-					scoreRight: s2.scoreR,
-				};
+		// 		const s2 = gameState as MatchState;
+		// 		const params = {
+		// 			tournamentId: ROOM_ID,
+		// 			gameId,
+		// 			gameIndex,
+		// 			playerLeft,
+		// 			playerRight,
+		// 			scoreLeft: s2.scoreL,
+		// 			scoreRight: s2.scoreR,
+		// 		};
 
-				const { provider } = getWalletState();
-				if (!provider) throw new Error("Wallet not connected");
-				const txHash = await saveMatchOnChain(provider, params);
-				return {
-					tournamentId: params.tournamentId,
-					gameId: params.gameId,
-					txHash,
-				};
-			});
-		} // Close the "if (s.mode !== "tournament")" block
+		// 		const { provider } = getWalletState();
+		// 		if (!provider) throw new Error("Wallet not connected");
+		// 		const txHash = await saveMatchOnChain(provider, params);
+		// 		return {
+		// 			tournamentId: params.tournamentId,
+		// 			gameId: params.gameId,
+		// 			txHash,
+		// 		};
+		// 	});
+		// } // Close the "if (s.mode !== "tournament")" block
 		ctx.textAlign = "left"; // reset text alignment
 	}
 }
