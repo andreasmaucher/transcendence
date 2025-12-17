@@ -306,3 +306,150 @@
 	margin-top: 1rem;
 	color: #fff;
 }
+
+/* --- PAGINATION --- */
+
+.stats-pagination {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 12px;
+	margin-top: 12px;
+}
+
+.stats-pagination button {
+	width: 36px;
+	height: 36px;
+	border-radius: 50%;
+	border: 1px solid #ff2cfb66;
+	background: rgba(0, 0, 0, 0.45);
+	color: #ff6bff;
+	cursor: pointer;
+	font-size: 14px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.15s ease;
+	box-shadow: 0 0 8px #ff2cfb22;
+}
+
+.stats-pagination button:hover:not(:disabled) {
+	background: rgba(255, 44, 251, 0.25);
+	box-shadow: 0 0 12px #ff2cfb55;
+	transform: translateY(-1px);
+}
+
+.stats-pagination button:disabled {
+	opacity: 0.35;
+	cursor: default;
+	box-shadow: none;
+}
+
+.tournament-matches-row td {
+	padding-top: 6px;
+	padding-bottom: 10px;
+}
+
+.sub-stats-table {
+	border-left: 2px solid #ff2cfb33;
+	padding-left: 8px;
+}
+
+.profile-card {
+	box-shadow: inset 0 0 12px rgba(255, 44, 251, 0.05);
+}
+
+/* --- PROFILE ACTION BUTTONS --- */
+
+.profile-action-btn {
+	width: 100%;
+	padding: 10px;
+	border-radius: 8px;
+	border: 1px solid #ff2cfb66;
+	background: rgba(0, 0, 0, 0.45);
+	color: #ff6bff;
+	font-weight: bold;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	text-align: center;
+}
+
+.profile-action-btn:hover {
+	background: rgba(255, 44, 251, 0.25);
+	box-shadow: 0 0 12px #ff2cfb55;
+}
+
+.profile-action-section {
+	width: 100%;
+	margin-top: 10px;
+	display: none;
+	flex-direction: column;
+}
+
+/* --- CHANGE PASSWORD INLINE --- */
+
+.profile-action-btn {
+	all: unset;
+	width: auto;
+	padding: 8px 14px;
+	border-radius: 999px;
+	border: 1px solid #ff2cfb55;
+	background: rgba(255, 44, 251, 0.18);
+	color: #ff6bff;
+	font-size: 13px;
+	font-weight: bold;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	align-self: center;
+}
+
+.profile-action-btn:hover {
+	background: rgba(255, 44, 251, 0.35);
+	box-shadow: 0 0 10px #ff2cfb55;
+}
+
+/* Inline form (no frame) */
+.profile-action-section {
+	width: 100%;
+	margin-top: 10px;
+	display: none;
+	gap: 8px;
+}
+
+/* Inputs – tighter + softer */
+.profile-action-section .profile-input {
+	width: 260px;
+	max-width: 100%;
+	align-self: center;
+
+	background: rgba(255, 255, 255, 0.08);
+	border: 1px solid #ff2cfb55;
+	color: #f0f1ff;
+
+	font-size: 13px;
+	padding: 7px 12px;
+}
+
+
+/* Save button – secondary, smaller */
+.profile-action-section .profile-btn {
+	width: auto;
+	align-self: center;
+	padding: 7px 14px;
+	font-size: 13px;
+	border-radius: 999px;
+	background: rgba(110, 112, 224, 0.25);
+	border-color: #ff2cfb55;
+	color: #e6e7ff;
+}
+
+.profile-action-section .profile-btn:hover {
+	background: rgba(110, 112, 224, 0.45);
+	box-shadow: 0 0 10px #ff2cfb55;
+}
+
+/* Message smaller + subtle */
+.profile-action-section .profile-message {
+	font-size: 12px;
+	opacity: 0.85;
+}

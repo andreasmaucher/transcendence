@@ -23,7 +23,6 @@
 
 .user-profile-root {
 	width: 100%;
-	min-height: 100vh;
 	margin-top: 6rem; /* Push down from fixed navbar */
 
 	display: flex;
@@ -37,6 +36,11 @@
 	font-family: Orbitron, sans-serif;
 	color: var(--primary-light);
 }
+
+.profile-section-card {
+  overflow-x: auto;
+}
+
 
 /* ==========================================================
    MAIN CARD
