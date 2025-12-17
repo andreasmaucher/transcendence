@@ -27,6 +27,8 @@ pnpm-debug.log*
 # Keep example env files tracked
 !.env.example
 !.env.*.example
+!.env.sample
+!.env.*.sample
 
 # OS / IDE
 .DS_Store
@@ -36,3 +38,7 @@ Thumbs.db
 .vscode
 
 backend/.tmp/
+
+certs/*
+
+onchain-hardhat/.env
