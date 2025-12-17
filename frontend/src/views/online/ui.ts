@@ -1,8 +1,16 @@
 import { navigate } from "../../router/router";
 import { t } from "../../i18n";
 import { API_BASE } from "../../config/endpoints";
+import { initChat } from "../../chat/chatView";
 
-export function renderOnlineLobby(container: HTMLElement) {
+export let disposeChat: (() => void | Promise<void>) | null = null;
+
+export function teardownChat() {
+	disposeChat?.();
+	disposeChat = null;
+}
+
+export async function renderOnlineLobby(container: HTMLElement) {
 	container.innerHTML = "";
 	let cancelled = false;
 
@@ -115,10 +123,11 @@ export function renderOnlineLobby(container: HTMLElement) {
 	}
 
 	setupLobbySocket();
-
+	disposeChat = await initChat();
 	return () => {
 		cancelled = true;
 		clearInterval(interval);
 		backBtn.onclick = null;
+		teardownChat();
 	};
 }
