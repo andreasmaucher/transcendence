@@ -158,6 +158,10 @@ export default {
     tournamentNewTitle: "Neues Turnier verfügbar!", 
     viewTournament: "Turnier beitreten",
     tournamentExpired: (name: string) => `Turnier "${name}" ist abgelaufen oder gestartet.`,
+
+    noGamesAvailableTitle: "Kein Spiel offen? Erstelle eins!",
+    createSingle: "Einzelspiel erstellen",
+    createTournament: "Turnier erstellen",
   },
 
 };

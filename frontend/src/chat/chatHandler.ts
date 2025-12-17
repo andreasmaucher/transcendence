@@ -353,7 +353,90 @@ async function handleDuelChallenge(anchorElement: HTMLElement) {
 	}
 
 	if (availableGames.length === 0) {
-		alert(t("chat.noOpenGames"));
+		const rect = anchorElement.getBoundingClientRect();
+		const emptyDropdown = document.createElement("div");
+		emptyDropdown.id = "challenge-dropdown";
+		emptyDropdown.style.cssText = `
+			position: absolute; 
+			z-index: 99999;
+			background: rgba(10, 10, 10, 0.95);
+			backdrop-filter: blur(10px);
+			border: 2px solid #ffcc00;
+			border-radius: 8px;
+			box-shadow: 0 0 15px rgba(255, 204, 0, 0.4), inset 0 0 5px rgba(255, 204, 0, 0.2);
+			width: 260px;
+			padding: 16px;
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+			color: #fff;
+			text-align: center;
+			font-family: 'Orbitron', sans-serif;
+		`;
+		const scrollY = window.scrollY || window.pageYOffset;
+		const scrollX = window.scrollX || window.pageXOffset;
+		emptyDropdown.style.top = `${rect.bottom + scrollY + 8}px`;
+		const centerX = rect.left + (rect.width / 2) - 130; 
+		emptyDropdown.style.left = `${centerX + scrollX}px`;
+
+		const text = document.createElement("div");
+		text.textContent = t("chat.noGamesAvailableTitle");
+		text.style.fontSize = "13px";
+		text.style.color = "#ffcc00";
+		text.style.textShadow = "0 0 5px #ffcc00";
+		text.style.marginBottom = "4px";
+		emptyDropdown.appendChild(text);
+
+		const createNavButton = (label: string, color: string, path: string) => {
+			const btn = document.createElement("button");
+			btn.textContent = label;
+			btn.style.cssText = `
+				padding: 10px;
+				background: rgba(0, 0, 0, 0.3);
+				border: 1px solid ${color};
+				color: ${color};
+				border-radius: 4px;
+				cursor: pointer;
+				font-weight: bold;
+				font-size: 11px;
+				text-transform: uppercase;
+				letter-spacing: 1px;
+				transition: all 0.2s ease;
+			`;
+			btn.onmouseenter = () => {
+				btn.style.background = color;
+				btn.style.color = "#000";
+				btn.style.boxShadow = `0 0 10px ${color}`;
+			};
+			btn.onmouseleave = () => {
+				btn.style.background = "rgba(0, 0, 0, 0.3)";
+				btn.style.color = color;
+				btn.style.boxShadow = "none";
+			};
+			btn.onclick = () => {
+				navigate(path);
+				emptyDropdown.remove();
+			};
+			return btn;
+		};
+
+		const btnSingle = createNavButton(`🎾 ${t("chat.createSingle")}`, "#00ffc8", "#/online");
+		const btnTournament = createNavButton(`🏆 ${t("chat.createTournament")}`, "#ffcc00", "#/tournament");
+
+		emptyDropdown.appendChild(btnSingle);
+		emptyDropdown.appendChild(btnTournament);
+
+		setTimeout(() => {
+			const closeMenu = (e: MouseEvent) => {
+				if (!emptyDropdown.contains(e.target as Node) && e.target !== anchorElement) {
+					emptyDropdown.remove();
+					document.removeEventListener("click", closeMenu);
+				}
+			};
+			document.addEventListener("click", closeMenu);
+		}, 0);
+
+		document.body.appendChild(emptyDropdown);
 		return;
 	}
 

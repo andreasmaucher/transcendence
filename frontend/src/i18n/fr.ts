@@ -157,6 +157,10 @@ export default {
     tournamentNewTitle: "Nouveau tournoi disponible !",
     viewTournament: "Rejoindre le tournoi",
     tournamentExpired: (name: string) => `Le tournoi "${name}" est expiré ou a commencé.`,
+
+    noGamesAvailableTitle: "Pas de match ? Créez-en un !",
+    createSingle: "Créer un Match Simple",
+    createTournament: "Créer un Tournoi",
   },
 
 };
