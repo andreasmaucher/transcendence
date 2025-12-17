@@ -400,7 +400,7 @@ export async function renderUserProfile(container: HTMLElement, username?: strin
 					const mContainerRow = document.createElement("tr");
 					mContainerRow.className = "tournament-matches-row";
 					const mContainerCell = document.createElement("td");
-					mContainerCell.colSpan = 6;
+					mContainerCell.colSpan = 5;
 					mContainerCell.style.padding = "0";
 					mContainerCell.style.borderBottom = "none";
 

@@ -116,24 +116,21 @@ export async function renderProfile(container: HTMLElement) {
 		passCard.className = "profile-card";
 		content.append(passCard);
 
-		const passHeader = document.createElement("div");
-		passHeader.className = "profile-section-title";
-		passHeader.textContent = t("profile.changePassword");
-		passHeader.style.cursor = "pointer";
-		passCard.append(passHeader);
+	const passBtn = document.createElement("button");
+	passBtn.className = "profile-action-btn";
+	passBtn.textContent = t("profile.changePassword");
+	passCard.append(passBtn);
 
-		const passSection = document.createElement("div");
-		passSection.style.display = "none";
-		passSection.style.flexDirection = "column";
-		passCard.append(passSection);
+	const passSection = document.createElement("div");
+	passSection.className = "profile-action-section";
+	passCard.append(passSection);
 
-		passHeader.onclick = () => {
-			passSection.style.display = passSection.style.display === "none" ? "flex" : "none";
-		};
+	passBtn.onclick = () => {
+		passSection.style.display = passSection.style.display === "flex" ? "none" : "flex";
+	};
 
 		// Helper text
 		const passHint = document.createElement("div");
-		passHint.textContent = "(alphanumeric only)";
 		// Styling to match the theme (smaller, slightly transparent)
 		passHint.style.fontSize = "0.8em";
 		passHint.style.opacity = "0.7";
@@ -340,6 +337,10 @@ export async function renderProfile(container: HTMLElement) {
 			return getOrdinal(iWon ? bestRank : worstRank);
 		};
 
+		const PAGE_SIZE = 5;
+		let singlePage = 0;
+		let tournamentPage = 0;
+
 		const renderTabContent = (tab: "single" | "tournament", data: any) => {
 			tabContent.innerHTML = "";
 
@@ -364,11 +365,12 @@ export async function renderProfile(container: HTMLElement) {
 				table.append(thead);
 				const tbody = document.createElement("tbody");
 
-				const PAGE_SIZE = 5;
-				let page = 0;
+				
 
-				const pageData = data.singleGames.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-
+				const pageData = data.singleGames.slice(
+					singlePage * PAGE_SIZE,
+					(singlePage + 1) * PAGE_SIZE
+				);
 				pageData.forEach((g: any) => {
 					const row = document.createElement("tr");
 					row.innerHTML = `
@@ -388,17 +390,17 @@ export async function renderProfile(container: HTMLElement) {
 
 					const prev = document.createElement("button");
 					prev.textContent = "◀";
-					prev.disabled = page === 0;
+					prev.disabled = singlePage === 0;
 					prev.onclick = () => {
-						page--;
+						singlePage--;
 						renderTabContent("single", data);
 					};
 
 					const next = document.createElement("button");
 					next.textContent = "▶";
-					next.disabled = (page + 1) * PAGE_SIZE >= data.singleGames.length;
+					next.disabled = (singlePage + 1) * PAGE_SIZE >= data.singleGames.length;
 					next.onclick = () => {
-						page++;
+						singlePage++;
 						renderTabContent("single", data);
 					};
 
@@ -426,10 +428,11 @@ export async function renderProfile(container: HTMLElement) {
 				table.append(thead);
 				const tbody = document.createElement("tbody");
 
-				const PAGE_SIZE = 5;
-				let page = 0;
+				const pageData = data.tournaments.slice(
+					tournamentPage * PAGE_SIZE,
+					(tournamentPage + 1) * PAGE_SIZE
+				);
 
-				const pageData = data.tournaments.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
 				pageData.forEach((tourney: any) => {
 					const myRank = getUserTournamentRank(tourney);
@@ -479,17 +482,17 @@ export async function renderProfile(container: HTMLElement) {
 
 					const prev = document.createElement("button");
 					prev.textContent = "◀";
-					prev.disabled = page === 0;
+					prev.disabled = tournamentPage === 0;
 					prev.onclick = () => {
-						page--;
+						tournamentPage--;
 						renderTabContent("tournament", data);
 					};
 
 					const next = document.createElement("button");
 					next.textContent = "▶";
-					next.disabled = (page + 1) * PAGE_SIZE >= data.tournaments.length;
+					next.disabled = (tournamentPage + 1) * PAGE_SIZE >= data.tournaments.length;
 					next.onclick = () => {
-						page++;
+						tournamentPage++;
 						renderTabContent("tournament", data);
 					};
 
@@ -506,8 +509,15 @@ export async function renderProfile(container: HTMLElement) {
 				const data = res.data;
 				console.log("User games", data);
 				renderTabContent("single", data);
-				singleTabBtn.onclick = () => renderTabContent("single", data);
-				tournamentTabBtn.onclick = () => renderTabContent("tournament", data);
+				singleTabBtn.onclick = () => {
+					singlePage = 0;
+					renderTabContent("single", data);
+				};
+
+				tournamentTabBtn.onclick = () => {
+					tournamentPage = 0;
+					renderTabContent("tournament", data);
+				};
 			})
 			.catch((err) => {
 				const errDiv = document.createElement("div");
