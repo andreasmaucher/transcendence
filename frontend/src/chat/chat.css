@@ -1,0 +1,346 @@
+/* -------------------------------------
+   1. COLOR DEFINITIONS (CSS Custom Properties)
+   ------------------------------------- */
+:root {
+    --color-neon-primary: #00ffc8;
+    --color-neon-secondary: #66ffc8;
+    --color-bg-dark: rgba(10, 10, 10, 0.85);
+    --color-bg-dark-blur: rgba(0, 0, 0, 0.4);
+    --color-text-light: #66ffc8;
+}
+
+/* -------------------------------------
+   2. SCROLLBAR
+   ------------------------------------- */
+#chat-panel ::-webkit-scrollbar {
+    width: 6px;
+}
+#chat-panel ::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+#chat-panel ::-webkit-scrollbar-thumb {
+    background: var(--color-neon-primary);
+    border-radius: 3px;
+}
+#chat-panel ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-neon-secondary);
+}
+
+/* -------------------------------------
+   3. MAIN ELEMENTS (CHAT PANEL & SECTIONS)
+   ------------------------------------- */
+#chat-panel {
+    display: flex;
+    flex-direction: row;
+    position: relative; /* keep absolute children inside */
+
+    background: var(--color-bg-dark);
+    backdrop-filter: blur(8px);
+    border: 2px solid var(--color-neon-primary);
+    box-shadow: 0 0 10px var(--color-neon-secondary), 0 0 20px rgba(0, 255, 200, 0.2);
+    border-radius: 10px;
+
+    overflow: hidden;
+    color: var(--color-text-light);
+    font-family: 'Orbitron', sans-serif;
+    z-index: 9999;
+    transition: height 0.25s ease, width 0.25s ease;
+}
+
+.chat-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    border-right: 1px solid rgba(0, 255, 200, 0.2);
+    min-width: 0; /* allow shrinking so the right column doesn't overlap */
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--color-bg-dark-blur);
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(0, 255, 200, 0.1);
+}
+
+/* -------------------------------------
+   4. CHAT HEADER
+   ------------------------------------- */
+.chat-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    font-weight: 600;
+    color: var(--color-neon-primary);
+    text-shadow: 0 0 5px var(--color-neon-secondary);
+    /* FIX 1A: Standardizes the spacing above the message window */
+    margin-top: 0;
+    margin-bottom: 8px; 
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.chat-header-title {
+    flex: 1;
+    font-weight: 600;
+    color: var(--color-neon-primary);
+    text-shadow: 0 0 5px var(--color-neon-secondary);
+}
+
+.chat-header-btn-row {
+    display: flex;
+    gap: 6px;
+    margin-top: -3px;
+    transform: translateY(-1px);
+}
+
+/* -------------------------------------
+   5. MESSAGES & CONTENTS
+   ------------------------------------- */
+.message {
+    padding: 6px 8px;
+    margin-bottom: 6px;
+    background: rgba(0, 255, 200, 0.1);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--color-neon-primary);
+    margin-bottom: 5px;
+}
+
+.message-time {
+    color: var(--color-text-light);
+}
+
+.message-content {
+    color: var(--color-text-light);
+}
+
+.message-blocked-me {
+    background: rgba(150, 0, 0, 0.4);
+    color: #ff0000;
+    font-weight: bold;
+}
+
+.message-blocked-others {
+    background: rgba(255, 170, 0, 0.15);
+    color: #ffaa00;
+    font-weight: bold;
+}
+
+.invite-container {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--color-neon-primary);
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.tournament-broadcast-container {
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid var(--color-neon-primary);
+    box-shadow: 0 0 10px rgba(0, 255, 200, 0.4);
+    padding: 12px 15px;
+    border-radius: 8px;
+}
+
+.tournament-broadcast-container h4 {
+    color: #ffaa00;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0 0 5px 0;
+}
+
+.tournament-broadcast-container p {
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: bold;
+    margin: 0 0 10px 0;
+}
+
+/* -------------------------------------
+   6. BUTTONS & CHANNELS
+   ------------------------------------- */
+.neon-btn {
+    background: rgba(10, 10, 10, 0.55);
+    color: var(--color-text-light);
+    border: 2px solid var(--color-neon-primary);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.25s ease, box-shadow 0.25s ease, transform 0.12s ease;
+}
+
+.neon-btn:hover {
+    background-color: rgba(0, 255, 200, 0.15);
+    box-shadow: 0 0 14px var(--color-neon-secondary), 0 0 22px rgba(0, 255, 200, 0.4);
+}
+
+.neon-btn-send:active {
+    transform: scale(0.97);
+}
+
+.neon-input {
+    flex: 1;
+    border: 1px solid var(--color-neon-primary);
+    background: rgba(0, 0, 0, 0.6);
+    color: var(--color-text-light);
+    padding: 6px 8px;
+    border-radius: 4px;
+}
+
+.icon-btn {
+    padding: 4px 6px;
+    font-size: 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, text-shadow 0.2s ease;
+    border: 1px solid var(--color-neon-primary);
+}
+
+.icon-btn-default {
+    color: var(--color-neon-secondary);
+    background: rgba(0, 224, 179, 0.08);
+}
+
+.icon-btn-blocked {
+    color: white;
+    background: rgba(150, 0, 0, 0.58);
+    border-color: #ff0000;
+}
+
+.icon-btn-default:hover {
+    background-color: rgba(0, 255, 200, 0.35);
+    box-shadow: 0 0 6px var(--color-neon-secondary);
+    text-shadow: 0 0 5px var(--color-neon-secondary);
+}
+
+.icon-btn-blocked:hover {
+    background-color: rgba(255, 0, 0, 0.8);
+    box-shadow: 0 0 6px rgba(255, 0, 0, 0.8);
+}
+
+.action-btn {
+    cursor: pointer;
+    background-color: var(--color-neon-primary);
+    color: #000;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-weight: bold;
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.action-btn:hover {
+    background-color: var(--color-neon-secondary);
+    box-shadow: 0 0 8px var(--color-neon-primary);
+}
+
+.channel-section-header {
+    color: #00A358;
+    margin: 12px 0 5px 0;
+    font-size: 14px;
+    padding-left: 4px;
+    border-bottom: 1px solid rgba(0, 255, 200, 0.1);
+}
+
+.user-item {
+    padding: 6px 8px;
+    margin-bottom: 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.user-item.global {
+    background: rgba(0, 255, 200, 0.2);
+    color: var(--color-neon-primary);
+    font-weight: bold;
+}
+
+.user-item.online {
+    background: rgba(0, 255, 200, 0.1);
+    color: var(--color-text-light);
+}
+
+.user-item.offline {
+    background: rgba(255, 255, 255, 0.05);
+    color: #888;
+}
+
+.user-item.active {
+    border: 1px solid var(--color-neon-primary);
+    box-shadow: 0 0 5px var(--color-neon-primary);
+    color: var(--color-neon-primary);
+}
+
+.user-item:hover {
+    background-color: rgba(0, 255, 200, 0.25) !important;
+}
+
+/* -------------------------------------
+   7. CHALLENGE DROPDOWN (FIXES)
+   ------------------------------------- */
+#challenge-dropdown {
+    position: absolute; 
+    z-index: 99999;
+    background: #111;
+    border: 1px solid var(--color-neon-primary);
+    border-radius: 4px;
+    box-shadow: 0 0 10px rgba(0, 255, 200, 0.6);
+    width: 200px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.challenge-item {
+    padding: 8px 10px;
+    font-size: 13px;
+    color: #fff;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: background 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.challenge-item:hover {
+    background: rgba(0, 255, 200, 0.2);
+}
+.challenge-item.tournament {
+    border-left: 2px solid #ffcc00; /* Gold Accent */
+}
+.challenge-item.single {
+    border-left: 2px solid var(--color-neon-primary);
+}
+
+/* -------------------------------------
+   8. CHANNEL LIST LAYOUT
+   ------------------------------------- */
+.channel-list-container {
+    width: 180px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 8px 10px 10px;
+}
+
+.channel-list-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow-y: auto;
+}

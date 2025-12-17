@@ -10,8 +10,7 @@ import {
 } from "./types";
 import { navigate } from "../router/router";
 import { API_BASE } from "../config/endpoints";
-import { t } from "../i18n";
-import { convertUTCStringToLocal } from "../utils/time";
+import { t } from "../i18n";import { convertUTCStringToLocal } from "../utils/time";
 
 export function sendMessage(
 	type: ChatEvent,
@@ -74,8 +73,8 @@ export async function renderIncomingMessage(message: Message) {
 		const span = document.createElement("span");
 		span.style.color = "#ff0000";
 		span.style.fontWeight = "bold";
-		span.textContent = t("chat.blockedByMe")(message.receiver);
-
+		span.textContent = t("chat.blockedByMe")(message.receiver);; 
+		
 		messageElement.appendChild(span);
 	} else if (message.type === "blockedByOthersMessage") {
 		messageElement.style.background = "rgba(255, 170, 0, 0.15)";
@@ -442,7 +441,10 @@ export function renderChatHeaderButtons(chatHeader: HTMLElement, activeChat: str
 	const secondaryNeon = "#66ffc8";
 
 	const title = document.createElement("span");
-	title.textContent = activeChat === "Global Chat" ? t("chat.globalChat") : t("chat.chatWith")(activeChat!);
+	title.textContent =
+		activeChat === "Global Chat"
+			? t("chat.globalChat")
+			: t("chat.chatWith")(activeChat!);;
 
 	title.style.flex = "1";
 	title.style.fontWeight = "600";
@@ -529,18 +531,18 @@ export function renderChatHeaderButtons(chatHeader: HTMLElement, activeChat: str
 	const isBlocked = userData.blockedUsers?.includes(activeChat!);
 
 	const btnBlock = createIconBtn(
-		isBlocked ? "♻️" : "🚫",
-		isBlocked ? t("chat.unblockUser") : t("chat.blockUser"),
+		isBlocked? "♻️": "🚫",
+		isBlocked? t("chat.unblockUser") : t("chat.blockUser"),
 		() => {
 			const isBlockedNow = userData.blockedUsers?.includes(activeChat!) || false;
 
 			if (!isBlockedNow) {
 				userData.blockedUsers?.push(activeChat!);
-				sendMessage("block", t("chat.youBlocked") + activeChat, activeChat);
+				sendMessage('block', t("chat.youBlocked") + activeChat, activeChat);
 				console.log(`🚫 User ${activeChat} was blocked`);
 			} else {
-				userData.blockedUsers = userData.blockedUsers!.filter((u) => u !== activeChat);
-				sendMessage("unblock", t("chat.youUnblocked") + activeChat, activeChat);
+				userData.blockedUsers = userData.blockedUsers!.filter(u => u !== activeChat);
+				sendMessage('unblock', t("chat.youUnblocked") + activeChat, activeChat);
 				console.log(`♻️ User ${activeChat} was UNBLOCKED`);
 			}
 			renderChatHeaderButtons(chatHeader, activeChat);
@@ -642,14 +644,14 @@ export function renderOnlineUsers(
 	//friends online
 	if (friendsOnline.length > 0 || friendsOffline.length > 0) {
 		renderSectionHeader(t("chat.friends"), headerGreen);
-		friendsOnline.forEach((f) => renderUserItem(f, false));
-		friendsOffline.forEach((f) => renderUserItem(f, true));
+		friendsOnline.forEach(f => renderUserItem(f, false));
+		friendsOffline.forEach(f => renderUserItem(f, true));
 	}
 
 	//user online
 	if (othersOnline.length > 0) {
 		renderSectionHeader(t("chat.onlineUsers"), headerGreen);
-		othersOnline.forEach((f) => renderUserItem(f, false));
+		othersOnline.forEach(f => renderUserItem(f, false));
 	}
 }
 
@@ -658,7 +660,7 @@ export function formatTime(isoString: string | undefined): string {
 	if (!isoString) {
 		return "";
 	}
-
+	
 	try {
 		const date = new Date(isoString);
 
@@ -667,13 +669,14 @@ export function formatTime(isoString: string | undefined): string {
 		}
 		date.setMinutes(date.getMinutes() + 60);
 
-		const day = date.getDate().toString().padStart(2, "0");
-		const month = (date.getMonth() + 1).toString().padStart(2, "0");
+		const day = date.getDate().toString().padStart(2, '0');
+		const month = (date.getMonth() + 1).toString().padStart(2, '0');
 
-		const hours = date.getHours().toString().padStart(2, "0");
-		const minutes = date.getMinutes().toString().padStart(2, "0");
+		const hours = date.getHours().toString().padStart(2, '0');
+		const minutes = date.getMinutes().toString().padStart(2, '0');
 
 		return `${day}.${month}. ${hours}:${minutes}`;
+		
 	} catch (e) {
 		console.error(`[TimeFormat Error] Failed to process timestamp: "${isoString}".`, e);
 		return "N/A";
@@ -759,12 +762,10 @@ export function appendMessageToHistory(message: Message): void {
 		userData.chatHistory!.global.push(message);
 		return;
 	}
-	if (
-		message.type === "direct" ||
+	if (message.type === "direct" || 
 		message.type === "invite" ||
-		(message.type === "blockedByMeMessage" && message.sender === userData.username) ||
-		(message.type === "blockedByOthersMessage" && message.sender === userData.username)
-	) {
+		(message.type === "blockedByMeMessage" && message.sender === userData.username) || 
+		(message.type === "blockedByOthersMessage" && message.sender === userData.username)) {
 		const otherUser = message.sender === userData.chatHistory!.user ? message.receiver : message.sender;
 		if (!otherUser) return;
 		if (!userData.chatHistory!.private.has(otherUser)) userData.chatHistory!.private.set(otherUser, []);
@@ -822,7 +823,8 @@ export function wireIncomingChat(
 
 	const handleSocketMessage = async (e: Event) => {
 		try {
-			const customEvent = e as CustomEvent;
+			
+			const customEvent = e as CustomEvent; 
 			const payload = customEvent.detail;
 
 			if (payload && payload.type === "chat") {
@@ -889,7 +891,6 @@ export function wireIncomingChat(
 				const newUserOnline = payload.data.username;
 				console.log(`${newUserOnline} is online!`);
 				addOnlineUser(newUserOnline);
-				document.dispatchEvent(new CustomEvent("onlineUsersUpdated"));
 				renderOnlineUsers(friendList, chatMessages, chatHeader);
 			}
 
@@ -897,7 +898,6 @@ export function wireIncomingChat(
 				const newUserOffline = payload.data.username;
 				console.log(`${newUserOffline} left the realm!`);
 				generalData.onlineUsers = removeUserFromList(newUserOffline, generalData.onlineUsers!);
-				document.dispatchEvent(new CustomEvent("onlineUsersUpdated"));
 				if (userData.activePrivateChat === newUserOffline) {
 					userData.activePrivateChat = "Global Chat";
 					localStorage.setItem("activePrivateChat", "Global Chat");
@@ -925,11 +925,11 @@ export function wireIncomingChat(
 		}
 	};
 
-	document.addEventListener("userListsUpdated", handleUserListsUpdated);
-	document.addEventListener("socket-message", handleSocketMessage);
+	document.addEventListener('userListsUpdated', handleUserListsUpdated);
+	document.addEventListener('socket-message', handleSocketMessage);
 
 	return () => {
-		document.removeEventListener("userListsUpdated", handleUserListsUpdated);
-		document.removeEventListener("socket-message", handleSocketMessage);
+		document.removeEventListener('userListsUpdated', handleUserListsUpdated);
+		document.removeEventListener('socket-message', handleSocketMessage);
 	};
 }

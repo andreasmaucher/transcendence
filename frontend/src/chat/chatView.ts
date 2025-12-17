@@ -154,14 +154,13 @@ export async function fetchOnlineUsers() {
 	}
 
 	generalData.onlineUsers = body.data;
-	document.dispatchEvent(new CustomEvent("onlineUsersUpdated"));
 }
 
 export async function initChat(root: HTMLElement = document.body, skipFetch: boolean = false): Promise<() => void> {
 	if (!skipFetch) {
 		await fetchUserData();
-		//await fetchAllUsers();
-		//await fetchOnlineUsers();
+		await fetchAllUsers();
+		await fetchOnlineUsers();
 		if (!userData.chatHistory || !userData.blockedUsers || !userData.friends)
 			console.log("[CHAT] Error retrieving user data");
 	}
@@ -169,8 +168,8 @@ export async function initChat(root: HTMLElement = document.body, skipFetch: boo
 	// LIVE CHAT /////////////////////////////////////////////////////////////////
 	// MAIN CHAT PANEL
 
-	const storedMinimized = localStorage.getItem("chatMinimized");
-	let minimized = storedMinimized === "false" ? false : true;
+	const storedMinimized = localStorage.getItem('chatMinimized');
+    let minimized = storedMinimized === 'false' ? false : true;
 
 	const panel = document.createElement("div");
 	panel.id = "chat-panel";
@@ -208,7 +207,7 @@ export async function initChat(root: HTMLElement = document.body, skipFetch: boo
 	chatHeader.textContent = t("chat.globalChat");
 	chatHeader.style.fontWeight = "600";
 	chatHeader.style.marginTop = "0px";
-	chatHeader.style.marginBottom = "10px";
+	chatHeader.style.marginBottom = "8px";
 	chatHeader.style.color = "#00ffc8";
 	chatHeader.style.textShadow = "0 0 5px #66ffc8";
 	chat.append(chatHeader);
@@ -328,7 +327,7 @@ export async function initChat(root: HTMLElement = document.body, skipFetch: boo
 		minimized = !minimized;
 		panel.style.height = minimized ? "40px" : "450px";
 		toggleBtn.textContent = minimized ? "+" : "–";
-		localStorage.setItem("chatMinimized", minimized ? "true" : "false");
+		localStorage.setItem('chatMinimized', minimized ? 'true' : 'false');
 	};
 
 	// EVENTS //////
