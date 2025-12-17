@@ -1,6 +1,109 @@
 # Transcendence (42)
 
-**Controls**
+A full-stack multiplayer Pong web application built as part of the 42 curriculum. Players can compete in real-time matches or tournaments, chat with other users, and have their tournament results permanently recorded on the Ethereum blockchain. The app supports GitHub OAuth authentication, user profiles with friends/blocked lists, and is available in three languages.
+
+---
+
+## Technologies
+
+| Layer | Technology | Justification |
+|-------|------------|---------------|
+| **Backend** | Fastify + TypeScript | Lightweight, high-performance Node.js framework with first-class WebSocket support for real-time game state streaming |
+| **Frontend** | Vite + TypeScript | Fast HMR development, native ES modules, and minimal config for single-page application |
+| **Database** | SQLite (better-sqlite3) | Embedded database with zero setup, perfect for single-server deployment; synchronous API simplifies game state management |
+| **Authentication** | bcryptjs + GitHub OAuth | Secure password hashing with industry-standard algorithm; OAuth provides passwordless login option |
+| **Blockchain** | Hardhat + Solidity (Sepolia) | Smart contract stores immutable tournament match results; ethers.js for frontend/backend chain interaction |
+| **Infrastructure** | Docker Compose | Reproducible containerized deployment with a single command |
+
+---
+
+## Database Schema
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                              users                                  │
+├─────────────────────────────────────────────────────────────────────┤
+│ internal_id │ username │ password │ provider │ provider_id │ avatar │
+│ friends     │ blocked  │ stats    │ created_at                      │
+└─────────────────────────────────────────────────────────────────────┘
+        │                          │
+        │                          ▼
+        │            ┌─────────────────────────────────────┐
+        │            │        tournament_players           │
+        │            ├─────────────────────────────────────┤
+        │            │tournament_id│username│ display_name │
+        │            └─────────────────────────────────────┘
+        │                          │
+        ▼                          ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                           tournaments                               │
+├─────────────────────────────────────────────────────────────────────┤
+│ internal_id │ id │ name │ size │ winner │ creator                   │
+│ created_at  │ started_at │ ended_at │ notes                         │
+└─────────────────────────────────────────────────────────────────────┘
+        │
+        ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                             matches                                 │
+├─────────────────────────────────────────────────────────────────────┤
+│ internal_id │ id │ mode │ player_left │ player_right │ tournament_id│
+│ round │ in_tournament_type │ in_tournament_placement_range          │
+│ score_left │ score_right │ winner │ started_at │ ended_at │ tx_hash │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                            messages                                 │
+├─────────────────────────────────────────────────────────────────────┤
+│ internal_id │ id │ sender │ receiver │ type │ content │ game_id     │
+│ sent_at                                                             │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Features
+
+- **Real-time Pong gameplay** with server-authoritative physics (~60 FPS state updates)
+- **Local multiplayer** (two players on same keyboard)
+- **Remote multiplayer** over WebSocket
+- **Tournament system** with bracket matchmaking
+- **Blockchain integration** — tournament match results saved to Ethereum (Sepolia testnet)
+- **User accounts** with registration, login, avatars, friends, and block lists
+- **GitHub OAuth** for passwordless authentication
+- **Live chat** with direct messages and game invites
+- **Internationalization** (English, German, French)
+- **Responsive SPA** with browser history navigation
+
+---
+
+## Chosen Modules & Points
+
+| Module | Type | Points | Description |
+|--------|------|--------|-------------|
+| **Backend Framework** | Major | 2 | Fastify with TypeScript for REST API and WebSocket game server |
+| **Tournament on Blockchain** | Major | 2 | Solidity smart contract (`TournamentMatches.sol`) stores match results immutably on Sepolia |
+| **User Management** | Major | 2 | Registration, login, profiles, avatars, friends/blocked lists, password hashing |
+| **Remote Authentication** | Major | 2 | GitHub OAuth integration with CSRF protection |
+| **Remote Players** | Major | 2 | Real-time multiplayer over WebSocket with server-authoritative game state |
+| **Live Chat** | Major | 2 | Direct messaging, game invites, online status |
+| **Database** | Minor | 1 | SQLite with better-sqlite3 for persistent storage |
+| **Browser Compatibility** | Minor | 1 | Tested and compatible with latest Firefox and Chrome |
+| **Multiple Languages** | Minor | 1 | i18n support for English, German, and French |
+| **User and Game Stats Dashboards** | Minor | 1 | Detailed dashboard for user statistics and match history |
+
+### Points Summary
+
+| Category | Points |
+|----------|--------|
+| Major Modules (6 × 2) | 12 |
+| Minor Modules (4 × 1) | 4 |
+| **Total** | **16** |
+| Requirement | 14 |
+| **Bonus** | **+2** |
+
+---
+
+## Controls
 
 -  Left paddle: `W` (up) / `S` (down)
 -  Right paddle: `↑` (up) / `↓` (down)

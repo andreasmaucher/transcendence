@@ -1,4 +1,3 @@
-
 services:
   backend:
     image: transcendence-backend:latest
@@ -14,8 +13,6 @@ services:
       args:
         - CACHEBUST=1
     container_name: transcendence-backend
-    # ports:
-    #   - "4000:4000"
     expose:
       - "4000"
     networks:
@@ -23,14 +20,14 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      - CHOKIDAR_USEPOLLING=1                         # Enable file watching in containers on macOS
+      - CHOKIDAR_USEPOLLING=1 # Enable file watching in containers on macOS
     volumes:
       # Mount only source for live reload; keep node_modules inside the image (no npm volume)
       - ./backend/src:/app/src
       # Persist SQLite database outside Docker
-      - ./data:/app/data                              # persist SQLite database outside Docker
-    
-    command: ["npm", "run", "dev"]                    # Run in watch mode (overrides Dockerfile CMD)
+      - ./data:/app/data # persist SQLite database outside Docker
+
+    command: [ "npm", "run", "dev" ] # Run in watch mode (overrides Dockerfile CMD)
     restart: unless-stopped
 
   frontend:
@@ -43,7 +40,6 @@ services:
       dockerfile: Dockerfile
       args:
         - CACHEBUST=1
-    # container_name: transcendence-frontend
     ports:
       - "5173:5173"
     networks:
@@ -51,13 +47,12 @@ services:
     env_file:
       - ./frontend/.env
     environment:
-      - CHOKIDAR_USEPOLLING=1                         # Enable file watching in containers on macOS
+      - CHOKIDAR_USEPOLLING=1 # Enable file watching in containers on macOS
     volumes:
       # Mount only frontend sources and index for Vite HMR; keep node_modules inside the image
       - ./frontend/src:/app/src
       - ./frontend/index.html:/app/index.html
       - ./frontend/tsconfig.json:/app/tsconfig.json
-    # Dockerfile already starts Vite dev server on 0.0.0.0:5173
     depends_on:
       - backend
     restart: unless-stopped
