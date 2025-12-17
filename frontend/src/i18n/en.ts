@@ -162,6 +162,21 @@ export default {
 	youUnblocked: "You unblocked: ",
 	onlineUsers: "Online Users",
 	friends: "Friends",
+	inviteSent: (receiver: string, gameType: string) => {
+		const translatedType = gameType === "Tournament" ? "Tournament" : "Single Game";
+		return `You invited ${receiver} to a ${translatedType}.`;
+	},
+	inviteTypeTournament: "Tournament Invitation",
+	inviteTypeSingleGame: "Single Game Challenge",
+
+	system: "System",
+	tournamentNewTitle: "New Tournament Available!",
+	viewTournament: "Join Tournament",
+	tournamentExpired: (name: string) => `Tournament "${name}" has expired or started.`,
+
+	noGamesAvailableTitle: "No open games? Create one!",
+    createSingle: "Create Single Game",
+    createTournament: "Create Tournament",
 	},
 
 };

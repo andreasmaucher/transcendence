@@ -1,6 +1,7 @@
 import { showTournamentOverlay, hideTournamentOverlay } from "./tournament_overlay";
 import { userData } from "../../../config/constants";
 import { t } from "../../../i18n";
+import { getCurrentPlayerMatchId } from "../../../ws/game";
 
 /**
  * INTERNAL STATE
@@ -298,11 +299,11 @@ export function handleTournamentMatchState(
 			matchInfo?.type !== "thirdPlace";
 
 		if (isFinalMatch) {
-			// FINAL MATCH: run this for all players (including 3rd place players) so everyone sees the champion
+			// FINAL MATCH: Update the tournaent overlay for all players
 			internalBracket.results.finalWinner = winner;
 
-			// Only show overlay with rank title if this player is in the final match
-			// Otherwise, just update the bracket data so the champion appears in the overlay
+			// Only show overlay if this is the player's own match that finished
+			// This prevents the overlay from blocking the view for players whose match is still running
 			if (isMyMatch) {
 				rankTitleKey =
 					winner === me
@@ -315,22 +316,7 @@ export function handleTournamentMatchState(
 					bracket: internalBracket as any,
 					focusedPlayerUsername: focused,
 				});
-			} else {
-				// 3rd place player: show final overlay with their rank (3rd or 4th)
-				// but with the champion filled in
-				rankTitleKey =
-					internalBracket.results.thirdPlaceWinner === me
-						? "tournaments.rankThird"
-						: "tournaments.rankFourth";
-
-				showTournamentOverlay("final", {
-					title: t(rankTitleKey),
-					titleKey: rankTitleKey,
-					bracket: internalBracket as any,
-					focusedPlayerUsername: focused,
-				});
 			}
-
 			return;
 		} else {
 			// 3RD PLACE MATCH: Only process if this is the player's match
@@ -343,6 +329,8 @@ export function handleTournamentMatchState(
 					? "tournaments.rankThird"
 					: "tournaments.rankFourth";
 
+			// Show overlay when 3rd place match finishes
+			// If final match already finished, champion will be displayed; otherwise champion circle will be empty until final finishes
 			showTournamentOverlay("final", {
 				title: t(rankTitleKey),
 				titleKey: rankTitleKey,

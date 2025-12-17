@@ -10,8 +10,7 @@ import {
 } from "./types";
 import { navigate } from "../router/router";
 import { API_BASE } from "../config/endpoints";
-import { t } from "../i18n";
-import { convertUTCStringToLocal } from "../utils/time";
+import { t } from "../i18n";import { convertUTCStringToLocal } from "../utils/time";
 
 export function sendMessage(
 	type: ChatEvent,
@@ -74,8 +73,8 @@ export async function renderIncomingMessage(message: Message) {
 		const span = document.createElement("span");
 		span.style.color = "#ff0000";
 		span.style.fontWeight = "bold";
-		span.textContent = t("chat.blockedByMe")(message.receiver);
-
+		span.textContent = t("chat.blockedByMe")(message.receiver);; 
+		
 		messageElement.appendChild(span);
 	} else if (message.type === "blockedByOthersMessage") {
 		messageElement.style.background = "rgba(255, 170, 0, 0.15)";
@@ -87,54 +86,146 @@ export async function renderIncomingMessage(message: Message) {
 
 		messageElement.appendChild(span);
 	} else if (message.type === "invite") {
-		const isGameStillAvailable = await isGameStillOpen(message.gameId!);
-		const isExpired = !isGameStillAvailable;
+		if (message.receiver === userData.username) {
+			const isGameStillAvailable = await isGameStillOpen(message.gameId!);
+			const isExpired = !isGameStillAvailable;
 
-		if (isExpired) {
+			if (isExpired) {
+				const expiredText = document.createElement("div");
+				expiredText.style.color = "#888";
+				expiredText.style.fontStyle = "italic";
+				expiredText.textContent = t("chat.inviteExpired")(message.sender);;
+				messageElement.appendChild(expiredText);
+			} else {
+				messageElement.appendChild(createHeader(message.sender, convertUTCStringToLocal(message.sentAt!)));
+
+				const getTranslatedInviteText = (content: string) => {
+					if (content === "Are you up for a tournament") {
+						return t("chat.inviteTypeTournament");
+					}
+					return t("chat.inviteTypeSingleGame");
+				};
+				const translatedContent = getTranslatedInviteText(message.content || "");
+			
+				const inviteContainer = document.createElement("div");
+				inviteContainer.style.background = "rgba(0, 0, 0, 0.3)";
+				inviteContainer.style.border = "1px solid #00ffc8";
+				inviteContainer.style.padding = "10px";
+				inviteContainer.style.borderRadius = "5px";
+
+				const text = document.createElement("p");
+				text.textContent = translatedContent || "";
+				text.style.color = "#fff";
+				text.style.margin = "0 0 5px 0";
+				
+				const joinButton = document.createElement('button');
+				joinButton.textContent = t("chat.acceptChallenge");
+				joinButton.style.cursor = "pointer";
+				joinButton.style.backgroundColor = "#00ffc8";
+				joinButton.style.color = "#000";
+				joinButton.style.border = "none";
+				joinButton.style.padding = "5px 10px";
+				joinButton.style.borderRadius = "3px";
+				joinButton.style.fontWeight = "bold";
+
+				joinButton.onclick = (e) => {
+					e.stopPropagation();
+					if (message.content === "Are you up for a tournament") {
+						navigate(`#/tournament?joinId=${message.gameId}`);
+					} else {
+						navigate(`#/game?mode=online&id=${message.gameId}`);
+					}
+					console.log("Joining game:", message.gameId);
+				};
+
+				inviteContainer.appendChild(text);
+				inviteContainer.appendChild(joinButton);
+				messageElement.appendChild(inviteContainer);
+			}
+		} else {
+			messageElement.appendChild(createHeader(message.sender, convertUTCStringToLocal(message.sentAt!)));
+			
+			const contentSpan = document.createElement("span");
+			contentSpan.style.color = "#aaa";
+			contentSpan.style.fontStyle = "italic";
+			const gameType = message.content === "Are you up for a tournament" ? "Tournament" : "Single Game";
+
+			contentSpan.textContent = t("chat.inviteSent")(message.receiver, gameType);
+
+			messageElement.appendChild(contentSpan);
+		}
+	} else if (message.type === "broadcast" && message.gameId) {
+		
+		const tournamentId = message.gameId;
+		let isTournamentOpen = true;
+
+		if (tournamentId) {
+			isTournamentOpen = await isGameStillOpen(tournamentId); 
+		}
+
+		if (!isTournamentOpen) {
 			const expiredText = document.createElement("div");
 			expiredText.style.color = "#888";
 			expiredText.style.fontStyle = "italic";
-			expiredText.textContent = t("chat.inviteExpired")(message.sender);
+			expiredText.textContent = t("chat.tournamentExpired")(message.content);
 			messageElement.appendChild(expiredText);
+			
 		} else {
-			messageElement.appendChild(createHeader(message.sender, convertUTCStringToLocal(message.sentAt!)));
+			messageElement.appendChild(createHeader(t("chat.system"), convertUTCStringToLocal(message.sentAt!)));
 
-			const inviteContainer = document.createElement("div");
-			inviteContainer.style.background = "rgba(0, 0, 0, 0.3)";
-			inviteContainer.style.border = "1px solid #00ffc8";
-			inviteContainer.style.padding = "10px";
-			inviteContainer.style.borderRadius = "5px";
+			const broadcastContainer = document.createElement("div");
+			broadcastContainer.style.background = "rgba(0, 0, 0, 0.6)";
+			broadcastContainer.style.border = "1px solid #00ffc8";
+			broadcastContainer.style.boxShadow = "0 0 10px rgba(0, 255, 200, 0.4)";
+			broadcastContainer.style.padding = "12px 15px";
+			broadcastContainer.style.borderRadius = "8px";
 
-			const text = document.createElement("p");
-			text.textContent = message.content || "";
-			text.style.color = "#fff";
-			text.style.margin = "0 0 5px 0";
+			const headerText = document.createElement("h4");
+			headerText.textContent = t("chat.tournamentNewTitle"); 
+			headerText.style.color = "#ffaa00";
+			headerText.style.textTransform = "uppercase";
+			headerText.style.letterSpacing = "1px";
+			headerText.style.margin = "0 0 5px 0";
 
-			const joinButton = document.createElement("button");
-			joinButton.textContent = t("chat.acceptChallenge");
-			joinButton.style.cursor = "pointer";
-			joinButton.style.backgroundColor = "#00ffc8";
-			joinButton.style.color = "#000";
-			joinButton.style.border = "none";
-			joinButton.style.padding = "5px 10px";
-			joinButton.style.borderRadius = "3px";
-			joinButton.style.fontWeight = "bold";
+			const nameText = document.createElement("p");
+			nameText.textContent = `🏆 ${message.content}`;
+			nameText.style.color = "#ffffff";
+			nameText.style.fontSize = "16px";
+			nameText.style.fontWeight = "bold";
+			nameText.style.margin = "0 0 10px 0";
 
-			joinButton.onclick = (e) => {
-				e.stopPropagation();
-				if (message.content === "Are you up for a tournament") {
-					navigate(`#/tournament?joinId=${message.gameId}`);
-				} else {
-					navigate(`#/game?mode=online&id=${message.gameId}`);
-				}
-				console.log("Joining game:", message.gameId);
+			const viewButton = document.createElement('button');
+			viewButton.textContent = t("chat.viewTournament"); 
+			viewButton.style.cursor = "pointer";
+			viewButton.style.backgroundColor = "#00ffc8";
+			viewButton.style.color = "#000";
+			viewButton.style.border = "none";
+			viewButton.style.padding = "8px 15px";
+			viewButton.style.borderRadius = "4px";
+			viewButton.style.fontWeight = "bold";
+			viewButton.style.transition = "background-color 0.2s, box-shadow 0.2s";
+			
+			//hover
+			viewButton.onmouseenter = () => {
+				viewButton.style.backgroundColor = "#66ffc8";
+				viewButton.style.boxShadow = "0 0 8px #00ffc8";
+			};
+			viewButton.onmouseleave = () => {
+				viewButton.style.backgroundColor = "#00ffc8";
+				viewButton.style.boxShadow = "none";
 			};
 
-			inviteContainer.appendChild(text);
-			inviteContainer.appendChild(joinButton);
-			messageElement.appendChild(inviteContainer);
+			viewButton.onclick = (e) => {
+				e.stopPropagation();
+				navigate(`#/tournament?joinId=${tournamentId}`);
+			};
+
+			broadcastContainer.appendChild(headerText);
+			broadcastContainer.appendChild(nameText);
+			broadcastContainer.appendChild(viewButton);
+			messageElement.appendChild(broadcastContainer);
 		}
-	} else {
+	 } else {
 		messageElement.appendChild(createHeader(message.sender, convertUTCStringToLocal(message.sentAt!)));
 
 		const contentSpan = document.createElement("span");
@@ -262,7 +353,90 @@ async function handleDuelChallenge(anchorElement: HTMLElement) {
 	}
 
 	if (availableGames.length === 0) {
-		alert(t("chat.noOpenGames"));
+		const rect = anchorElement.getBoundingClientRect();
+		const emptyDropdown = document.createElement("div");
+		emptyDropdown.id = "challenge-dropdown";
+		emptyDropdown.style.cssText = `
+			position: absolute; 
+			z-index: 99999;
+			background: rgba(10, 10, 10, 0.95);
+			backdrop-filter: blur(10px);
+			border: 2px solid #ffcc00;
+			border-radius: 8px;
+			box-shadow: 0 0 15px rgba(255, 204, 0, 0.4), inset 0 0 5px rgba(255, 204, 0, 0.2);
+			width: 260px;
+			padding: 16px;
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+			color: #fff;
+			text-align: center;
+			font-family: 'Orbitron', sans-serif;
+		`;
+		const scrollY = window.scrollY || window.pageYOffset;
+		const scrollX = window.scrollX || window.pageXOffset;
+		emptyDropdown.style.top = `${rect.bottom + scrollY + 8}px`;
+		const centerX = rect.left + (rect.width / 2) - 130; 
+		emptyDropdown.style.left = `${centerX + scrollX}px`;
+
+		const text = document.createElement("div");
+		text.textContent = t("chat.noGamesAvailableTitle");
+		text.style.fontSize = "13px";
+		text.style.color = "#ffcc00";
+		text.style.textShadow = "0 0 5px #ffcc00";
+		text.style.marginBottom = "4px";
+		emptyDropdown.appendChild(text);
+
+		const createNavButton = (label: string, color: string, path: string) => {
+			const btn = document.createElement("button");
+			btn.textContent = label;
+			btn.style.cssText = `
+				padding: 10px;
+				background: rgba(0, 0, 0, 0.3);
+				border: 1px solid ${color};
+				color: ${color};
+				border-radius: 4px;
+				cursor: pointer;
+				font-weight: bold;
+				font-size: 11px;
+				text-transform: uppercase;
+				letter-spacing: 1px;
+				transition: all 0.2s ease;
+			`;
+			btn.onmouseenter = () => {
+				btn.style.background = color;
+				btn.style.color = "#000";
+				btn.style.boxShadow = `0 0 10px ${color}`;
+			};
+			btn.onmouseleave = () => {
+				btn.style.background = "rgba(0, 0, 0, 0.3)";
+				btn.style.color = color;
+				btn.style.boxShadow = "none";
+			};
+			btn.onclick = () => {
+				navigate(path);
+				emptyDropdown.remove();
+			};
+			return btn;
+		};
+
+		const btnSingle = createNavButton(`🎾 ${t("chat.createSingle")}`, "#00ffc8", "#/online");
+		const btnTournament = createNavButton(`🏆 ${t("chat.createTournament")}`, "#ffcc00", "#/tournament");
+
+		emptyDropdown.appendChild(btnSingle);
+		emptyDropdown.appendChild(btnTournament);
+
+		setTimeout(() => {
+			const closeMenu = (e: MouseEvent) => {
+				if (!emptyDropdown.contains(e.target as Node) && e.target !== anchorElement) {
+					emptyDropdown.remove();
+					document.removeEventListener("click", closeMenu);
+				}
+			};
+			document.addEventListener("click", closeMenu);
+		}, 0);
+
+		document.body.appendChild(emptyDropdown);
 		return;
 	}
 
@@ -346,11 +520,14 @@ async function handleDuelChallenge(anchorElement: HTMLElement) {
 export function renderChatHeaderButtons(chatHeader: HTMLElement, activeChat: string | null) {
 	chatHeader.textContent = "";
 
-	const primaryNeon = "#00ffc8"; // OLD "#00e0b3";
-	const secondaryNeon = "#66ffc8"; // OLD "#33cc99";
+	const primaryNeon = "#00ffc8";
+	const secondaryNeon = "#66ffc8";
 
 	const title = document.createElement("span");
-	title.textContent = activeChat === "Global Chat" ? t("chat.globalChat") : t("chat.chatWith")(activeChat!);
+	title.textContent =
+		activeChat === "Global Chat"
+			? t("chat.globalChat")
+			: t("chat.chatWith")(activeChat!);;
 
 	title.style.flex = "1";
 	title.style.fontWeight = "600";
@@ -437,18 +614,18 @@ export function renderChatHeaderButtons(chatHeader: HTMLElement, activeChat: str
 	const isBlocked = userData.blockedUsers?.includes(activeChat!);
 
 	const btnBlock = createIconBtn(
-		isBlocked ? "♻️" : "🚫",
-		isBlocked ? t("chat.unblockUser") : t("chat.blockUser"),
+		isBlocked? "♻️": "🚫",
+		isBlocked? t("chat.unblockUser") : t("chat.blockUser"),
 		() => {
 			const isBlockedNow = userData.blockedUsers?.includes(activeChat!) || false;
 
 			if (!isBlockedNow) {
 				userData.blockedUsers?.push(activeChat!);
-				sendMessage("block", t("chat.youBlocked") + activeChat, activeChat);
+				sendMessage('block', t("chat.youBlocked") + activeChat, activeChat);
 				console.log(`🚫 User ${activeChat} was blocked`);
 			} else {
-				userData.blockedUsers = userData.blockedUsers!.filter((u) => u !== activeChat);
-				sendMessage("unblock", t("chat.youUnblocked") + activeChat, activeChat);
+				userData.blockedUsers = userData.blockedUsers!.filter(u => u !== activeChat);
+				sendMessage('unblock', t("chat.youUnblocked") + activeChat, activeChat);
 				console.log(`♻️ User ${activeChat} was UNBLOCKED`);
 			}
 			renderChatHeaderButtons(chatHeader, activeChat);
@@ -550,14 +727,14 @@ export function renderOnlineUsers(
 	//friends online
 	if (friendsOnline.length > 0 || friendsOffline.length > 0) {
 		renderSectionHeader(t("chat.friends"), headerGreen);
-		friendsOnline.forEach((f) => renderUserItem(f, false));
-		friendsOffline.forEach((f) => renderUserItem(f, true));
+		friendsOnline.forEach(f => renderUserItem(f, false));
+		friendsOffline.forEach(f => renderUserItem(f, true));
 	}
 
 	//user online
 	if (othersOnline.length > 0) {
 		renderSectionHeader(t("chat.onlineUsers"), headerGreen);
-		othersOnline.forEach((f) => renderUserItem(f, false));
+		othersOnline.forEach(f => renderUserItem(f, false));
 	}
 }
 
@@ -566,7 +743,7 @@ export function formatTime(isoString: string | undefined): string {
 	if (!isoString) {
 		return "";
 	}
-
+	
 	try {
 		const date = new Date(isoString);
 
@@ -575,13 +752,14 @@ export function formatTime(isoString: string | undefined): string {
 		}
 		date.setMinutes(date.getMinutes() + 60);
 
-		const day = date.getDate().toString().padStart(2, "0");
-		const month = (date.getMonth() + 1).toString().padStart(2, "0");
+		const day = date.getDate().toString().padStart(2, '0');
+		const month = (date.getMonth() + 1).toString().padStart(2, '0');
 
-		const hours = date.getHours().toString().padStart(2, "0");
-		const minutes = date.getMinutes().toString().padStart(2, "0");
+		const hours = date.getHours().toString().padStart(2, '0');
+		const minutes = date.getMinutes().toString().padStart(2, '0');
 
 		return `${day}.${month}. ${hours}:${minutes}`;
+		
 	} catch (e) {
 		console.error(`[TimeFormat Error] Failed to process timestamp: "${isoString}".`, e);
 		return "N/A";
@@ -667,12 +845,10 @@ export function appendMessageToHistory(message: Message): void {
 		userData.chatHistory!.global.push(message);
 		return;
 	}
-	if (
-		message.type === "direct" ||
+	if (message.type === "direct" || 
 		message.type === "invite" ||
-		(message.type === "blockedByMeMessage" && message.sender === userData.username) ||
-		(message.type === "blockedByOthersMessage" && message.sender === userData.username)
-	) {
+		(message.type === "blockedByMeMessage" && message.sender === userData.username) || 
+		(message.type === "blockedByOthersMessage" && message.sender === userData.username)) {
 		const otherUser = message.sender === userData.chatHistory!.user ? message.receiver : message.sender;
 		if (!otherUser) return;
 		if (!userData.chatHistory!.private.has(otherUser)) userData.chatHistory!.private.set(otherUser, []);
@@ -690,15 +866,6 @@ export function wireIncomingChat(
 	friendList: HTMLElement,
 	chatHeader: HTMLElement
 ): () => void {
-	//OLD
-	/*const ws = userData.userSock;
-	if (!ws) {
-		console.warn("Chat socket not connected");
-		return () => {};
-	}
-
-	const previousHandler = ws.onmessage;*/
-
 	// get the last chatPartner
 	const savedChatPartner = localStorage.getItem("activeChatPartner");
 	if (savedChatPartner) {
@@ -739,13 +906,12 @@ export function wireIncomingChat(
 
 	const handleSocketMessage = async (e: Event) => {
 		try {
-			const customEvent = e as CustomEvent;
+			
+			const customEvent = e as CustomEvent; 
 			const payload = customEvent.detail;
 
-			//const payload = JSON.parse(event.data);
 			if (payload && payload.type === "chat") {
 				const msg: Message = payload.data;
-				console.log("DOM EVENT:", msg);
 
 				switch (msg.type) {
 					case "broadcast": {
@@ -792,9 +958,12 @@ export function wireIncomingChat(
 						break;
 					}
 					case "invite": {
-						if (userData.username === msg.receiver && userData.activePrivateChat === msg.sender) {
-							await displayIncomingMessage(msg, chatMessages);
-						}
+						if (
+							(userData.username === msg.receiver && userData.activePrivateChat === msg.sender) ||
+							(userData.username === msg.sender && userData.activePrivateChat === msg.receiver)
+						) {
+								await displayIncomingMessage(msg, chatMessages);
+							}
 						appendMessageToHistory(msg);
 						break;
 					}
@@ -805,7 +974,6 @@ export function wireIncomingChat(
 				const newUserOnline = payload.data.username;
 				console.log(`${newUserOnline} is online!`);
 				addOnlineUser(newUserOnline);
-				document.dispatchEvent(new CustomEvent("onlineUsersUpdated"));
 				renderOnlineUsers(friendList, chatMessages, chatHeader);
 			}
 
@@ -813,7 +981,6 @@ export function wireIncomingChat(
 				const newUserOffline = payload.data.username;
 				console.log(`${newUserOffline} left the realm!`);
 				generalData.onlineUsers = removeUserFromList(newUserOffline, generalData.onlineUsers!);
-				document.dispatchEvent(new CustomEvent("onlineUsersUpdated"));
 				if (userData.activePrivateChat === newUserOffline) {
 					userData.activePrivateChat = "Global Chat";
 					localStorage.setItem("activePrivateChat", "Global Chat");
@@ -841,11 +1008,11 @@ export function wireIncomingChat(
 		}
 	};
 
-	document.addEventListener("userListsUpdated", handleUserListsUpdated);
-	document.addEventListener("socket-message", handleSocketMessage);
+	document.addEventListener('userListsUpdated', handleUserListsUpdated);
+	document.addEventListener('socket-message', handleSocketMessage);
 
 	return () => {
-		document.removeEventListener("userListsUpdated", handleUserListsUpdated);
-		document.removeEventListener("socket-message", handleSocketMessage);
+		document.removeEventListener('userListsUpdated', handleUserListsUpdated);
+		document.removeEventListener('socket-message', handleSocketMessage);
 	};
 }

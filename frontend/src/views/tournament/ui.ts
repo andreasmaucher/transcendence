@@ -4,6 +4,15 @@ import { t } from "../../i18n";
 import "./tournament.css";
 import "./overlays/overlays.css";
 import { createTournamentOverlay, showTournamentOverlay, hideTournamentOverlay } from "./overlays/tournament_overlay";
+import { sendMessage } from "../../chat/chatHandler";
+import { initChat } from "../../chat/chatView";
+
+export let disposeChat: (() => void | Promise<void>) | null = null;
+
+export function teardownChat() {
+	disposeChat?.();
+	disposeChat = null;
+}
 
 export async function renderTournament(container: HTMLElement) {
 	container.innerHTML = "";
@@ -398,6 +407,7 @@ function getQueryParams(): { [key: string]: string } {
 			const customDisplayName = displayNameInput.value.trim();
 
 			modalOverlay.remove();
+			setTimeout(() => sendMessage("broadcast", tournamentName, null, tournamentId, tournamentName), 400);
 			const displayNameParam = customDisplayName ? `&displayName=${encodeURIComponent(customDisplayName)}` : '';
 		navigate(
 			`#/game?mode=tournament&id=${tournamentId}&name=${encodeURIComponent(
@@ -491,10 +501,6 @@ function getQueryParams(): { [key: string]: string } {
 				list.append(row);
 			});
 
-			// ------------------------------------------------------------------
-			// Automatic Join/Alias Modal Handling (Deeplink)
-			// Checks for 'joinId' in URL, usually passed from a chat invitation.
-			// ------------------------------------------------------------------
 			const params = getQueryParams();
 			const joinId = params.joinId;
 
@@ -532,6 +538,7 @@ function getQueryParams(): { [key: string]: string } {
 	// AUTO REFRESH
 	const interval = setInterval(() => loadTournaments(), 2000);
 
+	disposeChat = await initChat();
 	return () => {
 		cancelled = true;
 		clearInterval(interval);
@@ -539,5 +546,6 @@ function getQueryParams(): { [key: string]: string } {
 		// Remove any open tournament modals when navigating away from tournament view to prevent modals from showing when the user navigates to other views
 		const openModals = document.querySelectorAll(".tournament-modal-overlay");
 		openModals.forEach((modal) => modal.remove());
+		teardownChat();
 	};
 }
