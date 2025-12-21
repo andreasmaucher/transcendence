@@ -72,7 +72,7 @@ type OverlayData =
 
 let overlayEl: HTMLElement | null = null;
 let mode: TournamentOverlayMode | null = null;
-// ANDY: store current overlay data so we can re-render when language changes
+//  store current overlay data so we can re-render when language changes
 let currentOverlayData: OverlayData | null = null;
 
 export function createTournamentOverlay(container: HTMLElement) {
@@ -307,7 +307,7 @@ function buildBracketView(
     avatarImg.style.display = "none";
     avatarWrap.appendChild(avatarImg);
     
-    // ANDY: add champion name inside the circle if final is finished
+    //  add champion name inside the circle if final is finished
     if (results.finalWinner) {
         const championNameInCircle = document.createElement("div");
         championNameInCircle.style.cssText = "color: white; font-size: 10px; font-weight: bold; text-align: center; padding: 0 2px; word-break: break-word; line-height: 1.1; max-width: 82px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; flex-shrink: 0;";
@@ -358,7 +358,7 @@ async function loadChampionAvatarIfNeeded(bracket: BracketSnapshot4) {
 export function showTournamentOverlay(newMode: TournamentOverlayMode, rawData: OverlayData) {
     if (!overlayEl) return;
     mode = newMode;
-    currentOverlayData = rawData; // ANDY: store current data for translation updates
+    currentOverlayData = rawData; //  store current data for translation updates
 
     const titleEl = overlayEl.querySelector(".tournament-overlay-title") as HTMLElement;
     const bodyEl = overlayEl.querySelector(".tournament-overlay-body") as HTMLElement;
@@ -408,7 +408,7 @@ export function hideTournamentOverlay() {
     currentOverlayData = null;
 }
 
-// ANDY: function to update tournament overlay translations when language changes
+//  function to update tournament overlay translations when language changes
 export function updateTournamentOverlayTranslations() {
     if (!overlayEl || !mode || !currentOverlayData) return;
     // Re-render the overlay with current data to update translations

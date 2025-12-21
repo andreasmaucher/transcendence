@@ -14,7 +14,7 @@ export function createTournamentPlayerDB(tournamentId: string, username: string,
 	else console.log(`[DB] Created new tournament player for tournament ${tournamentId}`);
 }
 
-// ANDY: added this to solve a bug where if the creator of a tournament leaves and then joins his own tournament again the lobby counter would not work
+//  added this to solve a bug where if the creator of a tournament leaves and then joins his own tournament again the lobby counter would not work
 // Problem: Primary Key (tournament_id, username) when a player left they were removed from match.players and tournament.players but not from the tournament_players db table
 // when they tried to rejoin it returned a unique constraint error
 export function removeTournamentPlayerDB(tournamentId: string, username: string): void {

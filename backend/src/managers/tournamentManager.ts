@@ -40,7 +40,7 @@ export function getOrCreateTournament({
 		// Generate unique name with counter if creator is provided
 		let tournamentName = name;
 		if (creator && name) {
-			// Count existing tournaments by this creator (ANDY:added creator field to the db)
+			// Count existing tournaments by this creator (added creator field to the db)
 			const counter = getTournamentCountByCreator(creator) + 1;
 
 			// name the tournaments e.g.  "andyTournament1"
@@ -58,7 +58,7 @@ export function getOrCreateTournament({
 			matches: new Map<number, Match[]>(),
 			players: [],
 		} as Tournament;
-		// ANDY: Save tournament to database first before creating matches (tournament needs to exist in db so matches can be created)
+		//  Save tournament to database first before creating matches (tournament needs to exist in db so matches can be created)
 		try {
 			createTournamentDB(tournament.id, tournament.name, tournament.state.size, creator);
 		} catch (error: any) {
@@ -147,7 +147,7 @@ export function addPlayerToTournament({
 							createTournamentPlayerDB(tournament.id, playerId, playerDisplayName);
 						}
 					}
-					// ANDY: look up displayName from tournament.players for later rounds or if already in tournament
+					//  look up displayName from tournament.players for later rounds or if already in tournament
 					const tournamentPlayer = tournament.players.find((p) => p.username === playerId);
 					const displayName = tournamentPlayer?.displayName || playerDisplayName;
 					addPlayerToMatch(match, playerId, socket, displayName);
@@ -162,7 +162,7 @@ export function addPlayerToTournament({
 	}
 }
 
-// ANDY: Helper function to broadcast match-assigned messages to all tournament players
+//  Helper function to broadcast match-assigned messages to all tournament players
 function broadcastMatchAssigned(
 	tournament: Tournament,
 	newMatch: Match,
@@ -206,7 +206,7 @@ export function assignPlayersToRound(tournament: Tournament) {
 	const prevRound = tournament.matches.get(tournament.state.round - 1);
 	const nextRound = tournament.matches.get(tournament.state.round);
 	if (prevRound && nextRound) {
-		// ANDY: issue is was that Tournament is progressing to Round 2 when only 1 of the 2 Round 1 matches finished!
+		//  issue is was that Tournament is progressing to Round 2 when only 1 of the 2 Round 1 matches finished!
 		// validate all previous round matches have winners
 		let allHaveWinners = true;
 		for (const match of prevRound) {
@@ -219,7 +219,7 @@ export function assignPlayersToRound(tournament: Tournament) {
 			return;
 		}
 
-		// ANDY: creates a map of username -> socket from previous round
+		//  creates a map of username -> socket from previous round
 		// we need to be able to find the socket for the winner / loser to assign them to the new match
 		// attach to the new match by updating socket.currentTournamentMatch
 		const playerSockets = new Map<string, any>();
@@ -259,7 +259,7 @@ export function assignPlayersToRound(tournament: Tournament) {
 			socket.currentTournamentMatch = newMatch;
 
 			// build & send new match assignment with tournament info to the frontend
-			// ANDY: include player display names for tournament tree overlay
+			//  include player display names for tournament tree overlay
 			// Build base payload without playerSide (will be customized per recipient)
 			const basePayload = {
 				matchId: newMatch.id,
@@ -275,7 +275,7 @@ export function assignPlayersToRound(tournament: Tournament) {
 				},
 			};
 
-			// ANDY: broadcast match-assigned to all tournament players
+			//  broadcast match-assigned to all tournament players
 			broadcastMatchAssigned(tournament, newMatch, basePayload, socket, winner);
 
 			// send initial state of new match to the frontend so when a player joins the new match the canvas can render the right scene
@@ -306,7 +306,7 @@ export function assignPlayersToRound(tournament: Tournament) {
 			socket.currentTournamentMatch = newMatch;
 
 			// send new match assignment with tournament info
-			// ANDY: include player display names for tournament tree overlay
+			//  include player display names for tournament tree overlay
 			// Build base payload without playerSide (will be customized per recipient)
 			const basePayloadLoser = {
 				matchId: newMatch.id,
@@ -322,7 +322,7 @@ export function assignPlayersToRound(tournament: Tournament) {
 				},
 			};
 
-			// ANDY: broadcast match-assigned to all tournament players
+			//  broadcast match-assigned to all tournament players
 			broadcastMatchAssigned(tournament, newMatch, basePayloadLoser, socket, loser);
 
 			// send initial state of new match
@@ -333,7 +333,7 @@ export function assignPlayersToRound(tournament: Tournament) {
 
 // Move tournament logic to the next round
 export function goToNextRound(tournament: Tournament) {
-	// ANDY: added logic to ensure that second round starts when both matches of the first round have finished
+	//  added logic to ensure that second round starts when both matches of the first round have finished
 	const currentRound = tournament.state.round;
 	const nextRound = currentRound + 1;
 

@@ -62,7 +62,7 @@ export function removeTournamentDB(id: string): void {
 	stmt.run(id);
 }
 
-// ANDY: added this function to clean up abandoned tournaments
+//  added this function to clean up abandoned tournaments
 /*
 tournaments are deleted if ALL of these conditions are true:
 - start_at is NULL, meaning they never reached 4 players

@@ -105,7 +105,7 @@ export function forfeitMatchDB(id: string, playerId: string) {
 	else console.log(`[DB] Match ${id} forfeited: player ${playerId} left`);
 }
 
-// ANDY: Remove a player from an online match (used when player leaves during waiting mode)
+//  Remove a player from an online match (used when player leaves during waiting mode)
 export function removePlayerFromMatchDB(id: string, playerId: string, side: "left" | "right"): void {
 	const stmt = db.prepare(`
 		UPDATE matches
