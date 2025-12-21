@@ -143,7 +143,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 
 			resetMatchState(match);
 
-			// ANDY: add socket to clients BEFORE addPlayerToMatch so it receives countdown messages
+			//  add socket to clients BEFORE addPlayerToMatch so it receives countdown messages
 			// reason is that addPlayerToMatch triggers startGameCountdown as soon as the second player joins but the new socket was not in match.clients yet
 			// so it missed the entire countdown process and stayed in waiting for opponent mode
 			match.clients.add(socket);
@@ -224,7 +224,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			socket.username = payload.username;
 
 			//const tournament = getOrCreateTournament(tournamentId, tournamentName, tournamentSize, payload.username);
-			//// ANDY: added this part to ensure that in the second round of the tournament the sides are correctly assigned to the players
+			////  added this part to ensure that in the second round of the tournament the sides are correctly assigned to the players
 			//// Find which match this player will join and determine their side BEFORE adding them
 			//let playerSide: "left" | "right" = "left";
 			//const matches = tournament.matches.get(tournament.state.round);
@@ -246,7 +246,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				creator: payload.username,
 			});
 
-			// ANDY: use custom display name from query parameter if provided, otherwise use username
+			//  use custom display name from query parameter if provided, otherwise use username
 			const playerDisplayName = userDisplayName || socket.username;
 
 			// Add the current game info to the userOnline struct
@@ -261,11 +261,11 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 			if (match) {
 				resetMatchState(match);
 				match.clients.add(socket);
-				// ANDY: store reference for Round 2 reassignment so we can pick a socket up after a match is over and drop it into the next match
+				//  store reference for Round 2 reassignment so we can pick a socket up after a match is over and drop it into the next match
 				socket.currentTournamentMatch = match; // track which match the socket belongs to
 				socket.tournamentId = tournament.id; // tracks the tournament this socket belongs to
 
-				// ANDY: determine playerSide AFTER adding player (to get the actual assigned side)
+				//  determine playerSide AFTER adding player (to get the actual assigned side)
 				const playerSide: "left" | "right" | null =
 					match.players.left?.username === socket.username
 						? "left"
@@ -273,7 +273,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 						? "right"
 						: null;
 
-				// ANDY: broadcast match-assigned for ALL matches in the current round to ALL tournament participants
+				//  broadcast match-assigned for ALL matches in the current round to ALL tournament participants
 				// This ensures all players see the tournament tree being populated
 				const roundMatches = tournament.matches.get(tournament.state.round);
 				if (roundMatches) {
@@ -283,12 +283,12 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 					for (let i = 0; i < roundMatches.length; i++) {
 						const currentMatch = roundMatches[i];
 
-						// ANDY: Build base payload without playerSide (will be customized per recipient)
+						//  Build base payload without playerSide (will be customized per recipient)
 						const basePayload = {
 							matchId: currentMatch.id,
 							tournamentMatchType: currentMatch.tournament?.type,
 							round: tournament.state.round,
-							matchIndex: i, // ANDY: index in the roundMatches array (0=first match, 1=second match)
+							matchIndex: i, //  index in the roundMatches array (0=first match, 1=second match)
 							leftPlayer: {
 								username: currentMatch.players.left?.username || null,
 								displayName:
@@ -305,7 +305,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 						for (const player of tournament.players) {
 							if (player.socket && player.socket.readyState === 1) {
 								// WebSocket.OPEN
-								// ANDY: Determine playerSide for THIS specific player for THIS specific match
+								//  Determine playerSide for THIS specific player for THIS specific match
 								// needed for broadcasting match-assigned messages to all players
 								const recipientPlayerSide: "left" | "right" | null =
 									currentMatch.players.left?.username === player.username
@@ -335,7 +335,7 @@ export function registerWebsocketRoute(fastify: FastifyInstance) {
 				}
 
 				socket.send(buildPayload("state", match.state));
-				// ANDY: for tournaments using socket.currentMatch which will be updated between rounds
+				//  for tournaments using socket.currentMatch which will be updated between rounds
 				// wrapper ensures every incoming message (player input, reset, etc.) is routed to whichever match the socket is currently assigned to
 				socket.on("message", (raw: RawData) => {
 					const currentMatch = socket.currentTournamentMatch || match;

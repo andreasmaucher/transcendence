@@ -49,7 +49,7 @@ let round2MatchIds: {
 	thirdPlace?: string;
 } = {};
 
-// ANDY: track match type by matchId (so we can determine match type even if currentMatchType was overwritten)
+//  track match type by matchId (so we can determine match type even if currentMatchType was overwritten)
 const matchTypeMap = new Map<string, { round: number; type: string }>();
 
 // Export function to get all tournament match IDs for tx status display
@@ -65,7 +65,7 @@ export function getTournamentMatchIds(): {
 	};
 }
 
-// ANDY: export function to get match type (for use in game.ts)
+//  export function to get match type (for use in game.ts)
 export function getMatchType(matchId: string): string | undefined {
 	return matchTypeMap.get(matchId)?.type;
 }
@@ -73,7 +73,7 @@ export function getMatchType(matchId: string): string | undefined {
 //Check if a match is in round 2 (final or 3rd place)
 export function isMatchInRound2(matchId: string): boolean {
 	const matchInfo = matchTypeMap.get(matchId);
-	// ANDY: convert round to number for comparison (handles both number and string)
+	//  convert round to number for comparison (handles both number and string)
 	const round = matchInfo?.round;
 	const roundNum = round !== undefined ? (typeof round === 'number' ? round : parseInt(String(round), 10)) : undefined;
 	return roundNum === 2;
@@ -107,9 +107,9 @@ export function handleTournamentMatchAssigned(data: any) {
 	currentRound = round ?? 1;
 	currentMatchType = tournamentMatchType;
 	
-	// ANDY: store match type by matchId so we can look it up later
+	//  store match type by matchId so we can look it up later
 	if (matchId && round && tournamentMatchType) {
-		// ANDY: ensure round is stored as a number for consistent comparison
+		//  ensure round is stored as a number for consistent comparison
 		const roundNum = typeof round === 'number' ? round : parseInt(round, 10);
 		matchTypeMap.set(matchId, { round: roundNum, type: tournamentMatchType });
 	}
@@ -120,14 +120,14 @@ export function handleTournamentMatchAssigned(data: any) {
 	// ROUND 1: identify SF1 / SF2 and store player display names
 	// -------------------------------
 	if (currentRound === 1 && tournamentMatchType === "normal") {
-		// ANDY: use matchIndex from backend to identify which match (0=SF1, 1=SF2)
+		//  use matchIndex from backend to identify which match (0=SF1, 1=SF2)
 		const matchIndex = data.matchIndex;
 		
 		if (matchIndex === 0) {
 			if (!semiFinalMatchIds.sf1) {
 				semiFinalMatchIds.sf1 = matchId;
 			}
-			// ANDY: store player display names from ws payload
+			//  store player display names from ws payload
 			if (leftPlayer?.username) {
 				internalBracket.players[0] = {
 					username: leftPlayer.username,
@@ -144,7 +144,7 @@ export function handleTournamentMatchAssigned(data: any) {
 			if (!semiFinalMatchIds.sf2) {
 				semiFinalMatchIds.sf2 = matchId;
 			}
-			// ANDY: store player display names from ws payload
+			//  store player display names from ws payload
 			if (leftPlayer?.username) {
 				internalBracket.players[2] = {
 					username: leftPlayer.username,
@@ -172,7 +172,7 @@ export function handleTournamentMatchAssigned(data: any) {
 	// ROUND 2: final / 3rd place
 	// -------------------------------
 	if (currentRound === 2) {
-		// ANDY: update results from match-assigned messages to show final/3rd place players
+		//  update results from match-assigned messages to show final/3rd place players
 		if (tournamentMatchType === "final") {
 			// Store final match ID for tx status tracking
 			round2MatchIds.final = matchId;
@@ -252,7 +252,7 @@ export function handleTournamentMatchState(
 
 	const focused = userData.username ?? undefined;
 
-	// ANDY: determine round from matchTypeMap instead of relying on currentRound (which can be overwritten)
+	//  determine round from matchTypeMap instead of relying on currentRound (which can be overwritten)
 	// This ensures we correctly identify Round 2 matches even if currentRound was overwritten by a later match-assigned message
 	const matchInfo = matchTypeMap.get(matchId);
 	const matchRound = matchInfo?.round;

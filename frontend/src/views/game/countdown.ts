@@ -99,7 +99,7 @@ export function showCountdown(
     }, 1000);
   });
 
-  // ANDY: added this so the countdown can be cancelled if the user forfeits the match
+  //  added this so the countdown can be cancelled if the user forfeits the match
   // Cancel immediately cleans up all timers/elements and resolves the promise
   // so the calling code can continue and check the 'cancelled' flag
   const cancel = () => {

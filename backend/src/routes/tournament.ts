@@ -27,7 +27,7 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 
 	// GET all open tournaments
 	fastify.get("/api/tournaments/open", async (_request: FastifyRequest, reply: FastifyReply) => {
-		// ANDY: added this to load tournaments from database into memory so they're visible to all users
+		//  added this to load tournaments from database into memory so they're visible to all users
 		// Also include tournaments that are in memory but might not be in DB yet (just created)
 		try {
 			const dbOpenTournaments = getOpenTournamentsDB();

@@ -1,4 +1,4 @@
-// ANDY: added this to track when a match is active so we can disable navigation buttons in the topbar
+//  added this to track when a match is active so we can disable navigation buttons in the topbar
 // a match is defined as currently active as soon as the countdown started and until the user gets sent back to the main menu after the game finished 
 
 // true: Countdown started or game is running (hide navigation)

@@ -133,13 +133,13 @@ setInterval(() => {
 						...match.state,
 						playerLeft: toPlayerInfo(match.players.left),
 						playerRight: toPlayerInfo(match.players.right),
-						matchId: match.id, // ANDY: include matchId so frontend knows which match this state belongs to
+						matchId: match.id, //  include matchId so frontend knows which match this state belongs to
 					});
 					
 					// Broadcast to match clients (players in this match)
 					gameBroadcast(statePayload, match);
 					
-					// ANDY: When a Round 2 match finishes, also broadcast to ALL tournament players
+					//  When a Round 2 match finishes, also broadcast to ALL tournament players
 					// This ensures everyone (including 3rd place players) sees the final result and champion
 					if (match.state.isOver && !wasOver && match.tournament && match.tournament.round === 2) {
 						const tournament = tournaments.get(match.tournament.id);

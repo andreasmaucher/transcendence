@@ -72,7 +72,7 @@ function setupLanguageUI(langSwitcher: HTMLDivElement) {
       currentLangBtn.textContent = code.toUpperCase();
       updateTopBar();
       
-      // ANDY: if we're in a game view, update translations without re-rendering
+      //  if we're in a game view, update translations without re-rendering
       if (isInGameView()) {
         // Import and call the update function
         import("../../views/game/ui").then((module) => {
@@ -80,7 +80,7 @@ function setupLanguageUI(langSwitcher: HTMLDivElement) {
           updateFn?.();
         });
         
-        // ANDY: also update tournament overlay if it's visible
+        //  also update tournament overlay if it's visible
         import("../../views/tournament/overlays/tournament_overlay").then((module) => {
           const updateOverlayFn = (module as any).updateTournamentOverlayTranslations?.();
           updateOverlayFn?.();

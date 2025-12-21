@@ -197,7 +197,7 @@ export function endMatch(match: Match) {
 // Add player to open match
 export function addPlayerToMatch(match: Match, playerId: string, socket: any, displayName?: string) {
 	try {
-		// ANDY: had to update in-memory object here since checkMatchFull was returning undefined
+		//  had to update in-memory object here since checkMatchFull was returning undefined
 		// previously it only updated the database but did not update the in-memory match.players object
 		if (!match.players.left) {
 			addPlayerMatchDB(match.id, playerId, "left");
@@ -231,7 +231,7 @@ export function checkMatchFull(match: Match) {
 export function forfeitMatch(match: Match, playerId: string) {
 	if (match.singleGameId) {
 		if (match.state.isOver) return;
-		// ANDY: Check if match is full/started - if not, just remove the player and keep the game open
+		//  Check if match is full/started - if not, just remove the player and keep the game open
 		// this was needed to avoid forfeiting when players go from waiting mode back to the lobby in online games
 		const isMatchFull = checkMatchFull(match);
 		const isMatchStarted = match.state.isRunning;

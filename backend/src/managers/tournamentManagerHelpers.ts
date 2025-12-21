@@ -18,7 +18,7 @@ export function initTournamentMatches(tournament: Tournament, size: number): Mat
 
 	// How many matches in this round
 	let matchCount = size / Math.pow(2, round);
-	// ANDY: with the formula above only one final would be possible but we need also the game for 3rd place
+	//  with the formula above only one final would be possible but we need also the game for 3rd place
 	if (isFinalRound(tournament) && size >= 4) {
 		matchCount = 2;
 	}

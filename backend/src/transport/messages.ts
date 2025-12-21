@@ -9,7 +9,7 @@ import { convertToMessage } from "../chat/utils.js";
 import { ChatMessage } from "../types/chat.js";
 import { isValidChatInput } from "../utils/sanitize.js";
 
-// ANDY: added this to track when matches ended to delay reset requests (so final score is visible)
+//  added this to track when matches ended to delay reset requests (so final score is visible)
 export const matchEndTimes = new Map<string, number>(); // matchId -> timestamp when game ended
 const RESET_DELAY_MS = 3000; // 3 seconds - time to show final score before allowing reset
 
@@ -52,7 +52,7 @@ export function handleGameMessages(raw: RawData, match: Match) {
 		const dir = msg.direction === "up" ? -1 : msg.direction === "down" ? 1 : 0;
 		match.inputs[msg.paddle as PaddleSide] = dir;
 	} else if (msg.type === "reset") {
-		// ANDY: For tournament matches, we should not reset the match state when a "reset" message is received, because we need to preserve the winner for round progression!
+		//  For tournament matches, we should not reset the match state when a "reset" message is received, because we need to preserve the winner for round progression!
 		if (!match.tournament) {
 			// Delay reset if game just ended - allow final score to be visible for a few seconds
 			const endTime = matchEndTimes.get(match.id);

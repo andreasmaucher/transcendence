@@ -102,7 +102,7 @@ export function connectToLocalSingleGameWS(state: MatchState): () => void {
 				// payload.data is now MatchState
 				applyBackendState(state, payload.data);
 
-				// ANDY: when a local game finishe update the UI so the button changes to "Return to Menu"
+				//  when a local game finishe update the UI so the button changes to "Return to Menu"
 				if (state.isOver && !wasOver && state.winner) {
 					onMatchOver(); // Local games don't have matchId
 				}
@@ -217,7 +217,7 @@ export function connectToSingleGameWS(state: MatchState, roomId?: string): () =>
 				// payload.data is now MatchState
 				applyBackendState(state, payload.data);
 
-				// ANDY: when an online game finishes, update UI so the button changes to "Back to Menu"
+				//  when an online game finishes, update UI so the button changes to "Back to Menu"
 				if (state.isOver && !wasOver && state.winner) {
 					onMatchOver();
 				}
@@ -293,7 +293,7 @@ export function connectToTournamentWS(
 	displayName?: string
 ): () => void {
 	const targetRoomId = roomId ?? ROOM_ID;
-	// ANDY: add tournament name and display name as query parameters if provided
+	//  add tournament name and display name as query parameters if provided
 	const queryParams = new URLSearchParams();
 	if (tournamentName) {
 		queryParams.set("name", tournamentName);
@@ -311,7 +311,7 @@ export function connectToTournamentWS(
 
 	let resetRequested = false;
 	let isHandlingForfeit = false;
-	// ANDY: store match info (players) for each match we see
+	//  store match info (players) for each match we see
 	const matchPlayersMap = new Map<string, { left: string | null; right: string | null }>();
 	// track which matches have already finished (to prevent duplicate onMatchOver calls)
 	const finishedMatches = new Set<string>();
@@ -388,7 +388,7 @@ function showBlockchainTxStatus(statusObj: { status: "pending"|"success"|"fail",
 				// server tells us which side we're playing on
 				const data = (payload as any).data;
 
-				// ANDY: only update assignedSide if playerSide is explicitly set meaning the player is in the match
+				//  only update assignedSide if playerSide is explicitly set meaning the player is in the match
 				// This prevents overwriting the correct side when receiving match-assigned for for matches the player is not in
 				// the backend sends playerSide:null for matches the player is not in and we need it to show the tournament bracket correctly
 				// but it will not change the paddle they control
@@ -400,7 +400,7 @@ function showBlockchainTxStatus(statusObj: { status: "pending"|"success"|"fail",
 					}
 				}
 
-				// ANDY: store match players so we can determine winner later
+				//  store match players so we can determine winner later
 				if (data?.matchId) {
 					matchPlayersMap.set(data.matchId, {
 						left: data?.leftPlayer?.username || null,
@@ -433,7 +433,7 @@ function showBlockchainTxStatus(statusObj: { status: "pending"|"success"|"fail",
 				
 				applyBackendState(state, payload.data);
 
-				// ANDY: when a tournament match finishes, call handleTournamentMatchState
+				//  when a tournament match finishes, call handleTournamentMatchState
 				// Backend includes matchId in state payload for tournament matches
 				if (isMatchFinishing) {
 					// Mark this match as finished to prevent duplicate processing
@@ -443,7 +443,7 @@ function showBlockchainTxStatus(statusObj: { status: "pending"|"success"|"fail",
 					const players = matchPlayersMap.get(matchId);
 					if (players) {
 						handleTournamentMatchState(state, matchId, players.left, players.right);
-						// ANDY: call onMatchOver for all rounds, passing matchId so UI can check if player is in this match
+						//  call onMatchOver for all rounds, passing matchId so UI can check if player is in this match
 						// For Round 2, also change button to "Back to Menu"
 						if (isMatchInRound2(matchId)) {
 							onMatchOver(matchId);

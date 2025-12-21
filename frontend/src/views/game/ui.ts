@@ -23,10 +23,10 @@ import { setMatchActive } from "../../config/matchState";
 
 let GAME_CONSTANTS: GameConstants | null = null;
 
-// ANDY: store callback to update translations without re-rendering
+//  store callback to update translations without re-rendering
 let updateGameTranslations: (() => void) | null = null;
 
-// ANDY: export getter function so language switcher can access the update function
+//  export getter function so language switcher can access the update function
 export function getUpdateGameTranslations(): (() => void) | null {
 	return updateGameTranslations;
 }
@@ -252,7 +252,7 @@ export async function renderGame(container: HTMLElement) {
 			onSideAssigned((side) => {
 				if (!ui || !userBox) return;
 
-				currentAssignedSide = side; // ANDY: store current side for translation updates
+				currentAssignedSide = side; //  store current side for translation updates
 
 				if (side === "left") {
 					ui.style.left = "10px";
@@ -288,13 +288,13 @@ export async function renderGame(container: HTMLElement) {
 	}
 
 	let isWaiting = mode !== "local"; // Track if we're in waiting mode
-	let isMatchOver = false; // ANDY: track if the match is over (round 2 finished)
-	let currentAssignedSide: "left" | "right" | null = null; // ANDY: track current side assignment for translation updates
+	let isMatchOver = false; //  track if the match is over (round 2 finished)
+	let currentAssignedSide: "left" | "right" | null = null; //  track current side assignment for translation updates
 	const exitBtn = document.createElement("button");
 
 	// Function to update button text based on state
 	const updateButtonText = () => {
-		// ANDY: if match is over (round 2 finished), show "Back to Menu"
+		//  if match is over (round 2 finished), show "Back to Menu"
 		if (isMatchOver) {
 			exitBtn.textContent = t("game.backToMenu");
 		} else {
@@ -313,15 +313,15 @@ export async function renderGame(container: HTMLElement) {
 	};
 	updateButtonText(); // Set initial text
 
-	// ANDY: store update function globally so language switcher can call it without re-rendering
+	//  store update function globally so language switcher can call it without re-rendering
 	updateGameTranslations = () => {
 		updateButtonText();
-		// ANDY: also update side indicator if side is already assigned
+		//  also update side indicator if side is already assigned
 		if (currentAssignedSide && sideIndicator.style.display !== "none") {
 			sideIndicator.textContent =
 				currentAssignedSide === "left" ? t("game.controlLeftPaddle") : t("game.controlRightPaddle");
 		}
-		// ANDY: also update waiting overlay text if it's visible
+		//  also update waiting overlay text if it's visible
 		if (waitingOverlay && waitingOverlay.style.display !== "none") {
 			waitingOverlay.textContent = t("game.waitingForOpponent");
 		}
@@ -362,7 +362,7 @@ export async function renderGame(container: HTMLElement) {
 		setMatchActive(false); // Show topbar again before navigating
 		if (cancelCountdown) cancelCountdown(); // Stop countdown immediately
 
-		// ANDY: if match is over (round 2 finished), just go back to menu
+		//  if match is over (round 2 finished), just go back to menu
 		if (isMatchOver) {
 			userData.gameSock?.close(); // Close socket
 			navigate("#/menu");
@@ -528,11 +528,11 @@ export async function renderGame(container: HTMLElement) {
 			await showMessageOverlay(message);
 		},
 
-		// ANDY: change button to "Back to Menu" when the match is over (works separately for final and 3rd place matches)
+		//  change button to "Back to Menu" when the match is over (works separately for final and 3rd place matches)
 	onMatchOver: async (matchId?: string) => {
 		if (cancelled) return;
 
-		// ANDY: for tournaments, only set isMatchOver if it's a Round 2 match (final or 3rd place)
+		//  for tournaments, only set isMatchOver if it's a Round 2 match (final or 3rd place)
 		// Round 1 matches should not change the button to "Back to Menu"
 		if (mode === "tournament" && matchId) {
 			if (isMatchInRound2(matchId)) {
@@ -608,6 +608,6 @@ export async function renderGame(container: HTMLElement) {
 		cleanupLoop();
 		cleanupWS();
 		setActiveSocket(null);
-		updateGameTranslations = null; // ANDY: clear translation update callback when leaving game view
+		updateGameTranslations = null; //  clear translation update callback when leaving game view
 	};
 }

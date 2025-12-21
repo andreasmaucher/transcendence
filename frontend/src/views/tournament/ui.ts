@@ -76,7 +76,7 @@ function getQueryParams(): { [key: string]: string } {
 	list.className = "tournament-list";
 	box.append(list);
 
-	// ANDY: Function to show modal for joining a tournament with custom display name
+	//  Function to show modal for joining a tournament with custom display name
 	// Modal appears when user clicks "Join" button on a tournament
 	function showJoinTournamentModal(tournamentId: string, tournamentName?: string) {
 		// Create modal overlay (full screen dark background)
@@ -135,7 +135,7 @@ function getQueryParams(): { [key: string]: string } {
 		`;
 		modalContent.appendChild(modalTitle);
 
-		// ANDY: Display name input field that allows the player to set a custom display name for themselves
+		//  Display name input field that allows the player to set a custom display name for themselves
 		const displayNameLabel = document.createElement("label");
 		displayNameLabel.className = "tournament-name-label";
 		displayNameLabel.textContent = t("tournaments.displayNameLabel");
@@ -216,7 +216,7 @@ function getQueryParams(): { [key: string]: string } {
 			joinBtn.style.boxShadow = "none";
 		};
 		joinBtn.onclick = () => {
-			// ANDY: get custom display name from input if provided, otherwise it will be empty and backend will use username
+			//  get custom display name from input if provided, otherwise it will be empty and backend will use username
 			const customDisplayName = displayNameInput.value.trim();
 			const displayNameParam = customDisplayName ? `&displayName=${encodeURIComponent(customDisplayName)}` : "";
 
@@ -224,7 +224,7 @@ function getQueryParams(): { [key: string]: string } {
 			navigate(`#/game?mode=tournament&id=${tournamentId}${displayNameParam}`);
 		};
 
-		// ANDY: allow Enter key to submit the form
+		//  allow Enter key to submit the form
 		displayNameInput.addEventListener("keydown", (e) => {
 			if (e.key === "Enter") {
 				joinBtn.click();
@@ -240,7 +240,7 @@ function getQueryParams(): { [key: string]: string } {
 		setTimeout(() => displayNameInput.focus(), 100);
 	}
 
-	// ANDY: Function to show modal for tournament name input
+	//  Function to show modal for tournament name input
 	// Modal appears when user clicks "Create Tournament" button
 	function showCreateTournamentModal() {
 		// Create modal overlay (full screen dark background)
@@ -298,7 +298,7 @@ function getQueryParams(): { [key: string]: string } {
 		`;
 		modalContent.appendChild(modalTitle);
 
-		// ANDY: Tournament name input field that allows users to set a custom name for their tournament
+		//  Tournament name input field that allows users to set a custom name for their tournament
 		const nameLabel = document.createElement("label");
 		nameLabel.className = "tournament-name-label";
 		nameLabel.textContent = t("tournaments.nameLabel");
@@ -317,7 +317,7 @@ function getQueryParams(): { [key: string]: string } {
 		nameLabel.appendChild(nameInput);
 		modalContent.appendChild(nameLabel);
 
-		// ANDY: Display name input field that allows the tournament creator to set a custom display name for themselves
+		//  Display name input field that allows the tournament creator to set a custom display name for themselves
 		const displayNameLabel = document.createElement("label");
 		displayNameLabel.className = "tournament-name-label";
 		displayNameLabel.textContent = t("tournaments.displayNameLabel");
@@ -395,7 +395,7 @@ function getQueryParams(): { [key: string]: string } {
 		confirmBtn.onclick = async () => {
 		const tournamentId = crypto.randomUUID?.() || Math.random().toString(36).slice(2);
 		const me = await fetchMe();
-			// ANDY: use custom tournament name from input if provided, otherwise use our old naming logic
+			//  use custom tournament name from input if provided, otherwise use our old naming logic
 			const customName = nameInput.value.trim();
 			const tournamentName = customName
 				? customName
@@ -403,7 +403,7 @@ function getQueryParams(): { [key: string]: string } {
 				? `${me.username}Tournament`
 				: `Tournament${tournamentId.slice(0, 8)}`;
 
-			// ANDY: get custom display name from input if provided, otherwise it will be empty and backend will use username
+			//  get custom display name from input if provided, otherwise it will be empty and backend will use username
 			const customDisplayName = displayNameInput.value.trim();
 
 			modalOverlay.remove();
@@ -416,7 +416,7 @@ function getQueryParams(): { [key: string]: string } {
 			);
 		};
 
-		// ANDY: allow Enter key to submit the form
+		//  allow Enter key to submit the form
 		nameInput.addEventListener("keydown", (e) => {
 			if (e.key === "Enter") {
 				confirmBtn.click();
@@ -491,7 +491,7 @@ function getQueryParams(): { [key: string]: string } {
 				joinBtn.className = "tournament-row-btn";
 				joinBtn.textContent = t("tournaments.join");
 				joinBtn.onclick = () => {
-					// ANDY: show modal to allow player to set custom display name before joining
+					//  show modal to allow player to set custom display name before joining
 					showJoinTournamentModal(tour.id, tour.name);
 				};
 
